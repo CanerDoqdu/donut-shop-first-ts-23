@@ -1,0 +1,943 @@
+[    2275ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2322ms] [WARNING] Image with src "/bars 2.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2596ms] [WARNING] Image with src "/beverage 1.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2897ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2999ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3000ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3106ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3162ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3247ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3252ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3269ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3277ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3278ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3304ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3565ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4285ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[    4318ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[   22378ms] [WARNING] Image with src "/donut (3).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   34117ms] [WARNING] Image with src "/donut 3.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   47071ms] [WARNING] Image with src "/donut (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  204868ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  242123ms] [WARNING] Image with src "/donut 6 (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  737986ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  737993ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[  738009ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <HTTPAccessFallbackBoundary notFound={<SegmentViewNode>} forbidden={undefined} unauthorized={undefined}>
+      <HTTPAccessFallbackErrorBoundary pathname="/en" notFound={<SegmentViewNode>} forbidden={undefined} ...>
+        <RedirectBoundary>
+          <RedirectErrorBoundary router={{...}}>
+            <InnerLayoutRouter url="/en" tree={[...]} params={{locale:"en"}} cacheNode={{...}} segmentPath={[...]} ...>
+              <SegmentViewNode type="layout" pagePath="[locale]/l...">
+                <SegmentTrieNode>
+                <link>
+                <script>
+                <script>
+                <script>
+                <script>
+                <script>
+                <script>
+                <LocaleLayout>
+                  <html lang="en" className="inter_c15e...">
+                    <body className="flex min-h...">
+                      <NextIntlClientProviderServer>
+                        <NextIntlClientProvider locale="en" messages={{...}} timeZone="Europe/Ist...">
+                          <IntlProvider locale="en" messages={{...}} timeZone="Europe/Ist...">
+                            <Header>
+                            <PromoBanner>
+                              <div
+                                className="sticky top-20 z-90 w-full select-none"
+                                style={{
++                                 height: "40px"
+-                                 height: "40px"
++                                 overflowX: "hidden"
++                                 overflowY: "visible"
+-                                 overflow-x: "visible"
+-                                 overflow-y: "visible"
+                                }}
+                              >
+                                <div>
+                                <div
++                                 className="absolute inset-0"
+-                                 className="absolute inset-0 overflow-hidden"
+                                  style={{zIndex:1,background:"linear-gra..."}}
+                                >
+                                ...
+                            ...
+            ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[  738029ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738038ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738047ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738048ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738048ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738058ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738077ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738098ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738121ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738124ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738124ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738124ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  738130ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  757148ms] [WARNING] Image with src "/donut (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  763631ms] [WARNING] Image with src "/donut 3.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  789975ms] [WARNING] Image with src "/donut 6 (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  871806ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  871881ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  872039ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[  872132ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[  872215ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  872481ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  872490ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  872728ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  873099ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  873337ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  873405ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  873461ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  873480ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  873533ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  873561ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  890803ms] [WARNING] Image with src "/donut (3).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  897147ms] [WARNING] Image with src "/donut 3.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  923174ms] [WARNING] Image with src "/donut (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  955673ms] [WARNING] Image with src "/donut 6 (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1010876ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/en:0
+[ 1011864ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/en:0
+[ 1014113ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/en:0
+[ 1014603ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/en:0
+[ 1014789ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:3000/en:0
+[ 1065517ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1065529ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1065638ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1065638ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1065704ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1065849ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1065969ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1066293ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1066593ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1066751ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1066761ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1066809ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1066872ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1066876ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1067002ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1067217ms] [WARNING] Image with src "/beverage 1.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1068530ms] [WARNING] Image with src "/donut (3).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1071512ms] [WARNING] Image with src "/donut 3.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1071566ms] [WARNING] Image with src "/donut (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1077123ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1091187ms] [WARNING] Image with src "/donut 6 (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373021ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1373028ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1373074ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373085ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373086ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373086ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373086ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373096ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373118ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373134ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373151ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373158ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373158ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373158ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1373158ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1381927ms] [WARNING] Image with src "/beverage 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1384223ms] [WARNING] Image with src "/donut (3).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1387099ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1422752ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1422771ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1424983ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425000ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425000ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425010ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425020ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425037ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425037ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425058ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425063ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425063ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425063ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1425071ms] [WARNING] Image with src "/beverage 1.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1428847ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1432446ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1432447ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1435682ms] [WARNING] Image with src "/beverage 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1435693ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1446030ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1446037ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1446062ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <SegmentViewNode type="page" pagePath="[locale]/p...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} serverProvidedParams={{...}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="flex flex-...">
+            <SprinkleRain>
+            <section className="relative o..." style={{...}}>
+              <div>
+              <div>
+              <div>
+              <div>
+              <div className="relative f..." style={{...}}>
+                <div>
+                <div className="flex-1 fle...">
+                  <HeroShowcase>
+                    <div className="relative w...">
+                      <div className="lg:hidden ...">
+                        <div className="max-w-sm s...">
+                          <div>
+                          <div className="grid grid-...">
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Chocolate Dream Donut"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
+                                  className="object-contain drop-shadow-lg"
+                                  style={{color:"transparent",filter:"drop-shado..."}}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=96&q=75 1x, /_next/image?url=%2Fdonut%..."}
+-                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=64&q=75 1x, /_next/image?url=%2Fdonut%..."}
++                                 src={"/_next/image?url=%2Fdonut%205.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fdonut%205.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Berry Bliss Beverage"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
+                                  className="object-contain drop-shadow-lg"
+                                  style={{color:"transparent",filter:"drop-shado..."}}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=96&q=75 1x, /_next/image?url=%2Fbev..."}
+-                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75 1x, /_next/image?url=%2Fbev..."}
++                                 src={"/_next/image?url=%2Fbeverage%201.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fbeverage%201.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                          ...
+                      ...
+              ...
+            ...
+    ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1446091ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1446116ms] [WARNING] Image with src "/beverage 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533591ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533601ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533602ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533614ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533635ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533646ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533646ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533646ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533646ms] [WARNING] Image with src "/donut (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533646ms] [WARNING] Image with src "/donut (3).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1533646ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1538154ms] [WARNING] Image with src "/donut 3.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544637ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <SegmentViewNode type="page" pagePath="[locale]/p...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} serverProvidedParams={{...}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="flex flex-...">
+            <SprinkleRain>
+            <section className="relative o..." style={{...}}>
+              <div>
+              <div>
+              <div>
+              <div>
+              <div className="relative f..." style={{...}}>
+                <div>
+                <div className="flex-1 fle...">
+                  <HeroShowcase>
+                    <div className="relative w...">
+                      <div className="lg:hidden ...">
+                        <div className="max-w-sm s...">
+                          <div>
+                          <div className="grid grid-...">
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Chocolate Dream Donut"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
+                                  className="object-contain drop-shadow-lg"
+                                  style={{color:"transparent",filter:"drop-shado..."}}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=96&q=75 1x, /_next/image?url=%2Fdonut%..."}
+-                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=64&q=75 1x, /_next/image?url=%2Fdonut%..."}
++                                 src={"/_next/image?url=%2Fdonut%205.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fdonut%205.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3 overflow-hidden"
+                              >
+                                <img
+                                  alt="Berry Bliss Beverage"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain drop-shadow-lg"
+-                                 className="w-full h-full object-contain drop-shadow-lg"
+                                  style={{color:"transparent",filter:"drop-shado..."}}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=96&q=75 1x, /_next/image?url=%2Fbev..."}
+-                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75 1x, /_next/image?url=%2Fbev..."}
++                                 src={"/_next/image?url=%2Fbeverage%201.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fbeverage%201.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                          ...
+                      ...
+              ...
+            ...
+    ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1544660ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544667ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544675ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544675ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544675ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544684ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1544684ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1544688ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544707ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544737ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544753ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544762ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544762ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544762ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1544762ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1549278ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1565791ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1565814ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1565904ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <SegmentViewNode type="page" pagePath="[locale]/p...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} serverProvidedParams={{...}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="flex flex-...">
+            <SprinkleRain>
+            <section className="relative o..." style={{...}}>
+              <div>
+              <div>
+              <div>
+              <div>
+              <div className="relative f..." style={{...}}>
+                <div>
+                <div className="flex-1 fle...">
+                  <HeroShowcase>
+                    <div className="relative w...">
+                      <div className="lg:hidden ...">
+                        <div className="max-w-sm s...">
+                          <div>
+                          <div className="grid grid-...">
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Chocolate Dream Donut"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
+                                  className="object-contain drop-shadow-lg"
+                                  style={{color:"transparent",filter:"drop-shado..."}}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=96&q=75 1x, /_next/image?url=%2Fdonut%..."}
+-                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=64&q=75 1x, /_next/image?url=%2Fdonut%..."}
++                                 src={"/_next/image?url=%2Fdonut%205.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fdonut%205.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3 overflow-hidden"
+                              >
+                                <img
+                                  alt="Berry Bliss Beverage"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain drop-shadow-lg"
+-                                 className="w-full h-full object-contain drop-shadow-lg"
+                                  style={{color:"transparent",filter:"drop-shado..."}}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=96&q=75 1x, /_next/image?url=%2Fbev..."}
+-                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75 1x, /_next/image?url=%2Fbev..."}
++                                 src={"/_next/image?url=%2Fbeverage%201.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fbeverage%201.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                          <div className="mt-3 sm:mt..." style={{...}}>
+                            <div>
+                            <div>
+                            <div className="flex items...">
+                              <div className="flex items...">
+                                <div
++                                 className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0"
+-                                 className="relative w-6 h-6 sm:w-7 sm:h-7 shrink-0 overflow-hidden"
+                                >
+                                  <img
+                                    alt=""
+                                    draggable={false}
+                                    fetchPriority={undefined}
+                                    loading="lazy"
+                                    width={28}
+                                    height={28}
+                                    decoding="async"
+                                    data-nimg="1"
++                                   className="object-contain"
+-                                   className="w-full h-full object-contain"
+                                    style={{color:"transparent"}}
+                                    sizes={undefined}
+                                    srcSet={"/_next/image?url=%2Fbeverage%201.png&w=32&q=75 1x, /_next/image?url=%2Fb..."}
+                                    src={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75"}
+                                    ref={function}
+                                    onLoad={function onLoad}
+                                    onError={function onError}
+                                  >
+                                ...
+                              ...
+                          ...
+                      ...
+              ...
+            ...
+    ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1565936ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1566507ms] [WARNING] Image with src "/donut 4.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1566633ms] [WARNING] Image with src "/donut 5.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594286ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594287ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594299ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594299ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594319ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594319ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594319ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594319ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1594320ms] [WARNING] Image with src "/donut 6 (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1610953ms] [WARNING] Image with src "/donut (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1689244ms] [WARNING] Image with src "/donut (3).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1713558ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_RESET @ http://localhost:3000/_next/image?url=%2Fdonut%203.png&w=96&q=75:0
+[ 1725909ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <SegmentViewNode type="page" pagePath="[locale]/p...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} serverProvidedParams={{...}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="flex flex-...">
+            <SprinkleRain>
+            <section className="relative o..." style={{...}}>
+              <div>
+              <div>
+              <div>
+              <div>
+              <div className="relative f..." style={{...}}>
+                <div>
+                <div className="flex-1 fle...">
+                  <HeroShowcase>
+                    <div className="relative w...">
+                      <div className="lg:hidden ...">
+                        <div className="max-w-sm s...">
+                          <div>
+                          <div className="grid grid-...">
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Chocolate Dream Donut"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain drop-shadow-lg"
+-                                 className="w-full h-full object-contain drop-shadow-lg"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
++                                   filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.2))"
+-                                   filter: "drop-shadow(rgba(0, 0, 0, 0.2) 0px 4px 12px)"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=96&q=75 1x, /_next/image?url=%2Fdonut%..."}
+-                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=64&q=75 1x, /_next/image?url=%2Fdonut%..."}
++                                 src={"/_next/image?url=%2Fdonut%205.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fdonut%205.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Berry Bliss Beverage"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain drop-shadow-lg"
+-                                 className="w-full h-full object-contain drop-shadow-lg"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
++                                   filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.2))"
+-                                   filter: "drop-shadow(rgba(0, 0, 0, 0.2) 0px 4px 12px)"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=96&q=75 1x, /_next/image?url=%2Fbev..."}
+-                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75 1x, /_next/image?url=%2Fbev..."}
++                                 src={"/_next/image?url=%2Fbeverage%201.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fbeverage%201.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                          <div className="mt-3 sm:mt..." style={{...}}>
+                            ...
+                              <div className="relative w...">
+                                <img
+                                  alt=""
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
+                                  width={28}
+                                  height={28}
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain"
+-                                 className="w-full h-full object-contain"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
+                                  srcSet={"/_next/image?url=%2Fdonut%205.png&w=32&q=75 1x, /_next/image?url=%2Fdonut%..."}
+                                  src={"/_next/image?url=%2Fdonut%205.png&w=64&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                            <div>
+                            ...
+                              <div className="relative w...">
+                                <img
+                                  alt=""
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
+                                  width={28}
+                                  height={28}
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain"
+-                                 className="w-full h-full object-contain"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
+                                  srcSet={"/_next/image?url=%2Fbeverage%201.png&w=32&q=75 1x, /_next/image?url=%2Fbev..."}
+                                  src={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                          ...
+                      ...
+              ...
+            ...
+    ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1726179ms] [WARNING] Image with src "/beverage 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1726440ms] [WARNING] Image with src "/donut 5.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1726562ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1726596ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1726612ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1726818ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1726873ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1727050ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1730262ms] [WARNING] Image with src "/donut-empty.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1734023ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1735804ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1735931ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1736103ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1736175ms] [WARNING] Image with src "/caramel blocks (2).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1736267ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1736282ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1736496ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1736521ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1796021ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=VQpFAI5ZyBcyB5glcwryg' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 1799485ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=VQpFAI5ZyBcyB5glcwryg' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[ 1809288ms] [ERROR] A tree hydrated but some attributes of the server rendered HTML didn't match the client properties. This won't be patched up. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+%s%s https://react.dev/link/hydration-mismatch 
+
+  ...
+    <SegmentViewNode type="page" pagePath="[locale]/p...">
+      <SegmentTrieNode>
+      <ClientPageRoot Component={function Home} serverProvidedParams={{...}}>
+        <Home params={Promise} searchParams={Promise}>
+          <div className="flex flex-...">
+            <SprinkleRain>
+            <section className="relative o..." style={{...}}>
+              <div>
+              <div>
+              <div>
+              <div>
+              <div className="relative f..." style={{...}}>
+                <div>
+                <div className="flex-1 fle...">
+                  <HeroShowcase>
+                    <div className="relative w...">
+                      <div className="lg:hidden ...">
+                        <div className="max-w-sm s...">
+                          <div>
+                          <div className="grid grid-...">
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Chocolate Dream Donut"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain drop-shadow-lg"
+-                                 className="w-full h-full object-contain drop-shadow-lg"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
++                                   filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.2))"
+-                                   filter: "drop-shadow(rgba(0, 0, 0, 0.2) 0px 4px 12px)"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=96&q=75 1x, /_next/image?url=%2Fdonut%..."}
+-                                 srcSet={"/_next/image?url=%2Fdonut%205.png&w=64&q=75 1x, /_next/image?url=%2Fdonut%..."}
++                                 src={"/_next/image?url=%2Fdonut%205.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fdonut%205.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                            <div className="relative r..." style={{...}}>
+                              <div>
+                              <div
++                               className="relative w-16 h-16 sm:w-20 sm:h-20 md:w-24 md:h-24 mb-2 sm:mb-3"
+-                               className="relative w-9 h-9 sm:w-12 sm:h-12 md:w-14 md:h-14 mb-2 sm:mb-3"
+                              >
+                                <img
+                                  alt="Berry Bliss Beverage"
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
++                                 width={96}
+-                                 width="56"
++                                 height={96}
+-                                 height="56"
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain drop-shadow-lg"
+-                                 className="w-full h-full object-contain drop-shadow-lg"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
++                                   filter: "drop-shadow(0 4px 12px rgba(0,0,0,0.2))"
+-                                   filter: "drop-shadow(rgba(0, 0, 0, 0.2) 0px 4px 12px)"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
++                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=96&q=75 1x, /_next/image?url=%2Fbev..."}
+-                                 srcSet={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75 1x, /_next/image?url=%2Fbev..."}
++                                 src={"/_next/image?url=%2Fbeverage%201.png&w=256&q=75"}
+-                                 src={"/_next/image?url=%2Fbeverage%201.png&w=128&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                              ...
+                          <div className="mt-3 sm:mt..." style={{...}}>
+                            ...
+                              <div className="relative w...">
+                                <img
+                                  alt=""
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
+                                  width={28}
+                                  height={28}
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain"
+-                                 className="w-full h-full object-contain"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
+                                  srcSet={"/_next/image?url=%2Fdonut%205.png&w=32&q=75 1x, /_next/image?url=%2Fdonut%..."}
+                                  src={"/_next/image?url=%2Fdonut%205.png&w=64&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                            <div>
+                            ...
+                              <div className="relative w...">
+                                <img
+                                  alt=""
+                                  draggable={false}
+                                  fetchPriority={undefined}
+                                  loading="lazy"
+                                  width={28}
+                                  height={28}
+                                  decoding="async"
+                                  data-nimg="1"
++                                 className="object-contain"
+-                                 className="w-full h-full object-contain"
+                                  style={{
++                                   color: "transparent"
+-                                   color: "transparent"
+-                                   width: "auto"
+-                                   height: "auto"
+-                                   max-width: "100%"
+-                                   max-height: "100%"
+                                  }}
+                                  sizes={undefined}
+                                  srcSet={"/_next/image?url=%2Fbeverage%201.png&w=32&q=75 1x, /_next/image?url=%2Fbev..."}
+                                  src={"/_next/image?url=%2Fbeverage%201.png&w=64&q=75"}
+                                  ref={function}
+                                  onLoad={function onLoad}
+                                  onError={function onError}
+                                >
+                          ...
+                      ...
+              ...
+            ...
+    ...
+ @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[ 1809484ms] [WARNING] Image with src "/caramel bloks 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1809581ms] [WARNING] Image with src "/caramel blocks.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1809692ms] [WARNING] Image with src "/beverage 1.png" was detected as the Largest Contentful Paint (LCP). Please add the `loading="eager"` property if this image is above the fold.
+Read more: https://nextjs.org/docs/app/api-reference/components/image#loading @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1809907ms] [WARNING] Image with src "/donut 4.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1809943ms] [WARNING] Image with src "/donut 5.png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1809981ms] [WARNING] Image with src "/donut 6 (2).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1810015ms] [WARNING] Image with src "/donut (3).png" has "fill" but is missing "sizes" prop. Please add it to improve page performance. Read more: https://nextjs.org/docs/api-reference/next/image#sizes @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1810022ms] [WARNING] Image with src "/bars 2.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1810074ms] [WARNING] Image with src "/bars 1.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1810236ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0
+[ 1810246ms] [ERROR] Manifest fetch from http://localhost:3000/manifest.json failed, code 404 @ http://localhost:3000/en:0
+[ 1810253ms] [WARNING] Image with src "/freepik__adjust__37854.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1810258ms] [WARNING] Image with src "/787a097af800f098a6771a29fb1a6020.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1810311ms] [WARNING] Image with src "/donut.png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1813094ms] [WARNING] Image with src "/donut (3).png" has either width or height modified, but not the other. If you use CSS to change the size of your image, also include the styles 'width: "auto"' or 'height: "auto"' to maintain the aspect ratio. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[ 1815345ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:3000/manifest.json:0

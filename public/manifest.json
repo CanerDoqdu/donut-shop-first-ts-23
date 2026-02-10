@@ -1,0 +1,21 @@
+{
+  "name": "Glazed & Sipped",
+  "short_name": "Glazed & Sipped",
+  "description": "Handcrafted donuts and signature beverages, made fresh daily with love.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#FFF8E7",
+  "theme_color": "#FF6BBF",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
