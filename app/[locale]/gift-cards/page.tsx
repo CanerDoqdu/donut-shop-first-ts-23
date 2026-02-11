@@ -1,11 +1,10 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import GiftCardPurchase from '@/components/giftcards/GiftCardPurchase';
 
 export default function GiftCardsPage() {
   const params = useParams();
-  const router = useRouter();
   const locale = (params.locale as string) || 'tr';
 
   async function handlePurchase(data: {

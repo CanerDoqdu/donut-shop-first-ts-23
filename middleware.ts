@@ -7,7 +7,7 @@ const intlMiddleware = createMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
   // Create a response object to modify
-  let response = intlMiddleware(request);
+  const response = intlMiddleware(request);
   
   // Create Supabase client for session refresh
   const supabase = createServerClient(
@@ -22,34 +22,32 @@ export async function middleware(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
-          response = NextResponse.next({
-            request,
-          });
+          // Set cookies on the existing intl response instead of replacing it
+          // Force httpOnly: false so browser JS can read auth cookies
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, { ...options })
           );
         },
       },
     }
   );
 
-  // Refresh session if expired
-  await supabase.auth.getUser();
+  // Refresh session and get user (single call)
+  const { data: { user } } = await supabase.auth.getUser();
 
   // Protected routes - require authentication
-  const protectedPaths = ['/admin'];
+  const protectedPaths = ['/admin', '/account', '/orders', '/checkout', '/loyalty', '/subscriptions', '/referrals'];
   const isProtectedPath = protectedPaths.some(path => 
     request.nextUrl.pathname.includes(path)
   );
 
-  if (isProtectedPath) {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    if (!user) {
-      const url = request.nextUrl.clone();
-      url.pathname = '/login';
-      return NextResponse.redirect(url);
-    }
+  if (isProtectedPath && !user) {
+    // Determine locale from pathname
+    const locale = request.nextUrl.pathname.startsWith('/tr') ? 'tr' : 'en';
+    const url = request.nextUrl.clone();
+    url.pathname = `/${locale}/login`;
+    url.searchParams.set('redirect', request.nextUrl.pathname);
+    return NextResponse.redirect(url);
   }
 
   return response;

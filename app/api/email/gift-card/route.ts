@@ -1,9 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request: NextRequest) {
+  // Rate limit: 3 gift card emails per minute per IP
+  const ip = getClientIP(request);
+  const limiter = rateLimit(`gift-card:${ip}`, { maxRequests: 3, windowSizeSeconds: 60 });
+  if (!limiter.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+
   try {
     const { giftCard, locale } = await request.json();
 

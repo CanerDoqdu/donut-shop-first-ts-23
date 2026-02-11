@@ -7,8 +7,22 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   title: "Glazed & Sipped — Premium Donuts & Beverages",
-  description: "Handcrafted donuts and signature beverages, made fresh daily with love.",
+  description: "Handcrafted donuts and signature beverages, made fresh daily with love. Order online for delivery or visit our stores.",
   manifest: "/manifest.json",
+  metadataBase: new URL("https://glazedandsipped.com"),
+  openGraph: {
+    title: "Glazed & Sipped — Premium Donuts & Beverages",
+    description: "Handcrafted donuts and signature beverages, made fresh daily with love.",
+    url: "https://glazedandsipped.com",
+    siteName: "Glazed & Sipped",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Glazed & Sipped — Premium Donuts & Beverages",
+    description: "Handcrafted donuts and signature beverages, made fresh daily with love.",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",

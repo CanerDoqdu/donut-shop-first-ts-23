@@ -67,33 +67,35 @@ export default function Home() {
                 {t('home.heroDesc')}
               </p>
               <div className="flex gap-3 justify-center">
-                <Link href="/products">
-                  <Button
-                    size="sm"
-                    className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,107,191,0.4)]"
-                    style={{
-                      background: 'linear-gradient(135deg, #FF6BBF, #FF3DA0)',
-                      color: 'white',
-                      boxShadow: '0 8px 30px rgba(255,61,160,0.3)',
-                    }}
-                  >
+                <Button
+                  asChild
+                  size="sm"
+                  className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,107,191,0.4)]"
+                  style={{
+                    background: 'linear-gradient(135deg, #FF6BBF, #FF3DA0)',
+                    color: 'white',
+                    boxShadow: '0 8px 30px rgba(255,61,160,0.3)',
+                  }}
+                >
+                  <Link href="/products">
                     {t('home.cta')} <ArrowRight className="ml-1 h-3 w-3" />
-                  </Button>
-                </Link>
-                <Link href="/products">
-                  <Button
-                    size="sm"
-                    className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,44,26,0.3)]"
-                    style={{
-                      background: 'linear-gradient(135deg, #4A2C1A, #6B3E26)',
-                      color: '#FFD93D',
-                      border: '1.5px solid rgba(255,217,61,0.25)',
-                      boxShadow: '0 8px 30px rgba(74,44,26,0.25)',
-                    }}
-                  >
+                  </Link>
+                </Button>
+                <Button
+                  asChild
+                  size="sm"
+                  className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,44,26,0.3)]"
+                  style={{
+                    background: 'linear-gradient(135deg, #4A2C1A, #6B3E26)',
+                    color: '#FFD93D',
+                    border: '1.5px solid rgba(255,217,61,0.25)',
+                    boxShadow: '0 8px 30px rgba(74,44,26,0.25)',
+                  }}
+                >
+                  <Link href="/products">
                     <ShoppingBag className="mr-1 h-3 w-3" /> {t('nav.products')}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             </FadeIn>
           </div>
@@ -104,9 +106,6 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Keyframes */}
-        <style dangerouslySetInnerHTML={{ __html: `
-        ` }} />
       </section>
 
       {/* ═══════════════════════════════════════════════ */}
@@ -173,11 +172,11 @@ export default function Home() {
 
           <FadeIn delay={0.3}>
             <div className="text-center mt-14">
-              <Link href="/products">
-                <Button variant="outline" size="lg" className="text-lg px-10 rounded-full border-2 hover:scale-105 transition-transform">
+              <Button asChild variant="outline" size="lg" className="text-lg px-10 rounded-full border-2 hover:scale-105 transition-transform">
+                <Link href="/products">
                   {t('nav.products')} <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
-              </Link>
+                </Link>
+              </Button>
             </div>
           </FadeIn>
         </div>
@@ -438,14 +437,15 @@ export default function Home() {
               {t('home.ctaDesc')} <span className="font-bold">{t('home.ctaFree')}</span>!
               {t('home.ctaCode')} <span className="font-bold bg-white/20 px-3 py-1 rounded-full">FIRSTDONUT</span> {t('home.ctaCodeSuffix')}
             </p>
-            <Link href="/products">
-              <Button
-                size="lg"
-                className="text-lg px-12 py-7 shadow-2xl font-bold rounded-full transition-all duration-300 hover:scale-105"
-              >
+            <Button
+              asChild
+              size="lg"
+              className="text-lg px-12 py-7 shadow-2xl font-bold rounded-full transition-all duration-300 hover:scale-105"
+            >
+              <Link href="/products">
                 Order Now <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </FadeIn>
         </div>
       </section>

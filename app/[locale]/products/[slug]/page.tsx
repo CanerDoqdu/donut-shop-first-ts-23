@@ -30,12 +30,12 @@ export default function ProductDetailPage() {
           <div className="text-8xl mb-4">🍩</div>
           <h1 className="text-2xl font-fredoka font-bold mb-2">Product Not Found</h1>
           <p className="text-gray-600 mb-6">The donut you&apos;re looking for doesn&apos;t exist.</p>
-          <Link href="/products">
-            <Button>
+          <Button asChild>
+            <Link href="/products">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Products
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     );

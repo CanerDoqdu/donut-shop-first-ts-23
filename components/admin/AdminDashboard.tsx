@@ -25,8 +25,7 @@ interface DashboardStats {
 
 interface RecentOrder {
   id: string;
-  user_email: string;
-  total: number;
+  total_amount: number;
   status: string;
   created_at: string;
 }
@@ -120,12 +119,12 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
     // Fetch orders
     const { data: allOrders } = await supabase
       .from('orders')
-      .select('id, user_email, total, status, created_at');
+      .select('id, total_amount, status, created_at');
 
     // Fetch today's orders
     const { data: todayOrders } = await supabase
       .from('orders')
-      .select('id, total')
+      .select('id, total_amount')
       .gte('created_at', todayISO);
 
     // Fetch unique customers
@@ -151,8 +150,8 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
       .select('product_name, quantity, unit_price');
 
     // Calculate stats
-    const totalRevenue = allOrders?.reduce((sum, o) => sum + o.total, 0) || 0;
-    const revenueToday = todayOrders?.reduce((sum, o) => sum + o.total, 0) || 0;
+    const totalRevenue = allOrders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
+    const revenueToday = todayOrders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
     
     setStats({
       totalOrders: allOrders?.length || 0,
@@ -354,13 +353,13 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
             {recentOrders.map((order) => (
               <div key={order.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
                 <div>
-                  <p className="font-medium text-gray-800">{order.user_email}</p>
+                  <p className="font-medium text-gray-800">#{order.id.substring(0, 8).toUpperCase()}</p>
                   <p className="text-xs text-gray-500">
                     {new Date(order.created_at).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US')}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-gray-800">{formatCurrency(order.total)}</p>
+                  <p className="font-semibold text-gray-800">{formatCurrency(order.total_amount)}</p>
                   <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
                     {getStatusLabel(order.status)}
                   </span>

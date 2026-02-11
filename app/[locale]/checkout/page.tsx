@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import Image from 'next/image';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { Loader2 } from 'lucide-react';
 
 export default function CheckoutPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const router = useRouter();
   const { items, getTotalPrice } = useCartStore();
   const [loading, setLoading] = useState(false);
@@ -51,9 +52,13 @@ export default function CheckoutPage() {
             name: i.product.name_en,
             price: i.product.price,
             quantity: i.quantity,
+            image: i.product.image_url,
           })),
           customerEmail: formData.email,
-          shippingAddress: formData.address,
+          customerName: formData.name,
+          customerPhone: formData.phone,
+          customerAddress: formData.address,
+          locale,
         }),
       });
 

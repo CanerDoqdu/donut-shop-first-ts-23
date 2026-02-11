@@ -8,9 +8,6 @@ interface Profile {
   id: string;
   email: string | null;
   full_name: string | null;
-  avatar_url: string | null;
-  phone: string | null;
-  address: string | null;
 }
 
 interface LoyaltyInfo {
@@ -60,7 +57,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('profiles')
       .select('*')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setProfile(data);
@@ -77,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .from('loyalty_points')
       .select('total_points, tier, lifetime_points')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (data) {
       setLoyalty(data as LoyaltyInfo);
@@ -119,12 +116,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               .from('profiles')
               .select('*')
               .eq('id', currentSession.user.id)
-              .single(),
+              .maybeSingle(),
             supabase
               .from('loyalty_points')
               .select('total_points, tier, lifetime_points')
               .eq('user_id', currentSession.user.id)
-              .single(),
+              .maybeSingle(),
           ]);
 
           if (profileResult.data) setProfile(profileResult.data);

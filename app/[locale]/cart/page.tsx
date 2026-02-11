@@ -24,9 +24,9 @@ export default function CartPage() {
         <ShoppingBag className="mx-auto h-24 w-24 text-gray-300 mb-6" />
         <h2 className="font-fredoka text-3xl font-bold mb-4">{t('cart.empty')}</h2>
         <p className="text-gray-600 mb-8">Add some delicious donuts to get started!</p>
-        <Link href="/products">
-          <Button size="lg">{t('cart.continueShopping')}</Button>
-        </Link>
+        <Button asChild size="lg">
+          <Link href="/products">{t('cart.continueShopping')}</Link>
+        </Button>
       </div>
     );
   }
@@ -68,6 +68,7 @@ export default function CartPage() {
                         size="icon"
                         className="h-8 w-8 sm:h-10 sm:w-10"
                         onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
+                        aria-label={`Decrease quantity of ${item.product.name_en}`}
                       >
                         <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
@@ -85,6 +86,7 @@ export default function CartPage() {
                         size="icon"
                         className="h-8 w-8 sm:h-10 sm:w-10"
                         onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
+                        aria-label={`Increase quantity of ${item.product.name_en}`}
                       >
                         <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                       </Button>
@@ -105,9 +107,9 @@ export default function CartPage() {
           ))}
 
           <div className="flex justify-between">
-            <Link href="/products">
-              <Button variant="outline">{t('cart.continueShopping')}</Button>
-            </Link>
+            <Button asChild variant="outline">
+              <Link href="/products">{t('cart.continueShopping')}</Link>
+            </Button>
             <Button variant="ghost" onClick={clearCart} className="text-red-500">
               Clear Cart
             </Button>
@@ -137,11 +139,9 @@ export default function CartPage() {
             </CardContent>
             
             <CardFooter className="p-6 pt-0">
-              <Link href="/checkout" className="w-full">
-                <Button size="lg" className="w-full">
-                  {t('cart.checkout')}
-                </Button>
-              </Link>
+              <Button asChild size="lg" className="w-full">
+                <Link href="/checkout">{t('cart.checkout')}</Link>
+              </Button>
             </CardFooter>
           </Card>
         </div>

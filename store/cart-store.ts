@@ -69,6 +69,7 @@ export const useCartStore = create<CartStore>()(
     {
       name: 'donut-cart-storage',
       storage: createJSONStorage(() => localStorage),
+      skipHydration: true,
     }
   )
 );

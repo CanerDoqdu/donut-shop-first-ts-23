@@ -31,9 +31,7 @@ const sampleOrder = {
     { id: '2', name: 'Chocolate Dream', price: 40, quantity: 1, image: '🍫' },
     { id: '3', name: 'Classic Sugar', price: 25, quantity: 3, image: '🍩' },
   ],
-  subtotal: 185,
-  tax: 33.3,
-  total: 218.3,
+  total_amount: 185,
 };
 
 const orderStatuses = ['pending', 'paid', 'preparing', 'shipped', 'delivered'] as const;
@@ -60,12 +58,12 @@ export default function OrderTrackingPage() {
         <div className="text-center">
           <div className="text-8xl mb-4">📦</div>
           <h1 className="text-2xl font-fredoka font-bold mb-2">{t('orders.noOrder')}</h1>
-          <Link href="/">
-            <Button>
+          <Button asChild>
+            <Link href="/">
               <ArrowLeft className="w-4 h-4 mr-2" />
               {t('nav.home')}
-            </Button>
-          </Link>
+            </Link>
+          </Button>
         </div>
       </div>
     );
@@ -76,11 +74,11 @@ export default function OrderTrackingPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Link href="/">
-            <Button variant="ghost" size="icon" className="rounded-full">
+          <Button asChild variant="ghost" size="icon" className="rounded-full">
+            <Link href="/">
               <ArrowLeft className="w-5 h-5" />
-            </Button>
-          </Link>
+            </Link>
+          </Button>
           <div>
             <h1 className="text-3xl font-fredoka font-bold text-gray-900">
               {t('orders.trackOrder')}
@@ -205,18 +203,10 @@ export default function OrderTrackingPage() {
 
             {/* Totals */}
             <div className="mt-6 pt-4 border-t border-gray-200 space-y-2">
-              <div className="flex justify-between text-gray-600">
-                <span>{t('cart.subtotal')}</span>
-                <span>{formatPrice(order.subtotal)}</span>
-              </div>
-              <div className="flex justify-between text-gray-600">
-                <span>{t('cart.tax')} (18%)</span>
-                <span>{formatPrice(order.tax)}</span>
-              </div>
               <div className="flex justify-between text-xl font-fredoka font-bold text-gray-900 pt-2">
                 <span>{t('cart.total')}</span>
                 <span className="text-transparent bg-clip-text bg-linear-to-r from-pink-500 to-orange-500">
-                  {formatPrice(order.total)}
+                  {formatPrice(order.total_amount)}
                 </span>
               </div>
             </div>

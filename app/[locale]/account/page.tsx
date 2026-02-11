@@ -10,11 +10,12 @@ import {
   ShoppingBag, Clock, CheckCircle, AlertCircle
 } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { updateProfile, signOut } from '@/lib/auth/actions';
 
 interface Order {
   id: string;
-  total: number;
+  total_amount: number;
   status: string;
   created_at: string;
 }
@@ -37,6 +38,7 @@ interface LoyaltyInfo {
 export default function AccountPage() {
   const params = useParams();
   const locale = (params.locale as string) || 'en';
+  const { user: authUser, loading: authLoading } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
@@ -117,29 +119,28 @@ export default function AccountPage() {
   }[locale as 'tr' | 'en'];
 
   useEffect(() => {
-    async function fetchData() {
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+    // Wait for AuthProvider to finish loading
+    if (authLoading) return;
 
+    async function fetchAccountData(userId: string) {
       const [profileRes, loyaltyRes, ordersRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', user.id).single(),
-        supabase.from('loyalty_points').select('*').eq('user_id', user.id).single(),
-        supabase.from('orders').select('id, total, status, created_at').eq('user_id', user.id).order('created_at', { ascending: false }).limit(5),
+        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+        supabase.from('loyalty_points').select('*').eq('user_id', userId).maybeSingle(),
+        supabase.from('orders').select('id, total_amount, status, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
       ]);
 
       if (profileRes.data) setProfile(profileRes.data);
       if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
       if (ordersRes.data) setOrders(ordersRes.data);
-      
       setLoading(false);
     }
 
-    fetchData();
-  }, [supabase]);
+    if (authUser) {
+      fetchAccountData(authUser.id);
+    } else {
+      setLoading(false);
+    }
+  }, [authUser, authLoading, supabase]);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -153,7 +154,7 @@ export default function AccountPage() {
       setSuccess(true);
       setEditing(false);
       // Refresh profile
-      const { data } = await supabase.from('profiles').select('*').eq('id', profile?.id).single();
+      const { data } = await supabase.from('profiles').select('*').eq('id', displayProfile.id).maybeSingle();
       if (data) setProfile(data);
       setTimeout(() => setSuccess(false), 3000);
     } else {
@@ -216,7 +217,7 @@ export default function AccountPage() {
     );
   }
 
-  if (!profile) {
+  if (!authUser && !profile) {
     return (
       <main className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
         <div className="text-center bg-white rounded-2xl p-8 shadow-lg max-w-md">
@@ -234,6 +235,16 @@ export default function AccountPage() {
       </main>
     );
   }
+
+  // Build a display profile — use DB profile if available, otherwise fall back to auth user
+  const displayProfile: Profile = profile ?? {
+    id: authUser?.id ?? '',
+    email: authUser?.email ?? null,
+    full_name: authUser?.user_metadata?.full_name ?? authUser?.user_metadata?.name ?? null,
+    phone: authUser?.phone ?? null,
+    address: null,
+    avatar_url: authUser?.user_metadata?.avatar_url ?? null,
+  };
 
   return (
     <main className="min-h-screen bg-gray-50 py-12">
@@ -293,7 +304,7 @@ export default function AccountPage() {
                       <input
                         type="text"
                         name="fullName"
-                        defaultValue={profile.full_name || ''}
+                        defaultValue={displayProfile.full_name || ''}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
@@ -305,7 +316,7 @@ export default function AccountPage() {
                       <input
                         type="tel"
                         name="phone"
-                        defaultValue={profile.phone || ''}
+                        defaultValue={displayProfile.phone || ''}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                       />
                     </div>
@@ -316,7 +327,7 @@ export default function AccountPage() {
                       <MapPin className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
                       <textarea
                         name="address"
-                        defaultValue={profile.address || ''}
+                        defaultValue={displayProfile.address || ''}
                         rows={2}
                         className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-amber-500"
                       />
@@ -355,28 +366,28 @@ export default function AccountPage() {
                     <User className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500">{t.fullName}</p>
-                      <p className="font-medium">{profile.full_name || '-'}</p>
+                      <p className="font-medium">{displayProfile.full_name || '-'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Mail className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500">{t.email}</p>
-                      <p className="font-medium">{profile.email}</p>
+                      <p className="font-medium">{displayProfile.email || '-'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <Phone className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500">{t.phone}</p>
-                      <p className="font-medium">{profile.phone || '-'}</p>
+                      <p className="font-medium">{displayProfile.phone || '-'}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     <MapPin className="w-5 h-5 text-gray-400" />
                     <div>
                       <p className="text-sm text-gray-500">{t.address}</p>
-                      <p className="font-medium">{profile.address || '-'}</p>
+                      <p className="font-medium">{displayProfile.address || '-'}</p>
                     </div>
                   </div>
                 </div>
@@ -427,7 +438,7 @@ export default function AccountPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold">₺{order.total.toFixed(2)}</p>
+                        <p className="font-semibold">₺{order.total_amount.toFixed(2)}</p>
                         <span className={`text-xs px-2 py-1 rounded-full ${getStatusColor(order.status)}`}>
                           {getStatusLabel(order.status)}
                         </span>

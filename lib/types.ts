@@ -20,19 +20,22 @@ export interface CartItem {
 
 export interface Order {
   id: string;
-  user_email: string;
+  user_id: string | null;
   status: 'pending' | 'paid' | 'preparing' | 'shipped' | 'delivered';
-  items: OrderItem[];
-  total: number;
+  total_amount: number;
+  shipping_address: string;
+  stripe_session_id: string | null;
   created_at: string;
   updated_at: string;
 }
 
 export interface OrderItem {
+  id: string;
+  order_id: string;
   product_id: string;
   product_name: string;
   quantity: number;
-  price: number;
+  unit_price: number;
 }
 
 export type Locale = 'tr' | 'en';

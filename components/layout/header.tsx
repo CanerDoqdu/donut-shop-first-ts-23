@@ -9,12 +9,11 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cart-store';
 import { createClient } from '@/lib/supabase/client';
-import { signOut } from '@/lib/auth/actions';
+import { useRouter } from 'next/navigation';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface Profile {
   full_name: string | null;
-  avatar_url: string | null;
 }
 
 interface LoyaltyInfo {
@@ -31,11 +30,31 @@ export function Header() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [signingOut, setSigningOut] = useState(false);
   const t = useTranslations();
+  const router = useRouter();
   const totalItems = useCartStore((state) => state.getTotalItems());
   const supabase = createClient();
 
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    setUserMenuOpen(false);
+    setMobileMenuOpen(false);
+    // Clear state immediately so navbar updates
+    setUser(null);
+    setProfile(null);
+    setLoyalty(null);
+    // Sign out from Supabase
+    await supabase.auth.signOut();
+    // Redirect to home
+    router.push('/');
+    router.refresh();
+    setSigningOut(false);
+  };
+
   useEffect(() => {
+    // Rehydrate cart store from localStorage after mount (skipHydration is enabled)
+    useCartStore.persist.rehydrate();
     startTransition(() => {
       setMounted(true);
     });
@@ -47,8 +66,8 @@ export function Header() {
       
       if (currentUser) {
         const [profileRes, loyaltyRes] = await Promise.all([
-          supabase.from('profiles').select('full_name, avatar_url').eq('id', currentUser.id).single(),
-          supabase.from('loyalty_points').select('total_points, tier').eq('user_id', currentUser.id).single(),
+          supabase.from('profiles').select('full_name').eq('id', currentUser.id).maybeSingle(),
+          supabase.from('loyalty_points').select('total_points, tier').eq('user_id', currentUser.id).maybeSingle(),
         ]);
         
         if (profileRes.data) setProfile(profileRes.data);
@@ -65,8 +84,8 @@ export function Header() {
       
       if (session?.user) {
         const [profileRes, loyaltyRes] = await Promise.all([
-          supabase.from('profiles').select('full_name, avatar_url').eq('id', session.user.id).single(),
-          supabase.from('loyalty_points').select('total_points, tier').eq('user_id', session.user.id).single(),
+          supabase.from('profiles').select('full_name').eq('id', session.user.id).maybeSingle(),
+          supabase.from('loyalty_points').select('total_points, tier').eq('user_id', session.user.id).maybeSingle(),
         ]);
         
         if (profileRes.data) setProfile(profileRes.data);
@@ -168,12 +187,12 @@ export function Header() {
 
           {/* Language Switcher */}
           <div className="flex gap-1">
-            <Link href="/" locale="tr">
-              <Button variant="ghost" size="sm" className="min-h-11 min-w-11">TR</Button>
-            </Link>
-            <Link href="/" locale="en">
-              <Button variant="ghost" size="sm" className="min-h-11 min-w-11">EN</Button>
-            </Link>
+            <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11">
+              <Link href="/" locale="tr">TR</Link>
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11">
+              <Link href="/" locale="en">EN</Link>
+            </Button>
           </div>
 
           {/* Auth Section */}
@@ -185,9 +204,9 @@ export function Header() {
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   onBlur={() => setTimeout(() => setUserMenuOpen(false), 150)}
                 >
-                  {profile?.avatar_url ? (
+                  {user?.user_metadata?.avatar_url ? (
                     <Image
-                      src={profile.avatar_url}
+                      src={user.user_metadata.avatar_url}
                       alt="Avatar"
                       width={32}
                       height={32}
@@ -244,32 +263,32 @@ export function Header() {
                       <Package className="w-4 h-4 text-blue-500" />
                       {t('nav.orders')}
                     </Link>
-                    <form action={signOut}>
-                      <button
-                        type="submit"
-                        className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        {t('nav.logout')}
-                      </button>
-                    </form>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      disabled={signingOut}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-sm text-red-600 hover:bg-red-50 transition-colors border-t border-gray-100"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {signingOut ? (t('nav.loggingOut') || 'Çıkış yapılıyor...') : t('nav.logout')}
+                    </button>
                   </div>
                 )}
               </div>
             ) : (
               <div className="flex items-center gap-2">
-                <Link href="/login">
-                  <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <Button asChild variant="ghost" size="sm" className="flex items-center gap-2">
+                  <Link href="/login">
                     <LogIn className="w-4 h-4" />
                     {t('nav.login')}
-                  </Button>
-                </Link>
-                <Link href="/register">
-                  <Button size="sm" className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600">
+                  </Link>
+                </Button>
+                <Button asChild size="sm" className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600">
+                  <Link href="/register">
                     <UserPlus className="w-4 h-4" />
                     {t('nav.register')}
-                  </Button>
-                </Link>
+                  </Link>
+                </Button>
               </div>
             )
           )}
@@ -279,6 +298,7 @@ export function Header() {
         <button
           className="md:hidden p-3 -m-3"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+          aria-label="Toggle menu"
         >
           {mobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -343,12 +363,12 @@ export function Header() {
             
             {/* Language Switcher */}
             <div className="flex gap-2 pt-2 border-t">
-              <Link href="/" locale="tr" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" size="sm">TR</Button>
-              </Link>
-              <Link href="/" locale="en" onClick={() => setMobileMenuOpen(false)}>
-                <Button variant="ghost" size="sm">EN</Button>
-              </Link>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/" locale="tr" onClick={() => setMobileMenuOpen(false)}>TR</Link>
+              </Button>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/" locale="en" onClick={() => setMobileMenuOpen(false)}>EN</Link>
+              </Button>
             </div>
 
             {/* Auth Section Mobile */}
@@ -357,9 +377,9 @@ export function Header() {
                 {user ? (
                   <>
                     <div className="flex items-center gap-3 mb-4 pb-3 border-b border-gray-100">
-                      {profile?.avatar_url ? (
+                      {user?.user_metadata?.avatar_url ? (
                         <Image
-                          src={profile.avatar_url}
+                          src={user.user_metadata.avatar_url}
                           alt="Avatar"
                           width={40}
                           height={40}
@@ -397,30 +417,30 @@ export function Header() {
                       <Package className="w-4 h-4 text-blue-500" />
                       {t('nav.orders')}
                     </Link>
-                    <form action={signOut}>
-                      <button
-                        type="submit"
-                        className="flex items-center gap-3 text-sm font-medium text-red-600 pt-3 mt-2 border-t"
-                      >
-                        <LogOut className="w-4 h-4" />
-                        {t('nav.logout')}
-                      </button>
-                    </form>
+                    <button
+                      type="button"
+                      onClick={handleSignOut}
+                      disabled={signingOut}
+                      className="flex items-center gap-3 text-sm font-medium text-red-600 pt-3 mt-2 border-t w-full"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      {signingOut ? (t('nav.loggingOut') || 'Çıkış yapılıyor...') : t('nav.logout')}
+                    </button>
                   </>
                 ) : (
                   <div className="flex flex-col gap-3">
-                    <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                      <Button variant="outline" className="w-full flex items-center gap-2">
+                    <Button asChild variant="outline" className="w-full flex items-center gap-2">
+                      <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
                         <LogIn className="w-4 h-4" />
                         {t('nav.login')}
-                      </Button>
-                    </Link>
-                    <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
-                      <Button className="w-full flex items-center gap-2 bg-amber-500 hover:bg-amber-600">
+                      </Link>
+                    </Button>
+                    <Button asChild className="w-full flex items-center gap-2 bg-amber-500 hover:bg-amber-600">
+                      <Link href="/register" onClick={() => setMobileMenuOpen(false)}>
                         <UserPlus className="w-4 h-4" />
                         {t('nav.register')}
-                      </Button>
-                    </Link>
+                      </Link>
+                    </Button>
                   </div>
                 )}
               </div>

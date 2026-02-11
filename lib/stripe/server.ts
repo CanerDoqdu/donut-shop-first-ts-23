@@ -8,8 +8,10 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_place
 export async function createCheckoutSession(
   items: Array<{ name: string; price: number; quantity: number }>,
   customerEmail: string,
-  orderId?: string
+  orderId?: string,
+  locale?: string
 ) {
+  const lang = locale || 'en';
   const lineItems = items.map(item => ({
     price_data: {
       currency: 'try',
@@ -25,8 +27,8 @@ export async function createCheckoutSession(
     mode: 'payment',
     line_items: lineItems,
     customer_email: customerEmail,
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/cart?cancelled=true`,
+    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/cart?cancelled=true`,
     metadata: {
       orderId: orderId || '',
       items: JSON.stringify(items),
