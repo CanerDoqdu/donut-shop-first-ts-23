@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
@@ -12,7 +13,23 @@ import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
 export default function CartPage() {
   const t = useTranslations();
+  const [hydrated, setHydrated] = useState(false);
   const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCartStore();
+
+  useEffect(() => {
+    setHydrated(useCartStore.persist.hasHydrated());
+    const unsubscribeHydration = useCartStore.persist.onFinishHydration(() => {
+      setHydrated(true);
+    });
+    if (!useCartStore.persist.hasHydrated()) {
+      useCartStore.persist.rehydrate();
+    }
+    return unsubscribeHydration;
+  }, []);
+
+  if (!hydrated) {
+    return <div className="container mx-auto px-4 py-12" />;
+  }
 
   const subtotal = getTotalPrice();
   const tax = subtotal * 0.18; // 18% VAT in Turkey
@@ -33,7 +50,9 @@ export default function CartPage() {
 
   return (
     <div className="container mx-auto px-4 py-12">
-      <h1 className="font-fredoka text-4xl font-bold mb-8 bg-gradient-donut bg-clip-text text-transparent">
+      <h1
+        className="font-fredoka text-4xl font-bold mb-8 bg-gradient-donut bg-clip-text text-transparent animate-metallic-shine"
+      >
         {t('cart.title')}
       </h1>
 

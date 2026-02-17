@@ -69,3 +69,34 @@ body {
   animation: shimmer 2s infinite linear;
   background-size: 200% 100%;
 }
+
+/* Metallic shine sweep animation */
+@keyframes metallic-shine {
+  0% {
+    background-position: center, -200% center;
+  }
+  100% {
+    background-position: center, 200% center;
+  }
+}
+
+.animate-metallic-shine {
+  background-image:
+    linear-gradient(135deg, #FF6BBF 0%, #FF8C42 50%, #FFD93D 100%),
+    linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0) 35%,
+      rgba(255, 255, 255, 0.72) 48%,
+      rgba(255, 255, 255, 1) 50%,
+      rgba(255, 255, 255, 0.72) 52%,
+      rgba(255, 255, 255, 0) 65%,
+      rgba(255, 255, 255, 0) 100%
+    );
+  background-size: 100% 100%, 220% 100%;
+  background-position: center, -200% center;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: metallic-shine 3s infinite linear;
+}

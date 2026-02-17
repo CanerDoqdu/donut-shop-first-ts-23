@@ -8,8 +8,36 @@
           milk splash, "SWEET" text split around donut.
    ────────────────────────────────────────────────────── */
 
-import Image from 'next/image';
+import NextImage from 'next/image';
 import { useTranslations } from 'next-intl';
+import { useState } from 'react';
+
+function Image(props: React.ComponentProps<typeof NextImage>) {
+  const { className, onLoad, ...rest } = props;
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <>
+      {!loaded && (
+        <div
+          className="absolute inset-0 rounded-full"
+          style={{
+            background: 'radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 65%, transparent 100%)',
+            filter: 'blur(12px)',
+          }}
+        />
+      )}
+      <NextImage
+        {...rest}
+        className={`${className ?? ''} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={(event) => {
+          setLoaded(true);
+          onLoad?.(event);
+        }}
+      />
+    </>
+  );
+}
 
 export function HeroShowcase() {
   const t = useTranslations('home');
@@ -171,7 +199,7 @@ export function HeroShowcase() {
                 alt="Berry Bliss Beverage"
                 fill
                 sizes="320px"
-                loading="eager"
+                priority
                 fetchPriority="high"
                 className="object-contain"
                 style={{
@@ -257,7 +285,7 @@ export function HeroShowcase() {
                 alt="Chocolate Dream Donut"
                 fill
                 sizes="320px"
-                loading="eager"
+                priority
                 fetchPriority="high"
                 className="object-contain"
                 style={{

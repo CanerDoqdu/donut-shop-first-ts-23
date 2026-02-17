@@ -13,6 +13,32 @@ import { Search, ShoppingCart } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 import { Link } from '@/i18n/routing';
 
+function ProductImage({ src, alt }: { src: string; alt: string }) {
+  const [loaded, setLoaded] = useState(false);
+
+  return (
+    <div className="w-full aspect-square relative mb-4 group-hover:scale-110 transition-transform">
+      {!loaded && (
+        <div className="absolute inset-0 rounded-2xl overflow-hidden">
+          <div className="w-full h-full bg-linear-to-r from-pink-100 via-white to-pink-100 animate-[shimmer_1.5s_infinite]"
+            style={{
+              backgroundSize: '200% 100%',
+              animation: 'shimmer 1.5s infinite linear',
+            }}
+          />
+        </div>
+      )}
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className={`object-contain drop-shadow-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        onLoad={() => setLoaded(true)}
+      />
+    </div>
+  );
+}
+
 export default function ProductsPage() {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
@@ -74,14 +100,7 @@ export default function ProductsPage() {
           <Card key={product.id} className="group hover:scale-105 transition-transform">
             <Link href={{ pathname: '/products/[slug]', params: { slug: product.slug } }}>
               <CardContent className="pt-6 cursor-pointer">
-                <div className="w-full aspect-square relative mb-4 group-hover:scale-110 transition-transform">
-                  <Image
-                    src={product.image_url}
-                    alt={product.name_en}
-                    fill
-                    className="object-contain drop-shadow-lg"
-                  />
-                </div>
+                <ProductImage src={product.image_url} alt={product.name_en} />
                 <CardTitle className="text-center mb-2 text-lg">
                   {product.name_en}
                 </CardTitle>

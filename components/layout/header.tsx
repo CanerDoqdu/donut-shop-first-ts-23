@@ -53,8 +53,6 @@ export function Header() {
   };
 
   useEffect(() => {
-    // Rehydrate cart store from localStorage after mount (skipHydration is enabled)
-    useCartStore.persist.rehydrate();
     startTransition(() => {
       setMounted(true);
     });

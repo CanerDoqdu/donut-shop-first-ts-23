@@ -4,6 +4,7 @@ import type { CartItem, Product } from '@/lib/types';
 
 interface CartStore {
   items: CartItem[];
+  cartTimestamp: number;
   addItem: (product: Product, quantity?: number) => void;
   removeItem: (productId: string) => void;
   updateQuantity: (productId: string, quantity: number) => void;
@@ -17,7 +18,7 @@ export const useCartStore = create<CartStore>()(
     (set, get) => ({
       items: [],
       // Timestamp for cart creation/update
-      cartTimestamp: Date.now(),
+      cartTimestamp: 0,
 
       addItem: (product, quantity = 1) => {
         const items = get().items;
@@ -73,7 +74,6 @@ export const useCartStore = create<CartStore>()(
     {
       name: 'donut-cart-storage',
       storage: createJSONStorage(() => localStorage),
-      skipHydration: true,
       // Custom hydration to clear cart if expired
       onRehydrateStorage: (state) => {
         if (!state) return;

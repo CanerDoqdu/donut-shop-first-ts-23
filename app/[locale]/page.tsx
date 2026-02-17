@@ -56,48 +56,46 @@ export default function Home() {
 
           {/* ── TOP CENTER — "Sip. Bite. Smile." ────── */}
           <div className="relative text-center px-4 pt-0 pb-0 shrink-0" style={{ zIndex: 5 }}>
-            <FadeIn direction="down" delay={0.05}>
-              <h1
-                className="font-fredoka text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.05] mb-1"
-                style={{ textShadow: '0 4px 30px rgba(0,0,0,0.18)' }}
+            <h1
+              className="font-fredoka text-4xl sm:text-5xl lg:text-6xl xl:text-7xl font-bold text-white leading-[1.05] mb-1"
+              style={{ textShadow: '0 4px 30px rgba(0,0,0,0.18)' }}
+            >
+              {t('home.heroTagline')}
+            </h1>
+            <p className="text-xs sm:text-sm text-white/80 max-w-md mx-auto mb-2 leading-relaxed font-medium">
+              {t('home.heroDesc')}
+            </p>
+            <div className="flex gap-3 justify-center">
+              <Button
+                asChild
+                size="sm"
+                className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,107,191,0.4)]"
+                style={{
+                  background: 'linear-gradient(135deg, #FF6BBF, #FF3DA0)',
+                  color: 'white',
+                  boxShadow: '0 8px 30px rgba(255,61,160,0.3)',
+                }}
               >
-                {t('home.heroTagline')}
-              </h1>
-              <p className="text-xs sm:text-sm text-white/80 max-w-md mx-auto mb-2 leading-relaxed font-medium">
-                {t('home.heroDesc')}
-              </p>
-              <div className="flex gap-3 justify-center">
-                <Button
-                  asChild
-                  size="sm"
-                  className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(255,107,191,0.4)]"
-                  style={{
-                    background: 'linear-gradient(135deg, #FF6BBF, #FF3DA0)',
-                    color: 'white',
-                    boxShadow: '0 8px 30px rgba(255,61,160,0.3)',
-                  }}
-                >
-                  <Link href="/products">
-                    {t('home.cta')} <ArrowRight className="ml-1 h-3 w-3" />
-                  </Link>
-                </Button>
-                <Button
-                  asChild
-                  size="sm"
-                  className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,44,26,0.3)]"
-                  style={{
-                    background: 'linear-gradient(135deg, #4A2C1A, #6B3E26)',
-                    color: '#FFD93D',
-                    border: '1.5px solid rgba(255,217,61,0.25)',
-                    boxShadow: '0 8px 30px rgba(74,44,26,0.25)',
-                  }}
-                >
-                  <Link href="/products">
-                    <ShoppingBag className="mr-1 h-3 w-3" /> {t('nav.products')}
-                  </Link>
-                </Button>
-              </div>
-            </FadeIn>
+                <Link href="/products">
+                  {t('home.cta')} <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                className="text-xs sm:text-sm px-5 sm:px-8 py-3 sm:py-4 font-bold rounded-full transition-all duration-300 hover:scale-105 hover:shadow-[0_0_30px_rgba(74,44,26,0.3)]"
+                style={{
+                  background: 'linear-gradient(135deg, #4A2C1A, #6B3E26)',
+                  color: '#FFD93D',
+                  border: '1.5px solid rgba(255,217,61,0.25)',
+                  boxShadow: '0 8px 30px rgba(74,44,26,0.25)',
+                }}
+              >
+                <Link href="/products">
+                  <ShoppingBag className="mr-1 h-3 w-3" /> {t('nav.products')}
+                </Link>
+              </Button>
+            </div>
           </div>
 
           {/* ── MID ROW: Unified Showcase ────── */}
