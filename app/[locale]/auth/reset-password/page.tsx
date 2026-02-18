@@ -13,7 +13,7 @@ export default function ResetPasswordPage() {
   const t = useTranslations('auth');
   const router = useRouter();
   const params = useParams();
-  const locale = (params.locale as string) || 'tr';
+  void params.locale; // acknowledge param — will be used for i18n error messages
   const [isPending, startTransition] = useTransition();
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -21,18 +21,18 @@ export default function ResetPasswordPage() {
   const [isValidToken, setIsValidToken] = useState(false);
 
   useEffect(() => {
-    const supabase = createClient();
-    
-    // Check if we have a valid session from the recovery link
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const checkSession = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getSession();
       startTransition(() => {
-        if (session) {
+        if (data.session) {
           setIsValidToken(true);
         } else {
           setMessage({ type: 'error', text: t('invalidResetLink') });
         }
       });
-    });
+    };
+    checkSession();
   }, [t]);
 
   const handleSubmit = async (e: React.FormEvent) => {

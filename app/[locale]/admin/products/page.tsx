@@ -19,6 +19,8 @@ import {
   Check,
   Star,
 } from 'lucide-react';
+import { useDebounce } from '@/hooks';
+import { SEARCH_DEBOUNCE_MS } from '@/lib/constants';
 
 type Product = (typeof sampleProducts)[number];
 
@@ -26,6 +28,7 @@ export default function AdminProductsPage() {
   const t = useTranslations();
   const [products, setProducts] = useState<Product[]>(sampleProducts);
   const [search, setSearch] = useState('');
+  const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_MS);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showAddForm, setShowAddForm] = useState(false);
 
@@ -39,7 +42,7 @@ export default function AdminProductsPage() {
   });
 
   const filteredProducts = products.filter((p) =>
-    p.name_en.toLowerCase().includes(search.toLowerCase())
+    p.name_en.toLowerCase().includes(debouncedSearch.toLowerCase())
   );
 
   const handleDelete = (id: string) => {

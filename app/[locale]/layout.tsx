@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/footer';
 import { PromoBanner } from '@/components/layout/promo-banner';
 import { AuthProvider } from '@/lib/auth/context';
 import { routing } from '@/i18n/routing';
+import { WebVitals } from '@/components/monitoring/web-vitals';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -51,6 +52,7 @@ export default async function LocaleLayout({
         </a>
         <NextIntlClientProvider messages={messages}>
           <AuthProvider>
+            <WebVitals />
             <Header />
             <PromoBanner />
             <main id="main-content" className="flex-1">{children}</main>

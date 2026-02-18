@@ -150,8 +150,8 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
       .select('product_name, quantity, unit_price');
 
     // Calculate stats
-    const totalRevenue = allOrders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
-    const revenueToday = todayOrders?.reduce((sum, o) => sum + (o.total_amount || 0), 0) || 0;
+    const totalRevenue = allOrders?.reduce((sum: number, o: Record<string, number>) => sum + (o.total_amount || 0), 0) || 0;
+    const revenueToday = todayOrders?.reduce((sum: number, o: Record<string, number>) => sum + (o.total_amount || 0), 0) || 0;
     
     setStats({
       totalOrders: allOrders?.length || 0,
@@ -167,18 +167,21 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
     // Recent orders
     setRecentOrders(
       (allOrders || [])
-        .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .sort((a: Record<string, string>, b: Record<string, string>) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
         .slice(0, 5)
     );
 
     // Calculate top products
     const productStats: Record<string, { sold: number; revenue: number }> = {};
-    orderItems?.forEach((item) => {
-      if (!productStats[item.product_name]) {
-        productStats[item.product_name] = { sold: 0, revenue: 0 };
+    orderItems?.forEach((item: Record<string, string | number>) => {
+      const name = item.product_name as string;
+      const qty = Number(item.quantity);
+      const price = Number(item.unit_price);
+      if (!productStats[name]) {
+        productStats[name] = { sold: 0, revenue: 0 };
       }
-      productStats[item.product_name].sold += item.quantity;
-      productStats[item.product_name].revenue += item.quantity * item.unit_price;
+      productStats[name].sold += qty;
+      productStats[name].revenue += qty * price;
     });
 
     setTopProducts(

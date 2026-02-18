@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { getSupabasePublicEnv } from '@/lib/supabase/env';
 
 // Edge runtime for faster response
 export const runtime = 'edge';
@@ -32,34 +33,31 @@ export async function GET(request: Request) {
 
   try {
     // Try to fetch from Supabase
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const { url, anonKey } = getSupabasePublicEnv();
 
-    if (supabaseUrl && supabaseKey) {
-      const supabase = createClient(supabaseUrl, supabaseKey);
-      
-      let query = supabase
-        .from('stores')
-        .select('*')
-        .eq('is_active', true)
-        .order('city');
+    const supabase = createClient(url, anonKey);
+    
+    let query = supabase
+      .from('stores')
+      .select('*')
+      .eq('is_active', true)
+      .order('city');
 
-      if (city) {
-        query = query.eq('city', city);
-      }
+    if (city) {
+      query = query.eq('city', city);
+    }
 
-      const { data, error } = await query;
+    const { data, error } = await query;
 
-      if (!error && data && data.length > 0) {
-        return NextResponse.json(
-          { stores: data, total: data.length },
-          {
-            headers: {
-              'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
-            },
-          }
-        );
-      }
+    if (!error && data && data.length > 0) {
+      return NextResponse.json(
+        { stores: data, total: data.length },
+        {
+          headers: {
+            'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=1200',
+          },
+        }
+      );
     }
   } catch {
     // Fall through to demo data

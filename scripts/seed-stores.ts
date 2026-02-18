@@ -2,11 +2,12 @@
 // Run with: npx ts-node --skip-project scripts/seed-stores.ts
 
 import { createClient } from '@supabase/supabase-js';
+import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+const { url } = getSupabasePublicEnv();
+const supabaseServiceKey = getSupabaseServiceRoleKey();
 
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+const supabase = createClient(url, supabaseServiceKey);
 
 const sampleStores = [
   {

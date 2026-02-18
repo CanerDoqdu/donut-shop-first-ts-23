@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useSyncExternalStore } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
@@ -11,21 +11,17 @@ import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
 
+// Stable subscription for Zustand persist hydration
+const subscribeHydration = (onStoreChange: () => void) => {
+  return useCartStore.persist.onFinishHydration(onStoreChange);
+};
+const getHydrated = () => useCartStore.persist.hasHydrated();
+const getServerHydrated = () => false;
+
 export default function CartPage() {
   const t = useTranslations();
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useSyncExternalStore(subscribeHydration, getHydrated, getServerHydrated);
   const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCartStore();
-
-  useEffect(() => {
-    setHydrated(useCartStore.persist.hasHydrated());
-    const unsubscribeHydration = useCartStore.persist.onFinishHydration(() => {
-      setHydrated(true);
-    });
-    if (!useCartStore.persist.hasHydrated()) {
-      useCartStore.persist.rehydrate();
-    }
-    return unsubscribeHydration;
-  }, []);
 
   if (!hydrated) {
     return <div className="container mx-auto px-4 py-12" />;

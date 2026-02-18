@@ -10,7 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cart-store';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import type { User as SupabaseUser } from '@supabase/supabase-js';
+import type { User as SupabaseUser, AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 interface Profile {
   full_name: string | null;
@@ -77,7 +77,7 @@ export function Header() {
     getAuthState();
     
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
       setUser(session?.user ?? null);
       
       if (session?.user) {

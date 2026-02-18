@@ -122,6 +122,14 @@ export default function AccountPage() {
     // Wait for AuthProvider to finish loading
     if (authLoading) return;
 
+    // No user — nothing to fetch, mark as loaded
+    if (!authUser) {
+      // Scheduled via microtask to satisfy react-hooks/set-state-in-effect
+      // (the rule disallows synchronous setState inside an effect body)
+      const id = requestAnimationFrame(() => setLoading(false));
+      return () => cancelAnimationFrame(id);
+    }
+
     async function fetchAccountData(userId: string) {
       const [profileRes, loyaltyRes, ordersRes] = await Promise.all([
         supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
@@ -135,11 +143,7 @@ export default function AccountPage() {
       setLoading(false);
     }
 
-    if (authUser) {
-      fetchAccountData(authUser.id);
-    } else {
-      setLoading(false);
-    }
+    fetchAccountData(authUser.id);
   }, [authUser, authLoading, supabase]);
 
   async function handleSave(e: React.FormEvent<HTMLFormElement>) {
