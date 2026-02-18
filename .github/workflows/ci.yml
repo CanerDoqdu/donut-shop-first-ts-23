@@ -83,6 +83,18 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
+      - name: Validate build env
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" || { echo "Missing NEXT_PUBLIC_SUPABASE_URL"; exit 1; }
+          test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" || { echo "Missing NEXT_PUBLIC_SUPABASE_ANON_KEY"; exit 1; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
+          test -n "$NEXT_PUBLIC_APP_URL" || { echo "Missing NEXT_PUBLIC_APP_URL (Repository Variable)"; exit 1; }
+
       - run: npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
@@ -120,9 +132,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
+      - name: Validate build env
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$NEXT_PUBLIC_SUPABASE_URL" || { echo "Missing NEXT_PUBLIC_SUPABASE_URL"; exit 1; }
+          test -n "$NEXT_PUBLIC_SUPABASE_ANON_KEY" || { echo "Missing NEXT_PUBLIC_SUPABASE_ANON_KEY"; exit 1; }
+          test -n "$SUPABASE_SERVICE_ROLE_KEY" || { echo "Missing SUPABASE_SERVICE_ROLE_KEY"; exit 1; }
+          test -n "$NEXT_PUBLIC_APP_URL" || { echo "Missing NEXT_PUBLIC_APP_URL (Repository Variable)"; exit 1; }
+
       - run: ANALYZE=true npm run build
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          NEXT_PUBLIC_APP_URL: ${{ vars.NEXT_PUBLIC_APP_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
 
