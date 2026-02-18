@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, startTransition } from 'react';
+import { useState, useEffect, useCallback, useMemo, startTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { MapPin, Navigation, Phone, Clock, Search, List, Map } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -105,7 +105,7 @@ export default function StoreFinder({ locale, onSelectStore }: StoreFinderProps)
   }[locale];
 
   // Fallback demo stores when database is not available - localized
-  const demoStores: StoreWithDistance[] = locale === 'tr' ? [
+  const demoStores: StoreWithDistance[] = useMemo(() => locale === 'tr' ? [
     {
       id: '1',
       name: 'Donut Shop Kadıköy',
@@ -300,7 +300,7 @@ export default function StoreFinder({ locale, onSelectStore }: StoreFinderProps)
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     },
-  ];
+  ], [locale]);
 
   const fetchStores = useCallback(async () => {
     const { data, error } = await supabase
@@ -322,7 +322,7 @@ export default function StoreFinder({ locale, onSelectStore }: StoreFinderProps)
       });
     }
     setLoading(false);
-  }, [supabase]);
+  }, [supabase, demoStores]);
 
   const filterStores = useCallback(() => {
     let filtered = stores;

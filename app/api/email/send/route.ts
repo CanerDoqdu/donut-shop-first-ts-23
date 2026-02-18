@@ -96,7 +96,6 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function - will be used when Resend is configured
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateEmailHtml(type: string, data: Record<string, unknown>, locale: string) {
   const baseTemplate = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">

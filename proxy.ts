@@ -2,6 +2,8 @@ import createMiddleware from 'next-intl/middleware';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
+import { detectLocaleFromPath, isProtectedPath } from '@/lib/middleware';
+import { logger } from '@/lib/logger';
 
 const intlMiddleware = createMiddleware(routing);
 
@@ -35,18 +37,16 @@ export async function proxy(request: NextRequest) {
   // Refresh session and get user (single call)
   const { data: { user } } = await supabase.auth.getUser();
 
-  // Protected routes - require authentication
-  const protectedPaths = ['/admin', '/account', '/orders', '/checkout', '/loyalty', '/subscriptions', '/referrals'];
-  const isProtectedPath = protectedPaths.some(path => 
-    request.nextUrl.pathname.includes(path)
-  );
-
-  if (isProtectedPath && !user) {
+  if (isProtectedPath(request) && !user) {
     // Determine locale from pathname
-    const locale = request.nextUrl.pathname.startsWith('/tr') ? 'tr' : 'en';
+    const locale = detectLocaleFromPath(request.nextUrl.pathname);
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.searchParams.set('redirect', request.nextUrl.pathname);
+    logger.warn('Unauthenticated user redirected from protected route', {
+      path: request.nextUrl.pathname,
+      locale,
+    });
     return NextResponse.redirect(url);
   }
 

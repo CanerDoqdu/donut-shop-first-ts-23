@@ -27,12 +27,14 @@ export default function LoginPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
         router.replace(`/${locale}`);
       }
-    });
+    };
+    checkAuth();
   }, [locale, router]);
 
   // Show callback error

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import NextLink from 'next/link';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, AlertCircle, Check, Loader2 } from 'lucide-react';
@@ -20,12 +21,14 @@ export default function RegisterPage() {
 
   // Redirect if already logged in
   useEffect(() => {
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user) {
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
         router.replace(`/${locale}`);
       }
-    });
+    };
+    checkAuth();
   }, [locale, router]);
 
   const t = {
@@ -232,13 +235,13 @@ export default function RegisterPage() {
             {/* Terms */}
             <p className="text-xs text-gray-500 text-center">
               {t.byRegistering}{' '}
-              <a href="/terms" className="text-amber-600 hover:underline">
+              <NextLink href="/terms" className="text-amber-600 hover:underline">
                 {t.termsOfService}
-              </a>{' '}
+              </NextLink>{' '}
               {t.and}{' '}
-              <a href="/privacy" className="text-amber-600 hover:underline">
+              <NextLink href="/privacy" className="text-amber-600 hover:underline">
                 {t.privacyPolicy}
-              </a>
+              </NextLink>
               {t.agreeText}
             </p>
 

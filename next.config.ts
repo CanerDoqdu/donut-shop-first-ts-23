@@ -36,9 +36,28 @@ const nextConfig: NextConfig = {
   // PoweredBy header kaldır (güvenlik)
   poweredByHeader: false,
 
-  // Caching headers
+  // Security + caching headers
   async headers() {
     return [
+      // ── Security headers (all routes) ──────────────────────
+      {
+        source: '/(.*)',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'X-XSS-Protection', value: '1; mode=block' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(self)',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload',
+          },
+        ],
+      },
+      // ── Static asset caching ──────────────────────────────
       {
         source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)',
         headers: [

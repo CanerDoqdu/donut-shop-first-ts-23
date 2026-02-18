@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { items, customerEmail, customerName, customerPhone, customerAddress, locale } = await req.json();
+    const { items, customerEmail, customerName, customerAddress, locale } = await req.json();
 
     if (!items || !items.length || !customerEmail) {
       return NextResponse.json(

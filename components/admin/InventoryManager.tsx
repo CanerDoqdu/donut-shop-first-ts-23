@@ -102,8 +102,8 @@ export default function InventoryManager({ locale, storeId }: InventoryManagerPr
           .select('product_id, stock')
           .eq('store_id', storeId);
         
-        const inventoryMap = new Map(inventory?.map(i => [i.product_id, i.stock]) || []);
-        setProducts(data.map(p => ({
+        const inventoryMap = new Map(inventory?.map((i: Record<string, string | number>) => [i.product_id, i.stock]) || []);
+        setProducts(data.map((p: Record<string, string | number>) => ({
           ...p,
           storeStock: inventoryMap.get(p.id) || 0,
         })));

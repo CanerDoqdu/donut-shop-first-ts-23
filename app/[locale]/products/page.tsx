@@ -12,6 +12,8 @@ import { useCartStore } from '@/store/cart-store';
 import { Search, ShoppingCart } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 import { Link } from '@/i18n/routing';
+import { useDebounce } from '@/hooks';
+import { SEARCH_DEBOUNCE_MS, PRODUCT_CATEGORIES } from '@/lib/constants';
 
 function ProductImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -42,15 +44,15 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
 export default function ProductsPage() {
   const t = useTranslations();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearch = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const addItem = useCartStore((state) => state.addItem);
 
-  const categories = ['all', 'glazed', 'filled', 'specialty', 'seasonal', 'beverage'];
-
   const filteredProducts = sampleProducts.filter((product) => {
+    const q = debouncedSearch.toLowerCase();
     const matchesSearch =
-      product.name_en.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      product.name_tr.toLowerCase().includes(searchQuery.toLowerCase());
+      product.name_en.toLowerCase().includes(q) ||
+      product.name_tr.toLowerCase().includes(q);
     const matchesCategory =
       selectedCategory === 'all' || product.category === selectedCategory;
     return matchesSearch && matchesCategory;
@@ -81,7 +83,7 @@ export default function ProductsPage() {
         </div>
 
         <div className="flex flex-wrap justify-center gap-2">
-          {categories.map((category) => (
+          {PRODUCT_CATEGORIES.map((category) => (
             <Button
               key={category}
               variant={selectedCategory === category ? 'default' : 'outline'}
