@@ -4,17 +4,19 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
 import { detectLocaleFromPath, isProtectedPath } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
+import { getSupabasePublicEnv } from '@/lib/supabase/env';
 
 const intlMiddleware = createMiddleware(routing);
 
 export async function proxy(request: NextRequest) {
   // Create a response object to modify
   const response = intlMiddleware(request);
+  const { url, anonKey } = getSupabasePublicEnv();
   
   // Create Supabase client for session refresh
   const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    url,
+    anonKey,
     {
       cookies: {
         getAll() {

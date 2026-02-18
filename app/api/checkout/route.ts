@@ -3,12 +3,16 @@ import { createCheckoutSession } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServerClient } from '@supabase/ssr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
 function createAdminClient() {
+  const { url } = getSupabasePublicEnv();
+  const serviceRoleKey = getSupabaseServiceRoleKey();
+
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    url,
+    serviceRoleKey,
     {
       cookies: {
         getAll: () => [],

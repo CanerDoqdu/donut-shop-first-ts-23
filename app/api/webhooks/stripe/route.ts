@@ -2,11 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
 import { createClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
+import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
 
 // Use service role key for webhook operations
+const { url } = getSupabasePublicEnv();
+const serviceRoleKey = getSupabaseServiceRoleKey();
 const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  url,
+  serviceRoleKey
 );
 
 export async function POST(request: NextRequest) {
