@@ -1,62 +1,64 @@
 /**
- * Environment-specific configuration.
+ * Application configuration & feature flags.
  *
- * Uses lazy getters so that missing env vars only throw when
- * actually accessed at runtime — never during build / CI.
+ * For raw env vars, import `env` from '@/lib/env' directly.
+ * This file adds grouped config objects and feature toggles
+ * on top of the validated env layer.
  */
 
-function required(name: string): string {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
+import { env } from '@/lib/env';
 
-export const env = {
-  // ─── Supabase ──────────────────────────────────────────────
+// ── Re-export env for convenience ────────────────────────────
+export { env };
+
+// ── Feature flags ────────────────────────────────────────────
+// Flip these to enable/disable features across the app.
+// In the future, these can be driven by a remote config service.
+
+export const featureFlags = {
+  /** Enable the loyalty points program */
+  loyaltyProgram: true,
+
+  /** Enable gift card purchasing and redemption */
+  giftCards: true,
+
+  /** Enable donut subscription plans */
+  subscriptions: true,
+
+  /** Enable the referral system */
+  referrals: true,
+
+  /** Enable store locator map */
+  storeLocator: true,
+
+  /** Enable Web Vitals reporting to /api/vitals */
+  webVitals: env.isProduction,
+
+  /** Enable bundle analyzer (set ANALYZE=true in env) */
+  bundleAnalyzer: process.env.ANALYZE === 'true',
+} as const;
+
+// ── Grouped config (derived from env) ────────────────────────
+
+export const config = {
   supabase: {
-    get url() {
-      return required('NEXT_PUBLIC_SUPABASE_URL');
-    },
-    get anonKey() {
-      return required('NEXT_PUBLIC_SUPABASE_ANON_KEY');
-    },
+    get url() { return env.NEXT_PUBLIC_SUPABASE_URL; },
+    get anonKey() { return env.NEXT_PUBLIC_SUPABASE_ANON_KEY; },
   },
-
-  // ─── Stripe ────────────────────────────────────────────────
   stripe: {
-    get secretKey() {
-      return process.env.STRIPE_SECRET_KEY ?? '';
-    },
-    get webhookSecret() {
-      return process.env.STRIPE_WEBHOOK_SECRET ?? '';
-    },
-    get publicKey() {
-      return process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
-    },
+    get secretKey() { return env.STRIPE_SECRET_KEY; },
+    get webhookSecret() { return env.STRIPE_WEBHOOK_SECRET; },
+    get publicKey() { return env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY; },
   },
-
-  // ─── Resend (email) ────────────────────────────────────────
   resend: {
-    get apiKey() {
-      return process.env.RESEND_API_KEY ?? '';
-    },
+    get apiKey() { return env.RESEND_API_KEY; },
   },
-
-  // ─── App ───────────────────────────────────────────────────
   app: {
-    get url() {
-      return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
-    },
-    get nodeEnv() {
-      return process.env.NODE_ENV ?? 'development';
-    },
-    get isProduction() {
-      return process.env.NODE_ENV === 'production';
-    },
-    get isDevelopment() {
-      return process.env.NODE_ENV === 'development';
-    },
+    get url() { return env.NEXT_PUBLIC_APP_URL; },
+    get siteUrl() { return env.NEXT_PUBLIC_SITE_URL; },
+    get version() { return env.NEXT_PUBLIC_APP_VERSION; },
+    get nodeEnv() { return env.NODE_ENV; },
+    get isProduction() { return env.isProduction; },
+    get isDevelopment() { return env.isDevelopment; },
   },
-};
+} as const;
