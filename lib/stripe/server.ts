@@ -1,8 +1,25 @@
 import Stripe from 'stripe';
+import { env } from '@/lib/env';
 
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || 'sk_test_placeholder', {
-  apiVersion: '2026-01-28.clover',
-  typescript: true,
+function getStripeClient() {
+  return new Stripe(env.STRIPE_SECRET_KEY, {
+    apiVersion: '2026-01-28.clover',
+    typescript: true,
+  });
+}
+
+// Lazy singleton — only created when first accessed
+let _stripe: Stripe | null = null;
+export function getStripe(): Stripe {
+  if (!_stripe) _stripe = getStripeClient();
+  return _stripe;
+}
+
+/** @deprecated Use getStripe() instead — kept for backward compat */
+export const stripe = new Proxy({} as Stripe, {
+  get(_, prop) {
+    return (getStripe() as unknown as Record<string | symbol, unknown>)[prop];
+  },
 });
 
 export async function createCheckoutSession(
@@ -27,8 +44,8 @@ export async function createCheckoutSession(
     mode: 'payment',
     line_items: lineItems,
     customer_email: customerEmail,
-    success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${lang}/cart?cancelled=true`,
+    success_url: `${env.NEXT_PUBLIC_APP_URL}/${lang}/orders/success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${env.NEXT_PUBLIC_APP_URL}/${lang}/cart?cancelled=true`,
     metadata: {
       orderId: orderId || '',
       items: JSON.stringify(items),

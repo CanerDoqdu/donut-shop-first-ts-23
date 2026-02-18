@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { env } from '@/lib/env';
 
 export interface AuthResult {
   success: boolean;
@@ -52,7 +53,7 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
       data: {
         full_name: fullName,
       },
-      emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?locale=${locale}`,
+      emailRedirectTo: `${env.NEXT_PUBLIC_SITE_URL}/api/auth/callback?locale=${locale}`,
     },
   });
 
@@ -107,7 +108,7 @@ export async function forgotPassword(formData: FormData): Promise<AuthResult> {
   const supabase = await createClient();
 
   const { error } = await supabase.auth.resetPasswordForEmail(email, {
-    redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/${locale}/auth/reset-password`,
+    redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/${locale}/auth/reset-password`,
   });
 
   if (error) {
@@ -175,7 +176,7 @@ export async function signInWithGoogle(locale: string = 'en') {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?locale=${locale}`,
+      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/api/auth/callback?locale=${locale}`,
     },
   });
 
@@ -194,7 +195,7 @@ export async function signInWithGithub(locale: string = 'en') {
   const { data, error } = await supabase.auth.signInWithOAuth({
     provider: 'github',
     options: {
-      redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/api/auth/callback?locale=${locale}`,
+      redirectTo: `${env.NEXT_PUBLIC_SITE_URL}/api/auth/callback?locale=${locale}`,
     },
   });
 

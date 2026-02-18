@@ -1,13 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { env } from '@/lib/env';
 
 function getResendClient(): Resend {
-  const key = process.env.RESEND_API_KEY;
-  if (!key) {
-    throw new Error('RESEND_API_KEY is missing');
-  }
-  return new Resend(key);
+  return new Resend(env.RESEND_API_KEY);
 }
 
 export async function POST(request: NextRequest) {
@@ -72,7 +69,7 @@ export async function POST(request: NextRequest) {
               </div>
             ` : ''}
             
-            <a href="${process.env.NEXT_PUBLIC_SITE_URL}/checkout" 
+            <a href="${env.NEXT_PUBLIC_SITE_URL}/checkout" 
                style="display: inline-block; background: #f59e0b; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; margin-top: 16px;">
               ${locale === 'tr' ? 'Şimdi Kullan' : 'Use Now'}
             </a>
