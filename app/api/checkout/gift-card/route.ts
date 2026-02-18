@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
+import { env } from '@/lib/env';
 
 export async function POST(req: NextRequest) {
   try {
@@ -49,8 +50,8 @@ export async function POST(req: NextRequest) {
         },
       ],
       customer_email: senderEmail,
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/gift-cards/success?session_id={CHECKOUT_SESSION_ID}&code=${code}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/${locale}/gift-cards?cancelled=true`,
+      success_url: `${env.NEXT_PUBLIC_APP_URL}/${locale}/gift-cards/success?session_id={CHECKOUT_SESSION_ID}&code=${code}`,
+      cancel_url: `${env.NEXT_PUBLIC_APP_URL}/${locale}/gift-cards?cancelled=true`,
       metadata: {
         type: 'gift_card',
         code,
