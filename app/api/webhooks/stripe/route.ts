@@ -3,13 +3,19 @@ import { stripe } from '@/lib/stripe/server';
 import { createClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
 
-// Use service role key for webhook operations
-const supabaseAdmin = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
-);
+function createSupabaseAdminClient() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+  if (!url || !serviceRoleKey) {
+    throw new Error('Missing Supabase environment variables for Stripe webhook');
+  }
+
+  return createClient(url, serviceRoleKey);
+}
 
 export async function POST(request: NextRequest) {
+  const supabaseAdmin = createSupabaseAdminClient();
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 

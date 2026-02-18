@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient(): Resend {
+  const key = process.env.RESEND_API_KEY;
+  if (!key) {
+    throw new Error('RESEND_API_KEY is missing');
+  }
+  return new Resend(key);
+}
 
 export async function POST(request: NextRequest) {
   // Rate limit: 3 gift card emails per minute per IP
@@ -19,6 +25,7 @@ export async function POST(request: NextRequest) {
     const { giftCard, locale } = await request.json();
 
     // Send gift card email with Resend
+    const resend = getResendClient();
     const { error } = await resend.emails.send({
       from: 'Donut Shop <onboarding@resend.dev>',
       to: giftCard.recipient_email,

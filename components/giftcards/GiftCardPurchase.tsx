@@ -96,7 +96,7 @@ export default function GiftCardPurchase({ locale, onPurchase }: GiftCardPurchas
         message,
       });
       // If we get here without redirect, something went wrong
-    } catch (err) {
+    } catch {
       setError(locale === 'tr' ? 'Ödeme işlemi başarısız oldu. Lütfen tekrar deneyin.' : 'Payment failed. Please try again.');
     } finally {
       setSubmitting(false);

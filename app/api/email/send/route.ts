@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function getResendClient() {
+  const apiKey = process.env.RESEND_API_KEY;
+  if (!apiKey) {
+    return null;
+  }
+  return new Resend(apiKey);
+}
 
 const emailTemplates = {
   order_confirmation: {
@@ -68,6 +74,14 @@ export async function POST(request: NextRequest) {
 
   try {
     const { type, to, data, locale = 'tr' } = await request.json();
+    const resend = getResendClient();
+
+    if (!resend) {
+      return NextResponse.json(
+        { error: 'Email service is not configured' },
+        { status: 503 }
+      );
+    }
 
     if (!emailTemplates[type as keyof typeof emailTemplates]) {
       return NextResponse.json({ error: 'Invalid email type' }, { status: 400 });
@@ -96,7 +110,6 @@ export async function POST(request: NextRequest) {
 }
 
 // Helper function - will be used when Resend is configured
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function generateEmailHtml(type: string, data: Record<string, unknown>, locale: string) {
   const baseTemplate = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff;">
