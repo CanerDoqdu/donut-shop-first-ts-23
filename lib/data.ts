@@ -1,5 +1,17 @@
 import type { Product } from '@/lib/types';
 
+export function getProductById(id: string): Product | undefined {
+  return sampleProducts.find(p => p.id === id);
+}
+
+export function getProductsByIds(ids: string[]): Map<string, Product> {
+  const map = new Map<string, Product>();
+  for (const p of sampleProducts) {
+    if (ids.includes(p.id)) map.set(p.id, p);
+  }
+  return map;
+}
+
 export const sampleProducts: Product[] = [
   {
     id: '1',

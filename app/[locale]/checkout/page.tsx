@@ -47,12 +47,10 @@ export default function CheckoutPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          // Only send id + quantity — prices are looked up server-side
           items: items.map(i => ({
             id: i.product.id,
-            name: i.product.name_en,
-            price: i.product.price,
             quantity: i.quantity,
-            image: i.product.image_url,
           })),
           customerEmail: formData.email,
           customerName: formData.name,

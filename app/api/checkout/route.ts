@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createServerClient } from '@supabase/ssr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
+import { getProductsByIds } from '@/lib/data';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
 function createAdminClient() {
@@ -43,6 +44,25 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // ── Server-truth pricing: look up real prices from lib/data.ts ──
+    const productIds = items.map((item: { id: string }) => item.id);
+    const productMap = getProductsByIds(productIds);
+
+    // Validate every product exists server-side
+    const serverItems = items.map((item: { id: string; quantity: number }) => {
+      const product = productMap.get(item.id);
+      if (!product) {
+        throw new Error(`Product not found: ${item.id}`);
+      }
+      return {
+        id: product.id,
+        name: product.name_en,
+        price: product.price,         // SERVER price — never from client
+        quantity: item.quantity,
+        image: product.image_url,
+      };
+    });
+
     // Create Supabase clients
     const supabase = await createClient();
     const admin = createAdminClient();
@@ -67,8 +87,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Calculate totals
-    const totalAmount = items.reduce(
+    // Calculate totals from SERVER prices (not client-supplied)
+    const totalAmount = serverItems.reduce(
       (sum: number, item: { price: number; quantity: number }) => 
         sum + item.price * item.quantity, 
       0
@@ -94,14 +114,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Create order items using admin client to bypass RLS
-    const orderItems = items.map((item: { 
-      id: string; 
-      name: string; 
-      price: number; 
-      quantity: number;
-      image?: string;
-    }) => ({
+    // Create order items from SERVER-verified data
+    const orderItems = serverItems.map((item: { id: string; name: string; price: number; quantity: number }) => ({
       order_id: order.id,
       product_id: item.id,
       product_name: item.name,
@@ -117,8 +131,8 @@ export async function POST(req: NextRequest) {
       console.error('Failed to create order items:', itemsError);
     }
 
-    // Create Stripe checkout session
-    const session = await createCheckoutSession(items, customerEmail, order.id, locale || 'en');
+    // Create Stripe checkout session with server-verified prices
+    const session = await createCheckoutSession(serverItems, customerEmail, order.id, locale || 'en');
 
     // Update order with Stripe session ID
     await admin
