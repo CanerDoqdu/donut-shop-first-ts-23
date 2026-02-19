@@ -5,8 +5,9 @@ import { createServerClient } from '@supabase/ssr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
 import { getProductsByIds } from '@/lib/data';
-import { validateOrigin, sanitizeString, isValidEmail } from '@/lib/security';
+import { validateOrigin } from '@/lib/security';
 import { CART_EXPIRY_MS } from '@/lib/constants';
+import { checkoutSchema, parseBody } from '@/lib/validations';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
 function createAdminClient() {
@@ -41,10 +42,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { items, customerEmail: rawEmail, customerName: rawName, customerAddress: rawAddress, locale, cartTimestamp } = await req.json();
+    const body = await req.json();
+
+    // ── Zod validation ──
+    const parsed = parseBody(checkoutSchema, body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const { items, customerEmail, customerName, customerAddress, locale, cartTimestamp } = parsed.data;
 
     // ── Server-side cart expiry check ──
-    if (cartTimestamp && typeof cartTimestamp === 'number') {
+    if (cartTimestamp) {
       const age = Date.now() - cartTimestamp;
       if (age > CART_EXPIRY_MS) {
         return NextResponse.json(
@@ -54,31 +63,12 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Sanitize user-supplied strings
-    const customerEmail = sanitizeString(rawEmail ?? '');
-    const customerName = sanitizeString(rawName ?? '');
-    const customerAddress = sanitizeString(rawAddress ?? '');
-
-    if (!items || !items.length || !customerEmail) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
-    }
-
-    if (!isValidEmail(customerEmail)) {
-      return NextResponse.json(
-        { error: 'Invalid email address' },
-        { status: 400 }
-      );
-    }
-
     // ── Server-truth pricing: look up real prices from lib/data.ts ──
-    const productIds = items.map((item: { id: string }) => item.id);
+    const productIds = items.map((item) => item.id);
     const productMap = getProductsByIds(productIds);
 
     // Validate every product exists server-side
-    const serverItems = items.map((item: { id: string; quantity: number }) => {
+    const serverItems = items.map((item) => {
       const product = productMap.get(item.id);
       if (!product) {
         throw new Error(`Product not found: ${item.id}`);
