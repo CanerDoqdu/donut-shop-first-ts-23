@@ -4,6 +4,9 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { env } from '@/lib/env';
 import { validateOrigin } from '@/lib/security';
 import { emailSendSchema, parseBody } from '@/lib/validations';
+import { withHandler } from '@/lib/api-handler';
+import { ApiError } from '@/lib/api-error';
+import { withTimeout } from '@/lib/fetch-with-timeout';
 
 function getResendClient() {
   return new Resend(env.RESEND_API_KEY);
@@ -60,7 +63,7 @@ const emailTemplates = {
   },
 };
 
-export async function POST(request: NextRequest) {
+export const POST = withHandler(async (request: NextRequest) => {
   // ── CSRF: verify request origin ──
   const originError = validateOrigin(request);
   if (originError) return originError;
@@ -69,45 +72,41 @@ export async function POST(request: NextRequest) {
   const ip = getClientIP(request);
   const limiter = rateLimit(`email:${ip}`, { maxRequests: 3, windowSizeSeconds: 60 });
   if (!limiter.success) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': '60' } }
-    );
+    throw new ApiError('RATE_LIMITED', 'Too many requests. Please try again later.', 429);
   }
 
-  try {
-    const body = await request.json();
+  const body = await request.json();
 
-    // ── Zod validation ──
-    const parsed = parseBody(emailSendSchema, body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
-    }
+  // ── Zod validation ──
+  const parsed = parseBody(emailSendSchema, body);
+  if (!parsed.success) {
+    throw new ApiError('VALIDATION_ERROR', parsed.error, 400);
+  }
 
-    const { type, to, data, locale } = parsed.data;
-    const resend = getResendClient();
+  const { type, to, data, locale } = parsed.data;
+  const resend = getResendClient();
 
-    const template = emailTemplates[type][locale as 'tr' | 'en'];
+  const template = emailTemplates[type][locale as 'tr' | 'en'];
 
-    // Send email with Resend
-    const { error } = await resend.emails.send({
+  // Send email with Resend (10s timeout)
+  const { error } = await withTimeout(
+    resend.emails.send({
       from: 'Donut Shop <onboarding@resend.dev>',
       to,
       subject: template.subject,
       html: generateEmailHtml(type, data, locale),
-    });
+    }),
+    10_000,
+    'resend.emails.send',
+  );
 
-    if (error) {
-      console.error('Resend error:', error);
-      throw error;
-    }
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Email error:', error);
-    return NextResponse.json({ error: 'Failed to send email' }, { status: 500 });
+  if (error) {
+    console.error('Resend error:', error);
+    throw new ApiError('EMAIL_SEND_FAILED', 'Failed to send email', 502);
   }
-}
+
+  return NextResponse.json({ success: true });
+});
 
 // Helper function - will be used when Resend is configured
 function generateEmailHtml(type: string, data: Record<string, unknown>, locale: string) {

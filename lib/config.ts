@@ -36,6 +36,20 @@ export const featureFlags = {
 
   /** Enable bundle analyzer (set ANALYZE=true in env) */
   bundleAnalyzer: process.env.ANALYZE === 'true',
+
+  // ── Maintenance mode toggles ──────────────────────────────
+  // Set CHECKOUT_ENABLED=false or WEBHOOKS_ENABLED=false in env to
+  // disable these subsystems without a deploy (e.g. during incidents).
+
+  /** Checkout flow active. Set CHECKOUT_ENABLED=false to disable. */
+  get checkoutEnabled(): boolean {
+    return process.env.CHECKOUT_ENABLED !== 'false';
+  },
+
+  /** Webhook processing active. Set WEBHOOKS_ENABLED=false to disable. */
+  get webhooksEnabled(): boolean {
+    return process.env.WEBHOOKS_ENABLED !== 'false';
+  },
 } as const;
 
 // ── Grouped config (derived from env) ────────────────────────
