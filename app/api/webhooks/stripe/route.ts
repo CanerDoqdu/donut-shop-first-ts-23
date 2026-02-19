@@ -3,10 +3,19 @@ import { getStripe } from '@/lib/stripe/server';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
 import { env } from '@/lib/env';
-import { logger } from '@/lib/logger';
 import { getRequestId } from '@/lib/api-error';
 import { featureFlags } from '@/lib/config';
 import { withTimeout } from '@/lib/fetch-with-timeout';
+import { logger, startTimer } from '@/lib/logger';
+import type { Logger } from '@/lib/logger';
+import {
+  E_WEBHOOK_SIGNATURE_MISSING,
+  E_WEBHOOK_SIGNATURE_INVALID,
+  E_WEBHOOK_HANDLER_ERROR,
+  E_WEBHOOK_IDEMPOTENCY_FAILED,
+  E_WEBHOOK_ORDER_UPDATE_FAILED,
+  E_WEBHOOK_RPC_UNAVAILABLE,
+} from '@/lib/error-codes';
 
 // ── Supabase admin client (service_role — bypasses RLS) ──────
 function createSupabaseAdminClient() {
@@ -39,8 +48,9 @@ async function recordEvent(
   if (error) {
     // Table may not exist yet — warn but don't block
     logger.warn('webhook.idempotency_insert_failed', {
+      code: E_WEBHOOK_IDEMPOTENCY_FAILED,
       eventId,
-      code: error.code,
+      pgCode: error.code,
       error: error.message,
     });
   }
@@ -51,11 +61,12 @@ async function recordEvent(
 // ── Main Handler ─────────────────────────────────────────────
 export async function POST(request: NextRequest) {
   const requestId = getRequestId(request);
-  const log = logger.withContext({ requestId });
+  const log = logger.withContext({ requestId, path: '/api/webhooks/stripe' });
+  const elapsed = startTimer();
 
   // ── Maintenance mode ──
   if (!featureFlags.webhooksEnabled) {
-    log.warn('webhook.maintenance_mode');
+    log.warn('webhook.maintenance_mode', { requestId });
     return NextResponse.json(
       { code: 'MAINTENANCE', message: 'Webhook processing is disabled', requestId },
       { status: 503, headers: { 'x-request-id': requestId } },
@@ -67,9 +78,9 @@ export async function POST(request: NextRequest) {
   const signature = request.headers.get('stripe-signature');
 
   if (!signature) {
-    log.warn('webhook.missing_signature', { requestId });
+    log.warn('webhook.missing_signature', { code: E_WEBHOOK_SIGNATURE_MISSING, requestId });
     return NextResponse.json(
-      { code: 'MISSING_SIGNATURE', message: 'Missing stripe signature', requestId },
+      { code: E_WEBHOOK_SIGNATURE_MISSING, message: 'Missing stripe signature', requestId },
       { status: 400, headers: { 'x-request-id': requestId } },
     );
   }
@@ -84,11 +95,12 @@ export async function POST(request: NextRequest) {
     );
   } catch (err) {
     log.error('webhook.signature_invalid', {
+      code: E_WEBHOOK_SIGNATURE_INVALID,
       requestId,
       error: err instanceof Error ? err.message : String(err),
     });
     return NextResponse.json(
-      { code: 'INVALID_SIGNATURE', message: 'Invalid signature', requestId },
+      { code: E_WEBHOOK_SIGNATURE_INVALID, message: 'Invalid signature', requestId },
       { status: 400, headers: { 'x-request-id': requestId } },
     );
   }
@@ -116,6 +128,7 @@ export async function POST(request: NextRequest) {
           handleCheckoutCompleted(
             supabaseAdmin,
             event.data.object as Stripe.Checkout.Session,
+            log,
           ),
           15_000,
           'webhook.handleCheckoutCompleted',
@@ -128,6 +141,7 @@ export async function POST(request: NextRequest) {
           handleCheckoutExpired(
             supabaseAdmin,
             event.data.object as Stripe.Checkout.Session,
+            log,
           ),
           15_000,
           'webhook.handleCheckoutExpired',
@@ -138,6 +152,7 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.succeeded': {
         handlePaymentIntentSucceeded(
           event.data.object as Stripe.PaymentIntent,
+          log,
         );
         break;
       }
@@ -145,6 +160,7 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.payment_failed': {
         handlePaymentIntentFailed(
           event.data.object as Stripe.PaymentIntent,
+          log,
         );
         break;
       }
@@ -154,16 +170,22 @@ export async function POST(request: NextRequest) {
     }
   } catch (err) {
     log.error('webhook.handler_error', {
+      code: E_WEBHOOK_HANDLER_ERROR,
       eventId: event.id,
       type: event.type,
       error: err instanceof Error ? err.message : String(err),
     });
+    log.count('webhook_error');
+    log.metric('webhook_duration_ms', elapsed());
     // Return 500 so Stripe retries this event
     return NextResponse.json(
-      { code: 'WEBHOOK_HANDLER_ERROR', message: 'Internal error', requestId },
+      { code: E_WEBHOOK_HANDLER_ERROR, message: 'Internal error', requestId },
       { status: 500, headers: { 'x-request-id': requestId } },
     );
   }
+
+  log.count('webhook_success');
+  log.metric('webhook_duration_ms', elapsed());
 
   return NextResponse.json(
     { received: true },
@@ -182,8 +204,9 @@ export async function POST(request: NextRequest) {
 async function handleCheckoutCompleted(
   supabase: SupabaseClient,
   session: Stripe.Checkout.Session,
+  log: Logger,
 ) {
-  logger.info('webhook.checkout_completed', {
+  log.info('webhook.checkout_completed', {
     sessionId: session.id,
     paymentIntent: session.payment_intent,
     customerEmail: session.customer_email,
@@ -200,7 +223,8 @@ async function handleCheckoutCompleted(
 
   if (rpcError) {
     // RPC not deployed yet — fall back to simple update
-    logger.warn('webhook.rpc_unavailable_fallback', {
+    log.warn('webhook.rpc_unavailable_fallback', {
+      code: E_WEBHOOK_RPC_UNAVAILABLE,
       sessionId: session.id,
       error: rpcError.message,
     });
@@ -216,14 +240,15 @@ async function handleCheckoutCompleted(
       .eq('status', 'pending');
 
     if (updateError) {
-      logger.error('webhook.order_update_failed', {
+      log.error('webhook.order_update_failed', {
+        code: E_WEBHOOK_ORDER_UPDATE_FAILED,
         sessionId: session.id,
         error: updateError.message,
       });
       throw updateError;
     }
 
-    logger.info('webhook.order_paid_fallback', { sessionId: session.id });
+    log.info('webhook.order_paid_fallback', { sessionId: session.id });
     return;
   }
 
@@ -235,14 +260,14 @@ async function handleCheckoutCompleted(
   } | null;
 
   if (!result?.success) {
-    logger.warn('webhook.order_not_updated', {
+    log.warn('webhook.order_not_updated', {
       sessionId: session.id,
       reason: result?.reason,
     });
     return;
   }
 
-  logger.info('webhook.order_paid', {
+  log.info('webhook.order_paid', {
     orderId: result.order_id,
     pointsAwarded: result.points_awarded,
   });
@@ -252,8 +277,9 @@ async function handleCheckoutCompleted(
 async function handleCheckoutExpired(
   supabase: SupabaseClient,
   session: Stripe.Checkout.Session,
+  log: Logger,
 ) {
-  logger.info('webhook.checkout_expired', { sessionId: session.id });
+  log.info('webhook.checkout_expired', { sessionId: session.id });
 
   const { error } = await supabase
     .from('orders')
@@ -262,7 +288,8 @@ async function handleCheckoutExpired(
     .eq('status', 'pending'); // only cancel if still pending
 
   if (error) {
-    logger.error('webhook.cancel_failed', {
+    log.error('webhook.cancel_failed', {
+      code: E_WEBHOOK_ORDER_UPDATE_FAILED,
       sessionId: session.id,
       error: error.message,
     });
@@ -275,8 +302,8 @@ async function handleCheckoutExpired(
  * Order status is already updated via checkout.session.completed.
  * This handler provides an additional confirmation audit log.
  */
-function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
-  logger.info('webhook.payment_intent_succeeded', {
+function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent, log: Logger) {
+  log.info('webhook.payment_intent_succeeded', {
     paymentIntentId: pi.id,
     amount: pi.amount,
     currency: pi.currency,
@@ -284,8 +311,8 @@ function handlePaymentIntentSucceeded(pi: Stripe.PaymentIntent) {
 }
 
 // ── payment_intent.payment_failed ────────────────────────────
-function handlePaymentIntentFailed(pi: Stripe.PaymentIntent) {
-  logger.warn('webhook.payment_intent_failed', {
+function handlePaymentIntentFailed(pi: Stripe.PaymentIntent, log: Logger) {
+  log.warn('webhook.payment_intent_failed', {
     paymentIntentId: pi.id,
     amount: pi.amount,
     lastError: pi.last_payment_error?.message,
