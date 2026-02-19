@@ -282,6 +282,7 @@ export default function AdminProductsPage() {
                             src={product.image_url}
                             alt={product.name_en}
                             fill
+                            sizes="40px"
                             className="object-contain rounded-lg"
                           />
                         </div>
