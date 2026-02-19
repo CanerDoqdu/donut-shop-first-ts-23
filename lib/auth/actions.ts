@@ -3,7 +3,29 @@
 import { createClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
+import { headers } from 'next/headers';
 import { env } from '@/lib/env';
+import { rateLimit } from '@/lib/rate-limit';
+import { sanitizeString, isValidEmail } from '@/lib/security';
+import { logger } from '@/lib/logger';
+
+/** Extract client IP from server action request headers. */
+async function getActionIP(): Promise<string> {
+  const h = await headers();
+  return h.get('x-forwarded-for')?.split(',')[0].trim()
+    ?? h.get('x-real-ip')
+    ?? '127.0.0.1';
+}
+
+function checkAuthRateLimit(action: string, ip: string): AuthResult | null {
+  // 5 attempts per minute per IP per action
+  const result = rateLimit(`auth:${action}:${ip}`, { maxRequests: 5, windowSizeSeconds: 60 });
+  if (!result.success) {
+    logger.warn('Auth rate limit exceeded', { action, ip, remaining: result.remaining });
+    return { success: false, error: 'Too many attempts. Please try again later.' };
+  }
+  return null;
+}
 
 export interface AuthResult {
   success: boolean;
@@ -11,12 +33,20 @@ export interface AuthResult {
 }
 
 export async function signIn(formData: FormData): Promise<AuthResult> {
-  const email = formData.get('email') as string;
+  const ip = await getActionIP();
+  const limited = checkAuthRateLimit('signIn', ip);
+  if (limited) return limited;
+
+  const email = sanitizeString(formData.get('email') as string ?? '');
   const password = formData.get('password') as string;
   const locale = (formData.get('locale') as string) || 'en';
 
   if (!email || !password) {
     return { success: false, error: 'Email and password are required' };
+  }
+
+  if (!isValidEmail(email)) {
+    return { success: false, error: 'Invalid email address' };
   }
 
   const supabase = await createClient();
@@ -35,13 +65,21 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
 }
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
-  const email = formData.get('email') as string;
+  const ip = await getActionIP();
+  const limited = checkAuthRateLimit('signUp', ip);
+  if (limited) return limited;
+
+  const email = sanitizeString(formData.get('email') as string ?? '');
   const password = formData.get('password') as string;
-  const fullName = formData.get('fullName') as string;
+  const fullName = sanitizeString(formData.get('fullName') as string ?? '');
   const locale = (formData.get('locale') as string) || 'en';
 
   if (!email || !password) {
     return { success: false, error: 'Email and password are required' };
+  }
+
+  if (!isValidEmail(email)) {
+    return { success: false, error: 'Invalid email address' };
   }
 
   const supabase = await createClient();
@@ -98,11 +136,19 @@ export async function signOut(): Promise<void> {
 }
 
 export async function forgotPassword(formData: FormData): Promise<AuthResult> {
-  const email = formData.get('email') as string;
+  const ip = await getActionIP();
+  const limited = checkAuthRateLimit('forgotPassword', ip);
+  if (limited) return limited;
+
+  const email = sanitizeString(formData.get('email') as string ?? '');
   const locale = (formData.get('locale') as string) || 'en';
 
   if (!email) {
     return { success: false, error: 'Email is required' };
+  }
+
+  if (!isValidEmail(email)) {
+    return { success: false, error: 'Invalid email address' };
   }
 
   const supabase = await createClient();
