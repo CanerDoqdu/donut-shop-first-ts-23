@@ -1,77 +1,127 @@
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 import { createClient } from '@/lib/supabase/server';
+import {
+  TAG_PRODUCTS,
+  TAG_ORDERS,
+  TAG_ADMIN_DASHBOARD,
+  productTag,
+  userOrdersTag,
+  orderTag,
+  PRODUCTS_REVALIDATE_S,
+  ORDERS_REVALIDATE_S,
+  ADMIN_DASHBOARD_REVALIDATE_S,
+} from '@/lib/cache-tags';
 
 /**
  * Server-side cached query helpers.
  *
- * `React.cache()` deduplicates identical calls within a single
- * server render pass, so multiple components reading the same
- * data only trigger one Supabase round-trip.
+ * Two layers of caching:
+ *  1. `React.cache()` — deduplicates identical calls within a single
+ *     server render pass (same request).
+ *  2. `unstable_cache()` — cross-request data cache with tag-based
+ *     invalidation via `revalidateTag()`.
+ *
+ * Call `revalidateTag('products')` after a product mutation to
+ * bust the cache without redeploying.
  */
 
 // ─── Products ────────────────────────────────────────────────
 
-export const getProducts = cache(async () => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .order('created_at', { ascending: false });
+export const getProducts = cache(
+  unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data ?? [];
-});
+      if (error) throw error;
+      return data ?? [];
+    },
+    ['products-all'],
+    { revalidate: PRODUCTS_REVALIDATE_S, tags: [TAG_PRODUCTS] },
+  ),
+);
 
-export const getFeaturedProducts = cache(async () => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('featured', true)
-    .order('created_at', { ascending: false });
+export const getFeaturedProducts = cache(
+  unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('featured', true)
+        .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data ?? [];
-});
+      if (error) throw error;
+      return data ?? [];
+    },
+    ['products-featured'],
+    { revalidate: PRODUCTS_REVALIDATE_S, tags: [TAG_PRODUCTS] },
+  ),
+);
 
 export const getProductBySlug = cache(async (slug: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('slug', slug)
-    .maybeSingle();
+  const fn = unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('products')
+        .select('*')
+        .eq('slug', slug)
+        .maybeSingle();
 
-  if (error) throw error;
-  return data;
+      if (error) throw error;
+      return data;
+    },
+    [`product-${slug}`],
+    { revalidate: PRODUCTS_REVALIDATE_S, tags: [TAG_PRODUCTS, productTag(slug)] },
+  );
+  return fn();
 });
 
 // ─── Orders ──────────────────────────────────────────────────
 
 export const getOrdersByUser = cache(async (userId: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*, order_items(*)')
-    .eq('user_id', userId)
-    .is('deleted_at', null)          // respect soft-delete
-    .order('created_at', { ascending: false });
+  const fn = unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('user_id', userId)
+        .is('deleted_at', null)          // respect soft-delete
+        .order('created_at', { ascending: false });
 
-  if (error) throw error;
-  return data ?? [];
+      if (error) throw error;
+      return data ?? [];
+    },
+    [`orders-user-${userId}`],
+    { revalidate: ORDERS_REVALIDATE_S, tags: [TAG_ORDERS, userOrdersTag(userId)] },
+  );
+  return fn();
 });
 
 export const getOrderById = cache(async (orderId: string) => {
-  const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('orders')
-    .select('*, order_items(*)')
-    .eq('id', orderId)
-    .is('deleted_at', null)
-    .maybeSingle();
+  const fn = unstable_cache(
+    async () => {
+      const supabase = await createClient();
+      const { data, error } = await supabase
+        .from('orders')
+        .select('*, order_items(*)')
+        .eq('id', orderId)
+        .is('deleted_at', null)
+        .maybeSingle();
 
-  if (error) throw error;
-  return data;
+      if (error) throw error;
+      return data;
+    },
+    [`order-${orderId}`],
+    { revalidate: ORDERS_REVALIDATE_S, tags: [TAG_ORDERS, orderTag(orderId)] },
+  );
+  return fn();
 });
 
 // ─── Admin: dashboard aggregate ──────────────────────────────
@@ -90,8 +140,10 @@ export interface DashboardAggregates {
  * Fetch all admin dashboard numbers in a single batched request
  * instead of N+1 individual queries.
  */
-export const getAdminDashboardData = cache(async () => {
-  const supabase = await createClient();
+export const getAdminDashboardData = cache(
+  unstable_cache(
+    async () => {
+      const supabase = await createClient();
 
   const today = new Date();
   today.setHours(0, 0, 0, 0);
@@ -152,4 +204,8 @@ export const getAdminDashboardData = cache(async () => {
     recentOrders,
     topProducts,
   };
-});
+    },
+    ['admin-dashboard'],
+    { revalidate: ADMIN_DASHBOARD_REVALIDATE_S, tags: [TAG_ADMIN_DASHBOARD, TAG_ORDERS] },
+  ),
+);

@@ -64,6 +64,7 @@ export default function CartPage() {
                       src={item.product.image_url?.startsWith('/') || item.product.image_url?.startsWith('http') ? item.product.image_url : '/donut.png'}
                       alt={item.product.name_en}
                       fill
+                      sizes="80px"
                       className="object-contain"
                     />
                   </div>
