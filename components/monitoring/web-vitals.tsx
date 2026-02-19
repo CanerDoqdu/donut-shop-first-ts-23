@@ -47,7 +47,7 @@ export function WebVitals() {
 
       // Use sendBeacon for reliability (fires even on page unload)
       if (navigator.sendBeacon) {
-        navigator.sendBeacon('/api/analytics', body);
+        navigator.sendBeacon('/api/vitals', body);
       }
     }
   });
