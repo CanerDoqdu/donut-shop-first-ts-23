@@ -1,229 +1,241 @@
-# 🍩 Donut Shop — Full-Stack E-Commerce Platform
+<h1 align="center">Glazed & Sipped</h1>
 
-Production-grade e-commerce application built with **Next.js 16**, **React 19**, **Supabase**, and **Stripe**. Features internationalisation, loyalty program, real-time monitoring, and CI/CD pipeline.
+<p align="center">
+  <strong>Production-grade e-commerce platform</strong><br/>
+  <sub>Next.js 16 · React 19 · Supabase · Stripe</sub>
+</p>
 
-**Live Demo:** [donut-shop.vercel.app](https://donut-shop.vercel.app)
+<p align="center">
+  <img src="https://img.shields.io/badge/Next.js-16.1.6-black?logo=nextdotjs" alt="Next.js" />
+  <img src="https://img.shields.io/badge/React-19.2-61DAFB?logo=react&logoColor=white" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-5-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Supabase-PostgreSQL-3FCF8E?logo=supabase&logoColor=white" alt="Supabase" />
+  <img src="https://img.shields.io/badge/Stripe-Payments-635BFF?logo=stripe&logoColor=white" alt="Stripe" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-4-06B6D4?logo=tailwindcss&logoColor=white" alt="Tailwind" />
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Tests-41_passed-brightgreen?logo=vitest" alt="Tests" />
+  <img src="https://img.shields.io/badge/CI-GitHub_Actions-2088FF?logo=githubactions&logoColor=white" alt="CI" />
+  <img src="https://img.shields.io/badge/i18n-TR_|_EN-orange" alt="i18n" />
+  <img src="https://img.shields.io/badge/License-MIT-yellow" alt="License" />
+  <img src="https://img.shields.io/badge/Node.js-20_LTS-339933?logo=nodedotjs&logoColor=white" alt="Node" />
+</p>
 
 ---
 
-## Architecture Overview
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                      Client (React 19)                  │
-│  ┌──────────┐  ┌───────────┐  ┌────────────────────┐   │
-│  │ Zustand   │  │ next-intl │  │ Framer Motion      │   │
-│  │ Cart Store│  │ i18n (TR/ │  │ Animations         │   │
-│  │ (persist) │  │ EN)       │  │                    │   │
-│  └──────────┘  └───────────┘  └────────────────────┘   │
-├─────────────────────────────────────────────────────────┤
-│                   Next.js 16 App Router                 │
-│  ┌──────────┐  ┌───────────┐  ┌────────────────────┐   │
-│  │Middleware │  │ API Routes│  │ Server Components  │   │
-│  │Auth+i18n  │  │ /api/*    │  │ SSR / SSG          │   │
-│  └──────────┘  └───────────┘  └────────────────────┘   │
-├─────────────────────────────────────────────────────────┤
-│                   External Services                     │
-│  ┌──────────────┐  ┌──────────┐  ┌────────────────┐    │
-│  │ Supabase     │  │ Stripe   │  │ Resend         │    │
-│  │ Auth + DB    │  │ Payments │  │ Transactional  │    │
-│  │ (PostgreSQL) │  │ Webhooks │  │ Emails         │    │
-│  └──────────────┘  └──────────┘  └────────────────┘    │
-└─────────────────────────────────────────────────────────┘
+                        ┌──────────────────────────────────┐
+                        │          Client (React 19)       │
+                        │  Zustand · next-intl · Framer    │
+                        └───────────────┬──────────────────┘
+                                        │ HTTPS
+                        ┌───────────────▼──────────────────┐
+                        │     Next.js 16 — Middleware       │
+                        │  x-request-id · RBAC · i18n      │
+                        ├──────────┬───────────┬───────────┤
+                        │  Pages   │ API Routes│  Server   │
+                        │  (SSR/   │ /api/*    │ Components│
+                        │   SSG)   │           │ & Actions │
+                        └──┬───────┴─────┬─────┴───┬───────┘
+                           │             │         │
+              ┌────────────▼──┐  ┌───────▼──┐  ┌──▼────────┐
+              │   Supabase    │  │  Stripe  │  │  Resend   │
+              │ Auth · PG+RLS │  │ Checkout │  │  Email    │
+              │ Realtime      │  │ Webhooks │  │           │
+              └───────────────┘  └──────────┘  └───────────┘
 ```
 
-## Tech Stack
+### Request Lifecycle
 
-| Layer | Technology | Purpose |
-|-------|-----------|---------|
-| Framework | Next.js 16 (App Router) | SSR, SSG, API routes, middleware |
-| UI | React 19, Tailwind CSS 4 | Component architecture, utility-first styling |
-| State | Zustand 5 | Client-side cart with localStorage persistence |
-| Auth | Supabase Auth | Email/password, Google OAuth, session management |
-| Database | Supabase (PostgreSQL) | Products, orders, profiles, loyalty, gift cards |
-| Payments | Stripe | Checkout sessions, webhooks, gift card payments |
-| i18n | next-intl 4 | URL-based locale routing (TR/EN) |
-| Animation | Framer Motion | Page transitions, micro-interactions |
-| Email | Resend | Transactional emails (order confirmation, gift cards) |
-| Monitoring | Web Vitals | LCP, CLS, INP, FCP, TTFB tracking |
-| CI/CD | GitHub Actions | Lint → Type-check → Build pipeline |
+1. **Middleware** (`proxy.ts`) — `x-request-id` generation, admin RBAC, cookie passthrough, next-intl locale routing
+2. **API Route** — CSRF origin validation → rate limiting → input sanitisation → server-truth pricing → structured logging
+3. **Database** — Supabase client with RLS. Admin ops via `service_role` key
+4. **Webhooks** — Stripe signature → `stripe_events` idempotency → transactional RPC → structured logs
+
+---
 
 ## Features
 
-### Core Commerce
-- Product catalogue with category filtering and **debounced search** (300ms)
-- Shopping cart with 2-day localStorage persistence and hydration guards
-- Stripe Checkout integration with webhook order confirmation
-- Order history with status tracking (pending → paid → preparing → shipped → delivered)
+| Domain | Highlights |
+|--------|-----------|
+| **Commerce** | Product catalogue, category filter, debounced search, cart (2-day TTL), Stripe Checkout, order lifecycle |
+| **Auth & RBAC** | Email/password + Google OAuth, middleware admin guard, `admin_users` table |
+| **Security** | CSRF origin check, rate limiting, CSP + HSTS, input sanitisation, server-truth pricing, webhook idempotency |
+| **Loyalty** | Points per purchase (Bronze → Platinum), referral bonuses, gift card purchase & redemption |
+| **Subscriptions** | Monthly donut box plans (Starter / Classic / Premium / Family) |
+| **Observability** | Structured JSON logger, `x-request-id` tracing, `/api/health` probe, Web Vitals |
+| **Performance** | `React.cache()` deduplication, `Promise.all` batching, AVIF/WebP, immutable caching |
+| **i18n** | URL-based locale routing (`/tr`, `/en`), type-safe JSON message files |
+| **Data Lifecycle** | Soft-delete (`deleted_at`), `audit_log` table, 1-year retention policy |
+| **Testing** | 41 unit tests (Vitest) — security, rate-limiter, data helpers |
 
-### Authentication & Security
-- Email/password + Google OAuth via Supabase Auth
-- Singleton browser client (prevents GoTrue listener leaks)
-- Row-Level Security (RLS) on all database tables
-- Protected routes enforced at middleware level
-- Security headers: HSTS, X-Frame-Options, CSP directives, Referrer-Policy
+---
 
-### Loyalty & Engagement
-- Points-per-purchase loyalty system (Bronze → Silver → Gold → Platinum)
-- Referral program with bonus points
-- Gift card purchase, email delivery, and redemption
-- Subscription box plans with recurring billing
+## Quick Start
 
-### Performance
-- Image optimisation: AVIF/WebP with 1-year cache, shimmer placeholders, fade-in transitions
-- Font loading: `display: swap`, self-hosted via `next/font/google`
-- Debounced search inputs prevent unnecessary re-renders
-- Web Vitals monitoring (LCP, CLS, INP, FCP, TTFB) with console + beacon reporting
-- Bundle analysis via `@next/bundle-analyzer`
+### Prerequisites
 
-### Internationalisation
-- URL-based locale routing (`/tr/...`, `/en/...`)
-- Type-safe translations with JSON message files
-- Middleware-based locale detection and redirect
+- **Node.js** 20+ · **npm** 10+
+- [Supabase](https://supabase.com) project
+- [Stripe](https://stripe.com) account
 
-### Admin
-- Product CRUD with inventory management
-- Order management dashboard
-- Inventory stats and analytics
+### Install
+
+```bash
+git clone https://github.com/CanerDoqdu/donut-shop-first-ts-23.git
+cd donut-shop-first-ts-23
+npm install
+cp .env.example .env.local   # fill in your keys
+```
+
+### Environment Variables
+
+| Variable | Required | Description |
+|----------|:--------:|-------------|
+| `NEXT_PUBLIC_SUPABASE_URL` | ✅ | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | ✅ | Supabase anon key |
+| `SUPABASE_SERVICE_ROLE_KEY` | ✅ | Supabase service-role key (server only) |
+| `STRIPE_SECRET_KEY` | ✅ | Stripe secret API key |
+| `STRIPE_WEBHOOK_SECRET` | ✅ | Stripe webhook signing secret |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | — | Stripe publishable key |
+| `RESEND_API_KEY` | ✅ | Resend email API key |
+| `NEXT_PUBLIC_APP_URL` | — | Default `http://localhost:3000` |
+| `NEXT_PUBLIC_SITE_URL` | — | Default `http://localhost:3000` |
+
+### Scripts
+
+```bash
+npm run dev           # Turbopack dev server
+npm run build         # production build
+npm run start         # production server
+npm test              # 41 tests
+npm run test:watch    # watch mode
+npm run test:coverage # v8 coverage
+npm run lint          # ESLint
+npm run typecheck     # tsc --noEmit
+ANALYZE=true npm run build  # bundle analysis
+```
+
+---
+
+## Database
+
+### Migrations
+
+Apply in Supabase SQL Editor in order:
+
+| # | File | Purpose |
+|---|------|---------|
+| 1 | `supabase/migrations/001_core_schema.sql` | Products, profiles, orders, order_items, indexes, RLS, triggers |
+| 2 | `supabase/migrations/002_extended_features.sql` | Stores, loyalty, gift cards, subscriptions, reviews, referrals |
+| 3 | `supabase/migrations/003_stores_seed.sql` | Store location seed data |
+| 4 | `supabase/migrations/004_stripe_events.sql` | `stripe_events` idempotency + `process_payment_completed` RPC |
+| 5 | `supabase/migrations/005_soft_delete_audit.sql` | `orders.deleted_at` soft-delete + `audit_log` table |
+
+All migrations are **idempotent** — safe to re-run.
+
+### Schema
+
+```
+products ──────────┐
+profiles ──┐       │
+           ├─ orders ──── order_items
+           ├─ loyalty_points ── points_transactions
+           ├─ gift_cards ── gift_card_transactions
+           ├─ subscriptions ── subscription_deliveries
+           ├─ referrals / referral_codes
+           ├─ reviews ── review_helpful_votes
+           └─ notifications
+stores ── store_inventory
+admin_users · analytics_events · stripe_events · audit_log
+```
+
+---
+
+## Security
+
+| Layer | Implementation |
+|-------|---------------|
+| **CSRF** | Origin / Referer validation on mutation routes |
+| **Rate Limit** | Token-bucket (auth: 5/min, checkout: 5/min, gift-cards: 3/min) |
+| **CSP** | `script-src 'self' stripe.com`, `frame-ancestors 'none'`, `object-src 'none'` |
+| **Headers** | HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy |
+| **Auth** | Supabase Auth + middleware RBAC + `admin_users` table |
+| **Pricing** | Server-truth — client sends `{id, qty}[]`, prices from `lib/data.ts` |
+| **Webhooks** | Stripe signature + `stripe_events` idempotency + transactional RPC |
+| **Input** | `sanitizeString()`, `sanitizePayload()`, `isValidEmail()`, `clampNumber()` |
+
+→ [docs/SECURITY.md](docs/SECURITY.md)
+
+---
+
+## Testing
+
+| Suite | Tests | Coverage |
+|-------|:-----:|----------|
+| `security.test.ts` | 20 | sanitizeString, sanitizePayload, isValidEmail, clampNumber |
+| `rate-limit.test.ts` | 10 | rateLimit, getClientIP, token refill, blocking |
+| `data.test.ts` | 11 | getProductById, getProductsByIds, data integrity |
+
+→ [docs/TESTING.md](docs/TESTING.md)
+
+---
+
+## CI/CD
+
+```
+  Lint ──┐
+  Type ──┼── Build (PR-safe) ── Bundle Analysis (PR only)
+  Test ──┘
+         └── Build (Real Secrets, main only)
+  Audit ──── (non-blocking)
+```
+
+→ [docs/CI.md](docs/CI.md)
 
 ---
 
 ## Project Structure
 
 ```
-├── .github/workflows/     # CI/CD pipeline (lint → typecheck → build)
-├── app/
-│   ├── [locale]/          # Internationalised routes (TR/EN)
-│   │   ├── products/      # Product catalogue + detail pages
-│   │   ├── cart/           # Shopping cart
-│   │   ├── checkout/       # Stripe checkout
-│   │   ├── orders/         # Order history + detail
-│   │   ├── loyalty/        # Loyalty dashboard
-│   │   ├── gift-cards/     # Gift card purchase
-│   │   ├── subscriptions/  # Subscription plans
-│   │   ├── referrals/      # Referral program
-│   │   ├── admin/          # Admin dashboard + CRUD
-│   │   ├── login/          # Auth pages
-│   │   └── register/
-│   ├── api/
-│   │   ├── auth/           # OAuth callback
-│   │   ├── checkout/       # Stripe session creation
-│   │   ├── email/          # Transactional emails
-│   │   ├── vitals/         # Web Vitals beacon endpoint
-│   │   └── webhooks/       # Stripe webhook handler
-│   └── offline/            # PWA offline fallback
-├── components/
-│   ├── home/               # Hero showcase, donut conveyor
-│   ├── layout/             # Header, Footer, PromoBanner
-│   ├── monitoring/         # WebVitals, ErrorBoundary
-│   ├── shared/             # Reusable error boundary
-│   └── ui/                 # Design system primitives
-├── docs/
-│   └── adr/                # Architecture Decision Records
-├── hooks/                  # Custom React hooks (useDebounce, useMounted, useMediaQuery)
-├── i18n/
-│   ├── messages/           # Translation JSON files
-│   └── routing.ts          # Locale routing config
-├── lib/
-│   ├── auth/               # Auth actions + context provider
-│   ├── config.ts           # Environment variable validation
-│   ├── constants.ts        # App-wide constants (no magic numbers)
-│   ├── data.ts             # Sample product data
-│   ├── rate-limit.ts       # Token-bucket rate limiter
-│   ├── stripe/             # Stripe server utilities
-│   ├── supabase/           # Singleton client + server client
-│   ├── types.ts            # TypeScript type definitions
-│   ├── utils.ts            # Utility functions (cn, formatPrice)
-│   └── validators.ts       # Input validation helpers
-├── store/                  # Zustand stores
-├── middleware.ts           # Auth session refresh + i18n routing
-└── next.config.ts          # Image opts, security headers, caching
-```
-
-### Key Engineering Decisions
-
-All major architecture decisions are documented as [ADRs](docs/adr/):
-
-| ADR | Decision |
-|-----|----------|
-| [001](docs/adr/001-zustand-state-management.md) | Zustand for client state (vs Context/Redux) |
-| [002](docs/adr/002-internationalisation.md) | next-intl for i18n routing |
-| [003](docs/adr/003-supabase-auth.md) | Supabase Auth with singleton pattern |
-| [004](docs/adr/004-performance-strategy.md) | Multi-layered performance strategy |
-
----
-
-## Getting Started
-
-### Prerequisites
-- Node.js 20+
-- npm 10+
-- Supabase project ([supabase.com](https://supabase.com))
-- Stripe account ([stripe.com](https://stripe.com))
-
-### Installation
-
-```bash
-git clone https://github.com/CanerDoqdu/donut-shop-first-ts-23.git
-cd donut-shop-first-ts-23
-npm install
-```
-
-### Environment Variables
-
-Copy `.env.example` to `.env.local` and fill in your credentials:
-
-```bash
-cp .env.example .env.local
-```
-
-```env
-# Supabase
-NEXT_PUBLIC_SUPABASE_URL=https://xxx.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-
-# Stripe
-STRIPE_SECRET_KEY=sk_test_...
-NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...
-STRIPE_WEBHOOK_SECRET=whsec_...
-
-# App
-NEXT_PUBLIC_APP_URL=http://localhost:3000
-```
-
-### Development
-
-```bash
-npm run dev        # Start dev server (Turbopack)
-npm run build      # Production build
-npm run lint       # ESLint
-npx tsc --noEmit   # Type-check
-ANALYZE=true npm run build  # Bundle analysis
+app/
+  [locale]/            i18n pages (tr/en)
+  api/                 Route handlers (checkout, webhooks, health, vitals)
+components/
+  admin/ home/ layout/ ui/
+lib/
+  auth/    stripe/    supabase/
+  data.ts  env.ts     logger.ts    queries.ts
+  rate-limit.ts       security.ts  types.ts
+store/
+  cart-store.ts        Zustand (localStorage)
+supabase/
+  migrations/          Ordered, idempotent SQL
+tests/
+  lib/                 Unit tests
+docs/
+  ARCHITECTURE · SECURITY · PAYMENTS · RLS · PERF · RUNBOOK · TESTING · CI
 ```
 
 ---
 
-## Database Setup
+## Docs
 
-Run the SQL scripts in your Supabase dashboard:
+| Document | Description |
+|----------|-------------|
+| [ARCHITECTURE](docs/ARCHITECTURE.md) | System design, request flow, key decisions |
+| [SECURITY](docs/SECURITY.md) | CSRF, rate limiting, CSP, auth, webhooks |
+| [PAYMENTS](docs/PAYMENTS.md) | Stripe integration, checkout flow, webhooks |
+| [RLS](docs/RLS.md) | Row Level Security per table |
+| [PERF](docs/PERF.md) | Caching, React.cache(), images, indexes |
+| [RUNBOOK](docs/RUNBOOK.md) | Health checks, troubleshooting, deployment |
+| [TESTING](docs/TESTING.md) | Vitest setup, writing tests, coverage |
+| [CI](docs/CI.md) | Pipeline, secrets, jobs |
 
-1. `supabase/schema.sql` — Core tables (profiles, products, orders)
-2. `supabase/schema-extended.sql` — Extended tables (loyalty, gift cards, referrals)
-3. `scripts/create-stores-table.sql` — Store locations
-
-## CI/CD
-
-GitHub Actions pipeline runs on every push/PR to `main`:
-
-```
-Lint → Type-check → Build
-```
-
-Configure these GitHub repository secrets:
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`
-- `STRIPE_SECRET_KEY`
+---
 
 ## Deployment
 
@@ -231,7 +243,13 @@ Configure these GitHub repository secrets:
 vercel deploy --prod
 ```
 
-Set environment variables in the Vercel dashboard and configure the Stripe webhook URL to `https://your-domain.com/api/webhooks/stripe`.
+1. Set env vars in Vercel dashboard
+2. Apply database migrations
+3. Configure Stripe webhook → `https://your-domain/api/webhooks/stripe`
+4. Seed `admin_users` table
+5. Verify `/api/health` → `{ "status": "ok" }`
+
+---
 
 ## License
 
