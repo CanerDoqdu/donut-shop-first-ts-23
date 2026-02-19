@@ -6,6 +6,7 @@ import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
 import { getProductsByIds } from '@/lib/data';
 import { validateOrigin, sanitizeString, isValidEmail } from '@/lib/security';
+import { CART_EXPIRY_MS } from '@/lib/constants';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
 function createAdminClient() {
@@ -40,7 +41,18 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { items, customerEmail: rawEmail, customerName: rawName, customerAddress: rawAddress, locale } = await req.json();
+    const { items, customerEmail: rawEmail, customerName: rawName, customerAddress: rawAddress, locale, cartTimestamp } = await req.json();
+
+    // ── Server-side cart expiry check ──
+    if (cartTimestamp && typeof cartTimestamp === 'number') {
+      const age = Date.now() - cartTimestamp;
+      if (age > CART_EXPIRY_MS) {
+        return NextResponse.json(
+          { error: 'Cart expired. Please refresh and try again.' },
+          { status: 410 }
+        );
+      }
+    }
 
     // Sanitize user-supplied strings
     const customerEmail = sanitizeString(rawEmail ?? '');
