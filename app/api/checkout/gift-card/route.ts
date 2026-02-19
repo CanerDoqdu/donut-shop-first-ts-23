@@ -1,22 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
 import { env } from '@/lib/env';
+import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { validateOrigin, sanitizeString, isValidEmail, clampNumber } from '@/lib/security';
 
 export async function POST(req: NextRequest) {
-  try {
-    const { 
-      amount, 
-      senderName, 
-      senderEmail, 
-      recipientName, 
-      recipientEmail, 
-      message,
-      locale = 'en' 
-    } = await req.json();
+  // ── CSRF: verify request origin ──
+  const originError = validateOrigin(req);
+  if (originError) return originError;
 
-    if (!amount || !senderName || !senderEmail || !recipientName || !recipientEmail) {
+  // Rate limit: 3 gift-card checkouts per minute per IP
+  const ip = getClientIP(req);
+  const limiter = rateLimit(`gift-checkout:${ip}`, { maxRequests: 3, windowSizeSeconds: 60 });
+  if (!limiter.success) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': '60' } }
+    );
+  }
+
+  try {
+    const body = await req.json();
+
+    // Sanitize inputs
+    const amount = clampNumber(Number(body.amount) || 0, 10, 5000);
+    const senderName = sanitizeString(body.senderName ?? '');
+    const senderEmail = sanitizeString(body.senderEmail ?? '');
+    const recipientName = sanitizeString(body.recipientName ?? '');
+    const recipientEmail = sanitizeString(body.recipientEmail ?? '');
+    const message = sanitizeString(body.message ?? '');
+    const locale = body.locale || 'en';
+
+    if (!senderName || !senderEmail || !recipientName || !recipientEmail) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(senderEmail) || !isValidEmail(recipientEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email address' },
         { status: 400 }
       );
     }

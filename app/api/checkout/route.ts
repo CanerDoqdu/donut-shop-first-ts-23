@@ -5,6 +5,7 @@ import { createServerClient } from '@supabase/ssr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
 import { getProductsByIds } from '@/lib/data';
+import { validateOrigin, sanitizeString, isValidEmail } from '@/lib/security';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
 function createAdminClient() {
@@ -24,6 +25,10 @@ function createAdminClient() {
 }
 
 export async function POST(req: NextRequest) {
+  // ── CSRF: verify request origin ──
+  const originError = validateOrigin(req);
+  if (originError) return originError;
+
   // Rate limit: 5 checkout attempts per minute per IP
   const ip = getClientIP(req);
   const limiter = rateLimit(`checkout:${ip}`, { maxRequests: 5, windowSizeSeconds: 60 });
@@ -35,11 +40,23 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { items, customerEmail, customerName, customerAddress, locale } = await req.json();
+    const { items, customerEmail: rawEmail, customerName: rawName, customerAddress: rawAddress, locale } = await req.json();
+
+    // Sanitize user-supplied strings
+    const customerEmail = sanitizeString(rawEmail ?? '');
+    const customerName = sanitizeString(rawName ?? '');
+    const customerAddress = sanitizeString(rawAddress ?? '');
 
     if (!items || !items.length || !customerEmail) {
       return NextResponse.json(
         { error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    if (!isValidEmail(customerEmail)) {
+      return NextResponse.json(
+        { error: 'Invalid email address' },
         { status: 400 }
       );
     }

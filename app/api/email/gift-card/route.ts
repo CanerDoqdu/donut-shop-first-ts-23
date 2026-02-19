@@ -2,12 +2,17 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { env } from '@/lib/env';
+import { validateOrigin } from '@/lib/security';
 
 function getResendClient(): Resend {
   return new Resend(env.RESEND_API_KEY);
 }
 
 export async function POST(request: NextRequest) {
+  // ── CSRF: verify request origin ──
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
   // Rate limit: 3 gift card emails per minute per IP
   const ip = getClientIP(request);
   const limiter = rateLimit(`gift-card:${ip}`, { maxRequests: 3, windowSizeSeconds: 60 });
