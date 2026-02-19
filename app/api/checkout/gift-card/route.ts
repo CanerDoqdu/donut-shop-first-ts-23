@@ -4,8 +4,17 @@ import { env } from '@/lib/env';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { validateOrigin } from '@/lib/security';
 import { giftCardCheckoutSchema, parseBody } from '@/lib/validations';
+import { withHandler } from '@/lib/api-handler';
+import { ApiError } from '@/lib/api-error';
+import { featureFlags } from '@/lib/config';
+import { withTimeout } from '@/lib/fetch-with-timeout';
 
-export async function POST(req: NextRequest) {
+export const POST = withHandler(async (req: NextRequest) => {
+  // ── Maintenance mode ──
+  if (!featureFlags.checkoutEnabled) {
+    throw new ApiError('MAINTENANCE', 'Checkout is temporarily disabled', 503);
+  }
+
   // ── CSRF: verify request origin ──
   const originError = validateOrigin(req);
   if (originError) return originError;
@@ -14,28 +23,25 @@ export async function POST(req: NextRequest) {
   const ip = getClientIP(req);
   const limiter = rateLimit(`gift-checkout:${ip}`, { maxRequests: 3, windowSizeSeconds: 60 });
   if (!limiter.success) {
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': '60' } }
-    );
+    throw new ApiError('RATE_LIMITED', 'Too many requests. Please try again later.', 429);
   }
 
-  try {
-    const body = await req.json();
+  const body = await req.json();
 
-    // ── Zod validation ──
-    const parsed = parseBody(giftCardCheckoutSchema, body);
-    if (!parsed.success) {
-      return NextResponse.json({ error: parsed.error }, { status: 400 });
-    }
+  // ── Zod validation ──
+  const parsed = parseBody(giftCardCheckoutSchema, body);
+  if (!parsed.success) {
+    throw new ApiError('VALIDATION_ERROR', parsed.error, 400);
+  }
 
-    const { amount, senderName, senderEmail, recipientName, recipientEmail, message, locale } = parsed.data;
+  const { amount, senderName, senderEmail, recipientName, recipientEmail, message, locale } = parsed.data;
 
-    // Generate unique gift card code for metadata
-    const code = `GC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+  // Generate unique gift card code for metadata
+  const code = `GC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
-    // Create Stripe checkout session
-    const session = await stripe.checkout.sessions.create({
+  // Create Stripe checkout session (10s timeout)
+  const session = await withTimeout(
+    stripe.checkout.sessions.create({
       mode: 'payment',
       line_items: [
         {
@@ -43,8 +49,8 @@ export async function POST(req: NextRequest) {
             currency: 'try',
             product_data: {
               name: locale === 'tr' ? 'Hediye Kartı' : 'Gift Card',
-              description: locale === 'tr' 
-                ? `${senderName}'den ${recipientName}'a hediye` 
+              description: locale === 'tr'
+                ? `${senderName}'den ${recipientName}'a hediye`
                 : `Gift from ${senderName} to ${recipientName}`,
             },
             unit_amount: Math.round(amount * 100), // Convert to kuruş
@@ -65,14 +71,10 @@ export async function POST(req: NextRequest) {
         recipientEmail,
         message: message || '',
       },
-    });
+    }),
+    10_000,
+    'stripe.checkout.sessions.create',
+  );
 
-    return NextResponse.json({ url: session.url, code });
-  } catch (err) {
-    console.error('Gift card checkout error:', err);
-    return NextResponse.json(
-      { error: 'Failed to create checkout session' },
-      { status: 500 }
-    );
-  }
-}
+  return NextResponse.json({ url: session.url, code });
+});
