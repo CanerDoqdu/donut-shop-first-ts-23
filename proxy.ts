@@ -2,7 +2,7 @@ import createMiddleware from 'next-intl/middleware';
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
-import { detectLocaleFromPath, isProtectedPath } from '@/lib/middleware';
+import { detectLocaleFromPath, isProtectedPath, isAdminPath } from '@/lib/middleware';
 import { logger } from '@/lib/logger';
 import { getSupabasePublicEnv } from '@/lib/supabase/env';
 
@@ -27,9 +27,9 @@ export async function proxy(request: NextRequest) {
             request.cookies.set(name, value)
           );
           // Set cookies on the existing intl response instead of replacing it
-          // Force httpOnly: false so browser JS can read auth cookies
+          // Pass Supabase cookie options through unchanged (httpOnly, Secure, SameSite)
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, { ...options })
+            response.cookies.set(name, value, options)
           );
         },
       },
@@ -50,6 +50,26 @@ export async function proxy(request: NextRequest) {
       locale,
     });
     return NextResponse.redirect(url);
+  }
+
+  // ── Admin RBAC: server-side guard for /admin routes ──
+  if (isAdminPath(request) && user) {
+    const { data: adminRecord } = await supabase
+      .from('admin_users')
+      .select('role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (!adminRecord) {
+      const locale = detectLocaleFromPath(request.nextUrl.pathname);
+      logger.warn('Non-admin user blocked from admin route', {
+        userId: user.id,
+        path: request.nextUrl.pathname,
+      });
+      const url = request.nextUrl.clone();
+      url.pathname = `/${locale}`;
+      return NextResponse.redirect(url);
+    }
   }
 
   return response;
