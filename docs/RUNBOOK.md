@@ -1,30 +1,79 @@
 # Database Runbook
 
-> Operational procedures for the Glazed & Sipped PostgreSQL database (Supabase).
+Operational procedures for the Glazed & Sipped PostgreSQL database (Supabase).
 
----
+## Health Check
+
+```bash
+curl https://your-domain.com/api/health
+```
+
+Expected response:
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-02-19T10:00:00.000Z",
+  "version": "0.1.0"
+}
+```
 
 ## Migration Execution Order
 
-Migrations must be run sequentially in the Supabase SQL Editor:
+Run sequentially in Supabase SQL Editor:
 
+1. `supabase/migrations/001_core_schema.sql`
+2. `supabase/migrations/002_extended_features.sql`
+3. `supabase/migrations/003_stores_seed.sql`
+4. `supabase/migrations/004_stripe_events.sql`
+5. `supabase/migrations/005_soft_delete_audit.sql`
+
+All migrations are idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP ... IF EXISTS`).
+
+## Common Issues
+
+### Missing environment variables
+Symptom: app fails with `[env] Missing required environment variable`.
+Fix: match `.env.local` to `.env.example`.
+
+### Stripe webhook failures
+Symptom: paid checkout but order remains `pending`.
+Checks:
+1. `STRIPE_WEBHOOK_SECRET` matches Stripe Dashboard.
+2. Event appears once in `stripe_events`.
+3. Logs contain no signature verification error.
+4. Webhook URL points to `/api/webhooks/stripe`.
+
+### Rate limit triggered
+Symptom: `429` on auth/checkout routes.
+Current limits:
+- Auth: 5 req/min/IP
+- Checkout: 5 req/min/IP
+- Gift cards: 3 req/min/IP
+
+### CSRF origin rejection
+Symptom: `403` on mutation routes.
+Checks:
+1. `NEXT_PUBLIC_APP_URL` / `NEXT_PUBLIC_SITE_URL` match deployed origin.
+2. In production, missing Origin/Referer is rejected.
+3. Stripe webhook route bypasses origin check by design.
+
+### Admin access denied
+Symptom: redirect from `/admin/*`.
+Fix:
+```sql
+INSERT INTO admin_users (user_id) VALUES ('user-uuid-here');
 ```
-001_core_schema.sql        → Base tables, RLS, triggers, seed products
-002_extended_features.sql  → Stores, loyalty, gift cards, subscriptions, reviews, referrals
-003_stores_seed.sql        → Extended store location data (6 locations)
-004_stripe_events.sql      → Stripe idempotency table + payment RPC
-005_soft_delete_audit.sql  → Soft-delete on orders + audit_log table
-```
 
-All migrations are **idempotent** — they use `IF NOT EXISTS`, `CREATE OR REPLACE`, and `DROP POLICY IF EXISTS` patterns and can be safely re-run.
+### Cart expired
+Symptom: `410 Gone` on checkout.
+Cause: cart older than 2 days.
+Fix: recreate cart.
 
----
+## Full Reset Procedure (Development Only)
 
-## Full Reset Procedure
+Warning: destructive.
 
-> **WARNING**: This destroys all data. Use only in development.
-
-### Step 1 — Drop all tables (reverse dependency order)
+### Step 1 — Drop all tables
 
 ```sql
 DROP TABLE IF EXISTS audit_log CASCADE;
@@ -66,17 +115,11 @@ DROP FUNCTION IF EXISTS process_payment_completed(TEXT, TEXT) CASCADE;
 
 ### Step 3 — Re-run migrations
 
-Run each file in order from `supabase/migrations/`:
-```
-001 → 002 → 003 → 004 → 005
-```
+`001 -> 002 -> 003 -> 004 -> 005`
 
----
+## Operations
 
-## Common Operations
-
-### Check Table Row Counts
-
+### Check table row counts
 ```sql
 SELECT schemaname, relname, n_live_tup
 FROM pg_stat_user_tables
@@ -84,8 +127,7 @@ WHERE schemaname = 'public'
 ORDER BY n_live_tup DESC;
 ```
 
-### Verify RLS is Enabled
-
+### Verify RLS enabled
 ```sql
 SELECT tablename, rowsecurity
 FROM pg_tables
@@ -93,8 +135,7 @@ WHERE schemaname = 'public'
 ORDER BY tablename;
 ```
 
-### List All Policies
-
+### List policies
 ```sql
 SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
 FROM pg_policies
@@ -102,8 +143,7 @@ WHERE schemaname = 'public'
 ORDER BY tablename, policyname;
 ```
 
-### Check Index Usage
-
+### Index usage
 ```sql
 SELECT indexrelname, idx_scan, idx_tup_read
 FROM pg_stat_user_indexes
@@ -111,35 +151,28 @@ WHERE schemaname = 'public'
 ORDER BY idx_scan DESC;
 ```
 
----
-
 ## Soft-Delete Operations
 
 ### Soft-delete an order
-
 ```sql
 SELECT soft_delete_order('<order-uuid>');
 ```
 
-### View soft-deleted orders (admin only, via service_role)
-
+### View soft-deleted orders
 ```sql
 SELECT * FROM orders WHERE deleted_at IS NOT NULL;
 ```
 
 ### Restore a soft-deleted order
-
 ```sql
-UPDATE orders SET deleted_at = NULL, updated_at = NOW()
+UPDATE orders
+SET deleted_at = NULL, updated_at = NOW()
 WHERE id = '<order-uuid>';
 ```
 
----
-
 ## Audit Log
 
-### Query recent audit entries
-
+### Recent entries
 ```sql
 SELECT action, entity_type, entity_id, created_at
 FROM audit_log
@@ -147,68 +180,42 @@ ORDER BY created_at DESC
 LIMIT 50;
 ```
 
-### Purge old entries (> 1 year)
-
+### Purge older than 1 year
 ```sql
-DELETE FROM audit_log WHERE created_at < NOW() - INTERVAL '1 year';
+DELETE FROM audit_log
+WHERE created_at < NOW() - INTERVAL '1 year';
 ```
-
----
 
 ## Stripe Events
 
-### Check for duplicate event processing
-
+### Verify idempotency
 ```sql
 SELECT event_id, event_type, processed_at
 FROM stripe_events
 WHERE event_id = 'evt_xxx';
 ```
 
-### Process payment manually (emergency)
-
+### Process payment manually
 ```sql
 SELECT process_payment_completed('cs_xxx', 'pi_xxx');
 ```
 
----
+## Monitoring
 
-## Backup & Restore
+### Structured logs
+All server logs are JSON (`lib/logger.ts`) and include `requestId`.
 
-Supabase provides automatic daily backups on Pro plans. For manual backups:
+### Web vitals
+Client reports CLS, FID, FCP, LCP, TTFB to `/api/vitals`.
 
-```bash
-# Export via pg_dump (requires direct connection string)
-pg_dump "$DATABASE_URL" --no-owner --no-acl -F c -f backup.dump
+### Request tracing
+Every request carries `x-request-id` (generated in middleware if missing).
 
-# Restore
-pg_restore -d "$DATABASE_URL" --no-owner --no-acl backup.dump
-```
+## Deployment Checklist
 
----
-
-## Monitoring Queries
-
-### Slow queries
-
-```sql
-SELECT query, calls, mean_exec_time, total_exec_time
-FROM pg_stat_statements
-ORDER BY mean_exec_time DESC
-LIMIT 10;
-```
-
-### Connection count
-
-```sql
-SELECT count(*) FROM pg_stat_activity WHERE state = 'active';
-```
-
-### Table sizes
-
-```sql
-SELECT relname,
-       pg_size_pretty(pg_total_relation_size(relid)) AS total_size
-FROM pg_catalog.pg_statio_user_tables
-ORDER BY pg_total_relation_size(relid) DESC;
-```
+- [ ] All env vars set (check `.env.example`)
+- [ ] Supabase migrations applied
+- [ ] Stripe webhook configured and verified
+- [ ] Admin users seeded in `admin_users` table
+- [ ] HTTPS enabled
+- [ ] CI pipeline green (lint, typecheck, test, build)
