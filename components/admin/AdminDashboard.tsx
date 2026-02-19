@@ -116,38 +116,22 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
     today.setHours(0, 0, 0, 0);
     const todayISO = today.toISOString();
 
-    // Fetch orders
-    const { data: allOrders } = await supabase
-      .from('orders')
-      .select('id, total_amount, status, created_at');
-
-    // Fetch today's orders
-    const { data: todayOrders } = await supabase
-      .from('orders')
-      .select('id, total_amount')
-      .gte('created_at', todayISO);
-
-    // Fetch unique customers
-    const { data: customers } = await supabase
-      .from('profiles')
-      .select('id');
-
-    // Fetch pending orders
-    const { data: pending } = await supabase
-      .from('orders')
-      .select('id')
-      .eq('status', 'pending');
-
-    // Fetch low stock products
-    const { data: lowStock } = await supabase
-      .from('products')
-      .select('id')
-      .lt('stock', 10);
-
-    // Fetch order items for top products
-    const { data: orderItems } = await supabase
-      .from('order_items')
-      .select('product_name, quantity, unit_price');
+    // ── Batch all queries in parallel (fixes N+1) ──
+    const [
+      { data: allOrders },
+      { data: todayOrders },
+      { data: customers },
+      { data: pending },
+      { data: lowStock },
+      { data: orderItems },
+    ] = await Promise.all([
+      supabase.from('orders').select('id, total_amount, status, created_at'),
+      supabase.from('orders').select('id, total_amount').gte('created_at', todayISO),
+      supabase.from('profiles').select('id'),
+      supabase.from('orders').select('id').eq('status', 'pending'),
+      supabase.from('products').select('id').lt('stock', 10),
+      supabase.from('order_items').select('product_name, quantity, unit_price'),
+    ]);
 
     // Calculate stats
     const totalRevenue = allOrders?.reduce((sum: number, o: Record<string, number>) => sum + (o.total_amount || 0), 0) || 0;
