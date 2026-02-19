@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { env } from '@/lib/env';
 import { validateOrigin } from '@/lib/security';
+import { giftCardEmailSchema, parseBody } from '@/lib/validations';
 
 function getResendClient(): Resend {
   return new Resend(env.RESEND_API_KEY);
@@ -24,7 +25,15 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { giftCard, locale } = await request.json();
+    const body = await request.json();
+
+    // ── Zod validation ──
+    const parsed = parseBody(giftCardEmailSchema, body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
+    }
+
+    const { giftCard, locale } = parsed.data;
 
     // Send gift card email with Resend
     const resend = getResendClient();

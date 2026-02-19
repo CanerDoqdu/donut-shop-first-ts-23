@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { env } from '@/lib/env';
-import { validateOrigin, sanitizeString } from '@/lib/security';
+import { validateOrigin } from '@/lib/security';
+import { emailSendSchema, parseBody } from '@/lib/validations';
 
 function getResendClient() {
   return new Resend(env.RESEND_API_KEY);
@@ -76,17 +77,17 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const type = sanitizeString(body.type ?? '');
-    const to = sanitizeString(body.to ?? '');
-    const data = body.data;
-    const locale = body.locale || 'tr';
-    const resend = getResendClient();
 
-    if (!emailTemplates[type as keyof typeof emailTemplates]) {
-      return NextResponse.json({ error: 'Invalid email type' }, { status: 400 });
+    // ── Zod validation ──
+    const parsed = parseBody(emailSendSchema, body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    const template = emailTemplates[type as keyof typeof emailTemplates][locale as 'tr' | 'en'];
+    const { type, to, data, locale } = parsed.data;
+    const resend = getResendClient();
+
+    const template = emailTemplates[type][locale as 'tr' | 'en'];
 
     // Send email with Resend
     const { error } = await resend.emails.send({
