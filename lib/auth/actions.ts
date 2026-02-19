@@ -7,6 +7,7 @@ import { headers } from 'next/headers';
 import { env } from '@/lib/env';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { E_AUTH_RATE_LIMITED } from '@/lib/error-codes';
 import {
   signInSchema,
   signUpSchema,
@@ -28,7 +29,7 @@ function checkAuthRateLimit(action: string, ip: string): AuthResult | null {
   // 5 attempts per minute per IP per action
   const result = rateLimit(`auth:${action}:${ip}`, { maxRequests: 5, windowSizeSeconds: 60 });
   if (!result.success) {
-    logger.warn('Auth rate limit exceeded', { action, ip, remaining: result.remaining });
+    logger.warn('auth.rate_limited', { code: E_AUTH_RATE_LIMITED, action, ip, remaining: result.remaining });
     return { success: false, error: 'Too many attempts. Please try again later.' };
   }
   return null;

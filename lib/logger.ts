@@ -8,6 +8,10 @@
  *   import { logger } from '@/lib/logger';
  *   logger.info('order created', { orderId, total });
  *   logger.withContext({ requestId }).info('checkout started');
+ *
+ * Metrics (log-based):
+ *   logger.metric('checkout_duration_ms', 340, { orderId });
+ *   logger.count('checkout_error', { code: 'E_STRIPE_CHECKOUT_FAILED' });
  */
 
 const SERVICE_NAME = 'donut-shop';
@@ -40,6 +44,10 @@ interface Logger {
   error: (message: string, meta?: LogMeta) => void;
   /** Return a child logger that merges extra context into every log line. */
   withContext: (ctx: LogMeta) => Logger;
+  /** Emit a metric data-point as a structured log line. */
+  metric: (name: string, value: number, meta?: LogMeta) => void;
+  /** Emit a counter increment as a structured log line. */
+  count: (name: string, meta?: LogMeta) => void;
 }
 
 function createLogger(baseCtx: LogMeta = {}): Logger {
@@ -70,8 +78,27 @@ function createLogger(baseCtx: LogMeta = {}): Logger {
     withContext(ctx) {
       return createLogger({ ...baseCtx, ...ctx });
     },
+    metric(name, value, meta) {
+      emit('info', `metric.${name}`, { metric: name, value, ...meta });
+    },
+    count(name, meta) {
+      emit('info', `metric.${name}`, { metric: name, value: 1, ...meta });
+    },
   };
 }
 
 export const logger: Logger = createLogger();
 export type { Logger, LogMeta };
+
+// ── Request ID helpers ──────────────────────────────────────
+
+/** Extract x-request-id from a Request, or generate one. */
+export function extractRequestId(req: Request): string {
+  return req.headers.get('x-request-id') ?? crypto.randomUUID();
+}
+
+/** Start a timer; call the returned function to get elapsed ms. */
+export function startTimer(): () => number {
+  const start = performance.now();
+  return () => Math.round(performance.now() - start);
+}
