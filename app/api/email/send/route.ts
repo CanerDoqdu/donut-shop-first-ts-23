@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { env } from '@/lib/env';
+import { validateOrigin, sanitizeString } from '@/lib/security';
 
 function getResendClient() {
   return new Resend(env.RESEND_API_KEY);
@@ -59,6 +60,10 @@ const emailTemplates = {
 };
 
 export async function POST(request: NextRequest) {
+  // ── CSRF: verify request origin ──
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
   // Rate limit: 3 emails per minute per IP
   const ip = getClientIP(request);
   const limiter = rateLimit(`email:${ip}`, { maxRequests: 3, windowSizeSeconds: 60 });
@@ -70,7 +75,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const { type, to, data, locale = 'tr' } = await request.json();
+    const body = await request.json();
+    const type = sanitizeString(body.type ?? '');
+    const to = sanitizeString(body.to ?? '');
+    const data = body.data;
+    const locale = body.locale || 'tr';
     const resend = getResendClient();
 
     if (!emailTemplates[type as keyof typeof emailTemplates]) {
