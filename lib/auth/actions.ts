@@ -6,8 +6,15 @@ import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { env } from '@/lib/env';
 import { rateLimit } from '@/lib/rate-limit';
-import { sanitizeString, isValidEmail } from '@/lib/security';
 import { logger } from '@/lib/logger';
+import {
+  signInSchema,
+  signUpSchema,
+  forgotPasswordSchema,
+  resetPasswordSchema,
+  updateProfileSchema,
+  parseBody,
+} from '@/lib/validations';
 
 /** Extract client IP from server action request headers. */
 async function getActionIP(): Promise<string> {
@@ -37,17 +44,14 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   const limited = checkAuthRateLimit('signIn', ip);
   if (limited) return limited;
 
-  const email = sanitizeString(formData.get('email') as string ?? '');
-  const password = formData.get('password') as string;
-  const locale = (formData.get('locale') as string) || 'en';
+  const parsed = parseBody(signInSchema, {
+    email: formData.get('email'),
+    password: formData.get('password'),
+    locale: formData.get('locale'),
+  });
+  if (!parsed.success) return { success: false, error: parsed.error };
 
-  if (!email || !password) {
-    return { success: false, error: 'Email and password are required' };
-  }
-
-  if (!isValidEmail(email)) {
-    return { success: false, error: 'Invalid email address' };
-  }
+  const { email, password, locale } = parsed.data;
 
   const supabase = await createClient();
 
@@ -69,18 +73,15 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   const limited = checkAuthRateLimit('signUp', ip);
   if (limited) return limited;
 
-  const email = sanitizeString(formData.get('email') as string ?? '');
-  const password = formData.get('password') as string;
-  const fullName = sanitizeString(formData.get('fullName') as string ?? '');
-  const locale = (formData.get('locale') as string) || 'en';
+  const parsed = parseBody(signUpSchema, {
+    email: formData.get('email'),
+    password: formData.get('password'),
+    fullName: formData.get('fullName'),
+    locale: formData.get('locale'),
+  });
+  if (!parsed.success) return { success: false, error: parsed.error };
 
-  if (!email || !password) {
-    return { success: false, error: 'Email and password are required' };
-  }
-
-  if (!isValidEmail(email)) {
-    return { success: false, error: 'Invalid email address' };
-  }
+  const { email, password, fullName, locale } = parsed.data;
 
   const supabase = await createClient();
 
@@ -140,16 +141,13 @@ export async function forgotPassword(formData: FormData): Promise<AuthResult> {
   const limited = checkAuthRateLimit('forgotPassword', ip);
   if (limited) return limited;
 
-  const email = sanitizeString(formData.get('email') as string ?? '');
-  const locale = (formData.get('locale') as string) || 'en';
+  const parsed = parseBody(forgotPasswordSchema, {
+    email: formData.get('email'),
+    locale: formData.get('locale'),
+  });
+  if (!parsed.success) return { success: false, error: parsed.error };
 
-  if (!email) {
-    return { success: false, error: 'Email is required' };
-  }
-
-  if (!isValidEmail(email)) {
-    return { success: false, error: 'Invalid email address' };
-  }
+  const { email, locale } = parsed.data;
 
   const supabase = await createClient();
 
@@ -165,12 +163,13 @@ export async function forgotPassword(formData: FormData): Promise<AuthResult> {
 }
 
 export async function resetPassword(formData: FormData): Promise<AuthResult> {
-  const password = formData.get('password') as string;
-  const locale = (formData.get('locale') as string) || 'en';
+  const parsed = parseBody(resetPasswordSchema, {
+    password: formData.get('password'),
+    locale: formData.get('locale'),
+  });
+  if (!parsed.success) return { success: false, error: parsed.error };
 
-  if (!password) {
-    return { success: false, error: 'Password is required' };
-  }
+  const { password, locale } = parsed.data;
 
   const supabase = await createClient();
 
@@ -187,9 +186,14 @@ export async function resetPassword(formData: FormData): Promise<AuthResult> {
 }
 
 export async function updateProfile(formData: FormData): Promise<AuthResult> {
-  const fullName = formData.get('fullName') as string;
-  const phone = formData.get('phone') as string;
-  const address = formData.get('address') as string;
+  const parsed = parseBody(updateProfileSchema, {
+    fullName: formData.get('fullName'),
+    phone: formData.get('phone'),
+    address: formData.get('address'),
+  });
+  if (!parsed.success) return { success: false, error: parsed.error };
+
+  const { fullName, phone, address } = parsed.data;
 
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();

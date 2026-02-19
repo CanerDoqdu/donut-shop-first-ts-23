@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe/server';
 import { env } from '@/lib/env';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
-import { validateOrigin, sanitizeString, isValidEmail, clampNumber } from '@/lib/security';
+import { validateOrigin } from '@/lib/security';
+import { giftCardCheckoutSchema, parseBody } from '@/lib/validations';
 
 export async function POST(req: NextRequest) {
   // ── CSRF: verify request origin ──
@@ -22,35 +23,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // Sanitize inputs
-    const amount = clampNumber(Number(body.amount) || 0, 10, 5000);
-    const senderName = sanitizeString(body.senderName ?? '');
-    const senderEmail = sanitizeString(body.senderEmail ?? '');
-    const recipientName = sanitizeString(body.recipientName ?? '');
-    const recipientEmail = sanitizeString(body.recipientEmail ?? '');
-    const message = sanitizeString(body.message ?? '');
-    const locale = body.locale || 'en';
-
-    if (!senderName || !senderEmail || !recipientName || !recipientEmail) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+    // ── Zod validation ──
+    const parsed = parseBody(giftCardCheckoutSchema, body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: parsed.error }, { status: 400 });
     }
 
-    if (!isValidEmail(senderEmail) || !isValidEmail(recipientEmail)) {
-      return NextResponse.json(
-        { error: 'Invalid email address' },
-        { status: 400 }
-      );
-    }
-
-    if (amount < 10 || amount > 5000) {
-      return NextResponse.json(
-        { error: 'Amount must be between 10 and 5000' },
-        { status: 400 }
-      );
-    }
+    const { amount, senderName, senderEmail, recipientName, recipientEmail, message, locale } = parsed.data;
 
     // Generate unique gift card code for metadata
     const code = `GC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
