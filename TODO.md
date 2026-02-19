@@ -94,3 +94,87 @@
 - [ ] Finalize `docs/ultimate-update/CI.md`
 - [ ] Finalize `docs/ultimate-update/ARCHITECTURE.md`
 - [ ] Verify: `npm run lint && npx tsc --noEmit && npm test && npm run build`
+
+
+> These PRs are appended after PR10.
+> Standard verify for each PR:
+> npm run lint && npm run typecheck && npm run build
+> (PR18 also run tests/e2e)
+
+---
+
+## PR 11 — Database Migrations + Idempotent SQL Standard
+- [ ] Move all SQL changes into `supabase/migrations/` (timestamped, ordered)
+- [ ] Standardize idempotent SQL patterns:
+  - [ ] `drop policy if exists ...; create policy ...;`
+  - [ ] `drop trigger if exists ...; create trigger ...;`
+  - [ ] `create index if not exists ...;`
+- [ ] Canonical RLS policy set doc for core tables:
+  - [ ] profiles
+  - [ ] loyalty_points
+  - [ ] orders
+  - [ ] stripe_events
+- [ ] Add a “DB reset/apply” runbook (local + staging)
+- [ ] Verify: `npm run lint && npm run typecheck && npm run build`
+
+## PR 12 — Security Hardening+ (Enterprise Pack)
+- [ ] Add secrets scan in CI (Gitleaks or equivalent) and fail on findings
+- [ ] Add Dependabot config (weekly) for npm dependencies
+- [ ] Add `npm audit` CI gate with severity threshold (high/critical fail)
+- [ ] Add full security headers (in addition to CSP):
+  - [ ] Strict-Transport-Security (HSTS)
+  - [ ] X-Content-Type-Options
+  - [ ] Referrer-Policy
+  - [ ] Permissions-Policy
+- [ ] Prevent account enumeration (generic auth responses for login/forgot-password)
+- [ ] Webhook signature failure logging (no PII; include requestId + eventId only)
+- [ ] CSRF strategy upgrade:
+  - [ ] keep origin check
+  - [ ] add token pattern ONLY if SameSite=None is required
+- [ ] Verify: `npm run lint && npm run typecheck && npm run build`
+
+## PR 13 — Reliability / Ops
+- [ ] Standard API error shape: `{ code, message, requestId }`
+- [ ] Global error handling pattern for route handlers + server actions
+- [ ] Add timeouts + AbortController for external calls (Stripe/Supabase/fetch)
+- [ ] Define retry/backoff rules (what retries, what never retries)
+- [ ] Webhook dead-letter / replay plan:
+  - [ ] admin-only replay endpoint OR documented CLI/script
+- [ ] Maintenance mode feature flag (e.g. `CHECKOUT_ENABLED`) used in checkout/webhooks
+- [ ] Verify: `npm run lint && npm run typecheck && npm run build`
+
+## PR 14 — Observability+
+- [ ] Ensure `x-request-id` is generated and propagated everywhere (proxy + handlers)
+- [ ] Include requestId on every log line
+- [ ] Add stable structured error codes:
+  - [ ] `E_AUTH_*`
+  - [ ] `E_STRIPE_*`
+  - [ ] `E_DB_*`
+  - [ ] `E_WEBHOOK_*`
+- [ ] Add basic metrics (log-based is OK): webhook latency, error rate, checkout failures
+- [ ] Optional: add Sentry (client + server) + tracing
+- [ ] Verify: `npm run lint && npm run typecheck && npm run build`
+
+## PR 15 — Performance+ (Enterprise Patterns)
+- [ ] Define `revalidateTag` strategy (products/orders/admin dashboards)
+- [ ] Define CDN caching policy (Cache-Control, s-maxage where appropriate)
+- [ ] Image optimization audit (`next/image`, remotePatterns)
+- [ ] Optional: bundle analyzer script (manual/CI optional)
+- [ ] Add DB indexing plan + migrations for hot queries (orders/events/audit_log)
+- [ ] Verify: `npm run lint && npm run typecheck && npm run build`
+
+## PR 16 — Data Governance (Compliance-ish)
+- [ ] PII classification doc (which fields are PII)
+- [ ] GDPR-ish delete/export plan (doc + minimal endpoints if needed)
+- [ ] Audit log integrity: append-only enforcement (prevent update/delete)
+- [ ] Backups + restore test procedure (documented)
+- [ ] Verify: `npm run lint && npm run typecheck && npm run build`
+
+## PR 17 — Test Strategy++ (Contract + Webhook Fixtures + E2E)
+- [ ] Add API contract tests for route handlers (checkout/auth/validators)
+- [ ] Add webhook replay tests using fixture payloads (assert idempotency)
+- [ ] Add Playwright E2E smoke tests:
+  - [ ] login flow
+  - [ ] checkout flow (Stripe test mode or mocked)
+- [ ] Optional: CI matrix (Node LTS + current)
+- [ ] Verify: `npm run lint && npm run typecheck && npm test && npm run build`

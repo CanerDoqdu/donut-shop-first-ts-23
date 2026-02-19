@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/logger';
 
 /**
  * POST /api/vitals
@@ -16,9 +17,13 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
     }
 
-    // TODO: Forward to your analytics / observability backend
-    // e.g. await datadog.metrics.submit('web.vitals', body);
-    console.log('[Vitals]', body.name, Math.round(body.value), body.rating);
+    logger.info('web-vital', {
+      metric: body.name,
+      value: Math.round(body.value),
+      rating: body.rating,
+      delta: body.delta,
+      navigationType: body.navigationType,
+    });
 
     return NextResponse.json({ ok: true });
   } catch {
