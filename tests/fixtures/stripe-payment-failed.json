@@ -1,0 +1,23 @@
+{
+  "id": "evt_test_payment_failed_001",
+  "object": "event",
+  "type": "payment_intent.payment_failed",
+  "data": {
+    "object": {
+      "id": "pi_test_failed_001",
+      "object": "payment_intent",
+      "amount": 5000,
+      "currency": "try",
+      "status": "requires_payment_method",
+      "last_payment_error": {
+        "message": "Your card was declined.",
+        "type": "card_error",
+        "code": "card_declined"
+      }
+    }
+  },
+  "created": 1708300200,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "api_version": "2024-12-18.acacia"
+}

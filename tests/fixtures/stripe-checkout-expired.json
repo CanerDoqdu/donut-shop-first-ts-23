@@ -1,0 +1,24 @@
+{
+  "id": "evt_test_checkout_expired_001",
+  "object": "event",
+  "type": "checkout.session.expired",
+  "data": {
+    "object": {
+      "id": "cs_test_expired_x1y2z3",
+      "object": "checkout.session",
+      "payment_intent": null,
+      "payment_status": "unpaid",
+      "status": "expired",
+      "customer_email": "expired@example.com",
+      "amount_total": 9000,
+      "currency": "try",
+      "metadata": {
+        "orderId": "order-uuid-002"
+      }
+    }
+  },
+  "created": 1708300100,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "api_version": "2024-12-18.acacia"
+}

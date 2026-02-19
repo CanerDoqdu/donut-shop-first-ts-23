@@ -1,0 +1,24 @@
+{
+  "id": "evt_test_checkout_completed_001",
+  "object": "event",
+  "type": "checkout.session.completed",
+  "data": {
+    "object": {
+      "id": "cs_test_a1b2c3d4e5",
+      "object": "checkout.session",
+      "payment_intent": "pi_test_intent_001",
+      "payment_status": "paid",
+      "status": "complete",
+      "customer_email": "test@example.com",
+      "amount_total": 15000,
+      "currency": "try",
+      "metadata": {
+        "orderId": "order-uuid-001"
+      }
+    }
+  },
+  "created": 1708300000,
+  "livemode": false,
+  "pending_webhooks": 1,
+  "api_version": "2024-12-18.acacia"
+}
