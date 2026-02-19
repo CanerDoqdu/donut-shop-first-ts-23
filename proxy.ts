@@ -9,8 +9,15 @@ import { getSupabasePublicEnv } from '@/lib/supabase/env';
 const intlMiddleware = createMiddleware(routing);
 
 export async function proxy(request: NextRequest) {
+  // ── Generate / forward x-request-id ──
+  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+
   // Create a response object to modify
   const response = intlMiddleware(request);
+
+  // Attach request-id to every response
+  response.headers.set('x-request-id', requestId);
+
   const { url, anonKey } = getSupabasePublicEnv();
   
   // Create Supabase client for session refresh
@@ -71,6 +78,14 @@ export async function proxy(request: NextRequest) {
       return NextResponse.redirect(url);
     }
   }
+
+  // ── Request logging ──
+  logger.info('request', {
+    requestId,
+    method: request.method,
+    path: request.nextUrl.pathname,
+    userId: user?.id ?? null,
+  });
 
   return response;
 }
