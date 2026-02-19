@@ -106,6 +106,43 @@ const nextConfig: NextConfig = {
           },
         ],
       },
+      // ── HTML pages: short CDN cache, longer SWR ───────────
+      {
+        source: '/:locale(tr|en)',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=60, stale-while-revalidate=300',
+          },
+        ],
+      },
+      {
+        source: '/:locale(tr|en)/products',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=120, stale-while-revalidate=600',
+          },
+        ],
+      },
+      {
+        source: '/:locale(tr|en)/products/:slug',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=120, stale-while-revalidate=600',
+          },
+        ],
+      },
+      {
+        source: '/:locale(tr|en)/stores',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, s-maxage=300, stale-while-revalidate=1200',
+          },
+        ],
+      },
     ];
   },
 };

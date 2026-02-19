@@ -202,6 +202,7 @@ export default function ProductDetailPage() {
                           src={rp.image_url}
                           alt={rp.name_en}
                           fill
+                          sizes="(min-width: 768px) 25vw, 50vw"
                           className="object-contain"
                         />
                       </div>

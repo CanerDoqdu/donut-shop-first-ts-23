@@ -34,6 +34,7 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
         src={src}
         alt={alt}
         fill
+        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
         className={`object-contain drop-shadow-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setLoaded(true)}
       />
