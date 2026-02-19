@@ -4,6 +4,9 @@ import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type Stripe from 'stripe';
 import { env } from '@/lib/env';
 import { logger } from '@/lib/logger';
+import { getRequestId } from '@/lib/api-error';
+import { featureFlags } from '@/lib/config';
+import { withTimeout } from '@/lib/fetch-with-timeout';
 
 // ── Supabase admin client (service_role — bypasses RLS) ──────
 function createSupabaseAdminClient() {
@@ -47,15 +50,27 @@ async function recordEvent(
 
 // ── Main Handler ─────────────────────────────────────────────
 export async function POST(request: NextRequest) {
+  const requestId = getRequestId(request);
+  const log = logger.withContext({ requestId });
+
+  // ── Maintenance mode ──
+  if (!featureFlags.webhooksEnabled) {
+    log.warn('webhook.maintenance_mode');
+    return NextResponse.json(
+      { code: 'MAINTENANCE', message: 'Webhook processing is disabled', requestId },
+      { status: 503, headers: { 'x-request-id': requestId } },
+    );
+  }
+
   const supabaseAdmin = createSupabaseAdminClient();
   const body = await request.text();
   const signature = request.headers.get('stripe-signature');
 
   if (!signature) {
-    logger.warn('webhook.missing_signature');
+    log.warn('webhook.missing_signature', { requestId });
     return NextResponse.json(
-      { error: 'Missing stripe signature' },
-      { status: 400 },
+      { code: 'MISSING_SIGNATURE', message: 'Missing stripe signature', requestId },
+      { status: 400, headers: { 'x-request-id': requestId } },
     );
   }
 
@@ -68,42 +83,54 @@ export async function POST(request: NextRequest) {
       env.STRIPE_WEBHOOK_SECRET,
     );
   } catch (err) {
-    logger.error('webhook.signature_invalid', {
+    log.error('webhook.signature_invalid', {
+      requestId,
       error: err instanceof Error ? err.message : String(err),
     });
     return NextResponse.json(
-      { error: 'Invalid signature' },
-      { status: 400 },
+      { code: 'INVALID_SIGNATURE', message: 'Invalid signature', requestId },
+      { status: 400, headers: { 'x-request-id': requestId } },
     );
   }
 
   // ── Idempotency: skip already-processed events ─────────────
   const isNew = await recordEvent(supabaseAdmin, event.id, event.type);
   if (!isNew) {
-    logger.info('webhook.duplicate_skipped', {
+    log.info('webhook.duplicate_skipped', {
       eventId: event.id,
       type: event.type,
     });
-    return NextResponse.json({ received: true });
+    return NextResponse.json(
+      { received: true },
+      { headers: { 'x-request-id': requestId } },
+    );
   }
 
-  logger.info('webhook.processing', { eventId: event.id, type: event.type });
+  log.info('webhook.processing', { eventId: event.id, type: event.type });
 
   // ── Route to handler ───────────────────────────────────────
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        await handleCheckoutCompleted(
-          supabaseAdmin,
-          event.data.object as Stripe.Checkout.Session,
+        await withTimeout(
+          handleCheckoutCompleted(
+            supabaseAdmin,
+            event.data.object as Stripe.Checkout.Session,
+          ),
+          15_000,
+          'webhook.handleCheckoutCompleted',
         );
         break;
       }
 
       case 'checkout.session.expired': {
-        await handleCheckoutExpired(
-          supabaseAdmin,
-          event.data.object as Stripe.Checkout.Session,
+        await withTimeout(
+          handleCheckoutExpired(
+            supabaseAdmin,
+            event.data.object as Stripe.Checkout.Session,
+          ),
+          15_000,
+          'webhook.handleCheckoutExpired',
         );
         break;
       }
@@ -123,19 +150,25 @@ export async function POST(request: NextRequest) {
       }
 
       default:
-        logger.info('webhook.unhandled_type', { type: event.type });
+        log.info('webhook.unhandled_type', { type: event.type });
     }
   } catch (err) {
-    logger.error('webhook.handler_error', {
+    log.error('webhook.handler_error', {
       eventId: event.id,
       type: event.type,
       error: err instanceof Error ? err.message : String(err),
     });
     // Return 500 so Stripe retries this event
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return NextResponse.json(
+      { code: 'WEBHOOK_HANDLER_ERROR', message: 'Internal error', requestId },
+      { status: 500, headers: { 'x-request-id': requestId } },
+    );
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json(
+    { received: true },
+    { headers: { 'x-request-id': requestId } },
+  );
 }
 
 // ── checkout.session.completed ───────────────────────────────
