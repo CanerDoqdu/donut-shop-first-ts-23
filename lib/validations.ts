@@ -23,6 +23,7 @@ export const checkoutSchema = z.object({
   locale,
   cartTimestamp: z.number().int().positive().optional(),
   promoCode: z.string().trim().max(50).optional(),
+  idempotencyKey: z.string().uuid('Invalid idempotency key').optional(),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;

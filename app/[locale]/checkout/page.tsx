@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import Image from 'next/image';
@@ -16,6 +16,8 @@ import { checkoutSchema } from '@/lib/validations';
 import { FieldError } from '@/components/ui/field-error';
 import { CHECKOUT_TIMEOUT_MS } from '@/lib/constants';
 import { getRetryCooldownMs } from '@/hooks/use-checkout-machine';
+import { safeFetch } from '@/lib/safe-fetch';
+import { generateIdempotencyKey, getOrCreateIdempotencyKey } from '@/lib/idempotency';
 
 export default function CheckoutPage() {
   const t = useTranslations();
@@ -23,6 +25,7 @@ export default function CheckoutPage() {
   const router = useRouter();
   const { items, getTotalPrice } = useCartStore();
   const machine = useCheckoutMachine();
+  const idempotencyKeyRef = useRef<string>(getOrCreateIdempotencyKey());
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
@@ -122,14 +125,12 @@ export default function CheckoutPage() {
     machine.send({ type: 'VALIDATION_OK' });
 
     try {
-      // Set up timeout
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), CHECKOUT_TIMEOUT_MS);
-
-      // Call checkout API to create Stripe session & save order to Supabase
-      const response = await fetch('/api/checkout', {
+      // Call checkout API with safeFetch (timeout + retry + abort)
+      const result = await safeFetch<{ url: string; orderId: string }>('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        timeout: CHECKOUT_TIMEOUT_MS,
+        retries: 0, // Checkout is NOT idempotent without key — no auto-retry
+        source: 'checkout',
         body: JSON.stringify({
           items: items.map(i => ({
             id: i.product.id,
@@ -140,29 +141,32 @@ export default function CheckoutPage() {
           customerPhone: formData.phone,
           customerAddress: formData.address,
           locale,
+          idempotencyKey: idempotencyKeyRef.current,
           ...(promoDiscount ? { promoCode: promoCode.trim() } : {}),
         }),
-        signal: controller.signal,
       });
 
-      clearTimeout(timeoutId);
-
-      const data = await response.json();
-
-      if (!response.ok || !data.url) {
-        throw new Error(data.error || 'Failed to create checkout session');
+      if (!result.ok || !result.data?.url) {
+        if (result.error === 'Request timed out') {
+          machine.send({ type: 'TIMEOUT' });
+        } else {
+          machine.send({
+            type: 'RESERVATION_FAIL',
+            error: result.error || 'Failed to create checkout session',
+          });
+        }
+        return;
       }
+
+      // Success — rotate idempotency key for next checkout
+      idempotencyKeyRef.current = generateIdempotencyKey();
 
       // Transition to redirecting and hand off to Stripe
-      machine.send({ type: 'RESERVATION_OK', url: data.url });
-      window.location.href = data.url;
+      machine.send({ type: 'RESERVATION_OK', url: result.data.url });
+      window.location.href = result.data.url;
     } catch (error) {
-      if (error instanceof DOMException && error.name === 'AbortError') {
-        machine.send({ type: 'TIMEOUT' });
-      } else {
-        const message = error instanceof Error ? error.message : 'Payment failed. Please try again.';
-        machine.send({ type: 'RESERVATION_FAIL', error: message });
-      }
+      const message = error instanceof Error ? error.message : 'Payment failed. Please try again.';
+      machine.send({ type: 'RESERVATION_FAIL', error: message });
     }
   };
 
