@@ -54,3 +54,10 @@ export const E_INTERNAL = 'E_INTERNAL';
 // ── Inventory ────────────────────────────────────────────────
 export const E_OUT_OF_STOCK = 'E_OUT_OF_STOCK';
 export const E_STOCK_RESERVE_FAILED = 'E_STOCK_RESERVE_FAILED';
+
+// ── Promo Codes ──────────────────────────────────────────────
+export const E_PROMO_INVALID = 'E_PROMO_INVALID';
+export const E_PROMO_EXPIRED = 'E_PROMO_EXPIRED';
+export const E_PROMO_DEPLETED = 'E_PROMO_DEPLETED';
+export const E_PROMO_MIN_ORDER = 'E_PROMO_MIN_ORDER';
+export const E_PROMO_APPLY_FAILED = 'E_PROMO_APPLY_FAILED';

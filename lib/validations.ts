@@ -22,6 +22,7 @@ export const checkoutSchema = z.object({
   customerAddress: sanitizedString,
   locale,
   cartTimestamp: z.number().int().positive().optional(),
+  promoCode: z.string().trim().max(50).optional(),
 });
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
@@ -73,6 +74,20 @@ export const giftCardEmailSchema = z.object({
 });
 
 export type GiftCardEmailInput = z.infer<typeof giftCardEmailSchema>;
+
+// ─── Promo Code Validation ──────────────────────────────────
+
+export const promoCodeSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .min(1, 'Promo code is required')
+    .max(50, 'Promo code too long')
+    .regex(/^[A-Za-z0-9_-]+$/, 'Invalid promo code format'),
+  orderTotal: z.number().positive('Order total must be positive'),
+});
+
+export type PromoCodeInput = z.infer<typeof promoCodeSchema>;
 
 // ─── Auth: Sign In ──────────────────────────────────────────
 

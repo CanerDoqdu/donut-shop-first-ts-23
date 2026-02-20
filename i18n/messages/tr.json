@@ -107,7 +107,13 @@
     "phone": "Telefon",
     "orderSummary": "Sipariş Özeti",
     "pay": "Ödeme Yap",
-    "error": "Ödeme oturumu oluşturulamadı"
+    "error": "Ödeme oturumu oluşturulamadı",
+    "promoCode": "Promosyon Kodu",
+    "promoPlaceholder": "Kod girin",
+    "promoApply": "Uygula",
+    "promoDiscount": "İndirim",
+    "promoInvalid": "Geçersiz promosyon kodu",
+    "promoError": "Kod doğrulanamadı. Tekrar deneyin."
   },
   "orders": {
     "title": "Sipariş Takibi",

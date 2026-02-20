@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Tag, Check, X } from 'lucide-react';
 import { useFormValidation } from '@/hooks';
 import { checkoutSchema } from '@/lib/validations';
 import { FieldError } from '@/components/ui/field-error';
@@ -22,6 +22,10 @@ export default function CheckoutPage() {
   const { items, getTotalPrice } = useCartStore();
   const [loading, setLoading] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [promoCode, setPromoCode] = useState('');
+  const [promoLoading, setPromoLoading] = useState(false);
+  const [promoDiscount, setPromoDiscount] = useState<{ discountValue: number; discountType: string } | null>(null);
+  const [promoError, setPromoError] = useState('');
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -32,8 +36,38 @@ export default function CheckoutPage() {
   const { fieldErrors, validateField } = useFormValidation(checkoutSchema);
 
   const subtotal = getTotalPrice();
-  const tax = subtotal * 0.18;
-  const total = subtotal + tax;
+  const discount = promoDiscount?.discountValue ?? 0;
+  const taxableAmount = Math.max(subtotal - discount, 0);
+  const tax = taxableAmount * 0.18;
+  const total = taxableAmount + tax;
+
+  const handleApplyPromo = async () => {
+    if (!promoCode.trim()) return;
+    setPromoLoading(true);
+    setPromoError('');
+    setPromoDiscount(null);
+
+    try {
+      const res = await fetch('/api/checkout/validate-promo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code: promoCode.trim(), subtotal }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Invalid promo code');
+      setPromoDiscount({ discountValue: data.discountValue, discountType: data.discountType });
+    } catch (err) {
+      setPromoError(err instanceof Error ? err.message : 'Invalid promo code');
+    } finally {
+      setPromoLoading(false);
+    }
+  };
+
+  const handleRemovePromo = () => {
+    setPromoCode('');
+    setPromoDiscount(null);
+    setPromoError('');
+  };
 
   // Redirect to cart if no items
   useEffect(() => {
@@ -62,6 +96,7 @@ export default function CheckoutPage() {
           customerPhone: formData.phone,
           customerAddress: formData.address,
           locale,
+          ...(promoDiscount ? { promoCode: promoCode.trim() } : {}),
         }),
       });
 
@@ -224,11 +259,54 @@ export default function CheckoutPage() {
                 ))}
               </div>
 
+              {/* Promo Code */}
+              <div className="border-t pt-4 mb-4">
+                <label className="text-sm font-medium mb-2 flex items-center gap-1">
+                  <Tag className="h-4 w-4" />
+                  {t('checkout.promoCode')}
+                </label>
+                <div className="flex gap-2 mt-1">
+                  {promoDiscount ? (
+                    <div className="flex items-center gap-2 w-full bg-green-50 rounded-lg px-3 py-2 border border-green-200">
+                      <Check className="h-4 w-4 text-green-600" />
+                      <span className="text-sm text-green-700 flex-1 font-medium">{promoCode}</span>
+                      <button onClick={handleRemovePromo} className="text-gray-400 hover:text-red-500">
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <Input
+                        value={promoCode}
+                        onChange={(e) => { setPromoCode(e.target.value); setPromoError(''); }}
+                        placeholder={t('checkout.promoPlaceholder')}
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={handleApplyPromo}
+                        disabled={promoLoading || !promoCode.trim()}
+                      >
+                        {promoLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : t('checkout.promoApply')}
+                      </Button>
+                    </>
+                  )}
+                </div>
+                {promoError && <p className="text-xs text-red-500 mt-1">{promoError}</p>}
+              </div>
+
               <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>{t('cart.subtotal')}</span>
                   <span>{formatPrice(subtotal)}</span>
                 </div>
+                {promoDiscount && (
+                  <div className="flex justify-between text-green-600">
+                    <span>{t('checkout.promoDiscount')}</span>
+                    <span>-{formatPrice(discount)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
                   <span>{t('cart.tax')} (18%)</span>
                   <span>{formatPrice(tax)}</span>
