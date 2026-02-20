@@ -11,6 +11,9 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
 import { Loader2 } from 'lucide-react';
+import { useFormValidation } from '@/hooks';
+import { checkoutSchema } from '@/lib/validations';
+import { FieldError } from '@/components/ui/field-error';
 
 export default function CheckoutPage() {
   const t = useTranslations();
@@ -25,6 +28,8 @@ export default function CheckoutPage() {
     phone: '',
     address: '',
   });
+
+  const { fieldErrors, validateField } = useFormValidation(checkoutSchema);
 
   const subtotal = getTotalPrice();
   const tax = subtotal * 0.18;
@@ -101,8 +106,11 @@ export default function CheckoutPage() {
                   required
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onBlur={(e) => validateField('customerEmail', e.target.value)}
                   placeholder="your@email.com"
+                  className={fieldErrors.customerEmail ? 'border-red-300 focus:ring-red-400' : ''}
                 />
+                <FieldError message={fieldErrors.customerEmail} />
               </div>
 
               <div>
@@ -114,8 +122,11 @@ export default function CheckoutPage() {
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onBlur={(e) => validateField('customerName', e.target.value)}
                   placeholder="John Doe"
+                  className={fieldErrors.customerName ? 'border-red-300 focus:ring-red-400' : ''}
                 />
+                <FieldError message={fieldErrors.customerName} />
               </div>
 
               <div>

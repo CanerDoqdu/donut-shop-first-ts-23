@@ -16,12 +16,11 @@ import {
 } from '@/components/ui/animations';
 import { formatPrice } from '@/lib/utils';
 import { sampleProducts } from '@/lib/data';
-import { useCartStore } from '@/store/cart-store';
 import { Star, Clock, Heart, ArrowRight, MapPin, Phone, Award, ShoppingBag } from 'lucide-react';
+import { AddToCartButton } from '@/components/ui/add-to-cart-button';
 
 export default function Home() {
   const t = useTranslations();
-  const addItem = useCartStore((state) => state.addItem);
 
   const featuredProducts = sampleProducts.filter((p) => p.featured).slice(0, 4);
 
@@ -159,9 +158,12 @@ export default function Home() {
                     </CardContent>
                   </Link>
                   <CardFooter className="px-6 pb-6">
-                    <Button className="w-full rounded-2xl" size="lg" onClick={() => addItem(product)}>
-                      {t('products.addToCart')}
-                    </Button>
+                    <AddToCartButton
+                      product={product}
+                      label={t('products.addToCart')}
+                      outOfStockLabel={t('products.outOfStock')}
+                      className="rounded-2xl"
+                    />
                   </CardFooter>
                 </Card>
               </StaggerItem>

@@ -8,6 +8,9 @@ import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, AlertCircle, Check, Loader2 } from 'lucide-react';
 import { signUp } from '@/lib/auth/actions';
 import { createClient } from '@/lib/supabase/client';
+import { useFormValidation } from '@/hooks';
+import { signUpSchema } from '@/lib/validations';
+import { FieldError } from '@/components/ui/field-error';
 
 export default function RegisterPage() {
   const params = useParams();
@@ -18,6 +21,7 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [password, setPassword] = useState('');
+  const { fieldErrors, validateField } = useFormValidation(signUpSchema);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -158,9 +162,11 @@ export default function RegisterPage() {
                   type="text"
                   name="fullName"
                   required
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  onBlur={(e) => validateField('fullName', e.target.value)}
+                  className={`w-full pl-12 pr-4 py-3 border ${fieldErrors.fullName ? 'border-red-300' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                   placeholder={locale === 'tr' ? 'Adınız Soyadınız' : 'John Doe'}
                 />
+                <FieldError message={fieldErrors.fullName} />
               </div>
             </div>
 
@@ -175,9 +181,11 @@ export default function RegisterPage() {
                   type="email"
                   name="email"
                   required
-                  className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
+                  onBlur={(e) => validateField('email', e.target.value)}
+                  className={`w-full pl-12 pr-4 py-3 border ${fieldErrors.email ? 'border-red-300' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                   placeholder="you@example.com"
                 />
+                <FieldError message={fieldErrors.email} />
               </div>
             </div>
 

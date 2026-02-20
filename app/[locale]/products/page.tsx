@@ -8,12 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { formatPrice } from '@/lib/utils';
-import { useCartStore } from '@/store/cart-store';
-import { Search, ShoppingCart } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 import { Link } from '@/i18n/routing';
 import { useDebounce } from '@/hooks';
 import { SEARCH_DEBOUNCE_MS, PRODUCT_CATEGORIES } from '@/lib/constants';
+import { AddToCartButton } from '@/components/ui/add-to-cart-button';
 
 function ProductImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
@@ -47,7 +47,6 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const addItem = useCartStore((state) => state.addItem);
 
   const filteredProducts = sampleProducts.filter((product) => {
     const q = debouncedSearch.toLowerCase();
@@ -120,14 +119,11 @@ export default function ProductsPage() {
               </CardContent>
             </Link>
             <CardFooter>
-              <Button
-                className="w-full"
-                onClick={() => addItem(product)}
-                disabled={product.stock === 0}
-              >
-                <ShoppingCart className="mr-2 h-4 w-4" />
-                {product.stock > 0 ? t('products.addToCart') : t('products.outOfStock')}
-              </Button>
+              <AddToCartButton
+                product={product}
+                label={t('products.addToCart')}
+                outOfStockLabel={t('products.outOfStock')}
+              />
             </CardFooter>
           </Card>
         ))}
