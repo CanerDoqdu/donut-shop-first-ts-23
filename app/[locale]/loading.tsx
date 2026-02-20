@@ -5,7 +5,7 @@ export default function Loading() {
       <div className="relative w-16 h-16">
         <div className="absolute inset-0 rounded-full border-4 border-amber-200" />
         <div className="absolute inset-0 rounded-full border-4 border-transparent border-t-amber-500 animate-spin" />
-        <div className="absolute inset-[10px] rounded-full bg-white" />
+        <div className="absolute inset-2.5 rounded-full bg-white" />
       </div>
 
       {/* Skeleton content blocks */}
