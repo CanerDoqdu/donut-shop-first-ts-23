@@ -10,6 +10,7 @@ import { logger, startTimer } from '@/lib/logger';
 import type { Logger } from '@/lib/logger';
 import { captureWithContext } from '@/lib/sentry';
 import { confirmReservations, releaseReservations } from '@/lib/inventory';
+import { enqueueEmail, enqueueLoyaltyPoints } from '@/lib/queue';
 import {
   E_WEBHOOK_SIGNATURE_MISSING,
   E_WEBHOOK_SIGNATURE_INVALID,
@@ -285,6 +286,40 @@ async function handleCheckoutCompleted(
     orderId: result.order_id,
     pointsAwarded: result.points_awarded,
   });
+
+  // Enqueue order confirmation email (async, non-blocking)
+  if (session.customer_email && result.order_id) {
+    enqueueEmail({
+      type: 'order_confirmation',
+      to: session.customer_email,
+      subject: `Order #${result.order_id} Confirmed!`,
+      templateData: {
+        orderId: result.order_id,
+        total: (session.amount_total ?? 0) / 100,
+        customerEmail: session.customer_email,
+      },
+    }).catch((err) => {
+      log.warn('webhook.email_enqueue_failed', {
+        orderId: result.order_id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
+
+  // Enqueue loyalty points via job queue (async, non-blocking)
+  if (result.order_id && result.points_awarded && session.metadata?.userId) {
+    enqueueLoyaltyPoints({
+      userId: session.metadata.userId,
+      orderId: result.order_id,
+      orderTotal: (session.amount_total ?? 0) / 100,
+      points: result.points_awarded,
+    }).catch((err) => {
+      log.warn('webhook.loyalty_enqueue_failed', {
+        orderId: result.order_id,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
 
   // Confirm stock reservations — moves status from 'pending' → 'confirmed'
   const orderId = result.order_id ?? session.metadata?.orderId;
