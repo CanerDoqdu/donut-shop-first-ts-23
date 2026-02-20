@@ -13,9 +13,38 @@ export interface Product {
   created_at: string;
 }
 
+export interface ProductVariant {
+  id: string;
+  product_id: string;
+  name_tr: string;
+  name_en: string;
+  size: string | null;
+  flavor: string | null;
+  sku: string | null;
+  price_offset: number;
+  stock: number;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface StockReservation {
+  id: string;
+  product_id: string;
+  variant_id: string | null;
+  quantity: number;
+  session_id: string;
+  order_id: string | null;
+  status: 'pending' | 'confirmed' | 'released';
+  expires_at: string;
+  created_at: string;
+}
+
 export interface CartItem {
   product: Product;
   quantity: number;
+  variantId?: string;
+  variant?: ProductVariant;
 }
 
 export interface Order {
