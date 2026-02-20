@@ -129,7 +129,7 @@ export function Header() {
         </Link>
 
         {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center space-x-6">
+        <nav aria-label="Main navigation" className="hidden md:flex items-center space-x-6">
           {navLinks.map((link) => (
             <Link
               key={link.href}
@@ -151,12 +151,14 @@ export function Header() {
               className="flex items-center gap-1 text-sm font-medium text-gray-700 transition-colors hover:text-[#FF6BBF]"
               onClick={() => setMoreMenuOpen(!moreMenuOpen)}
               onBlur={() => setTimeout(() => setMoreMenuOpen(false), 150)}
+              aria-expanded={moreMenuOpen}
+              aria-haspopup="true"
             >
               More
               <ChevronDown className={`w-4 h-4 transition-transform ${moreMenuOpen ? 'rotate-180' : ''}`} />
             </button>
             {moreMenuOpen && (
-              <div className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+              <div role="menu" className="absolute top-full right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                 {moreLinks.map((link) => {
                   const Icon = link.icon;
                   return (
@@ -175,7 +177,7 @@ export function Header() {
             )}
           </div>
           
-          <Link href="/cart" className="relative inline-flex items-center justify-center h-11 w-11 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground">
+          <Link href="/cart" aria-label="Shopping cart" className="relative inline-flex items-center justify-center h-11 w-11 rounded-md border border-input bg-background hover:bg-accent hover:text-accent-foreground">
               <ShoppingCart className="h-5 w-5" />
               {mounted && totalItems > 0 && (
                 <Badge className="absolute -right-2 -top-2 h-6 w-6 rounded-full p-0 flex items-center justify-center">
@@ -205,6 +207,9 @@ export function Header() {
                   className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
                   onBlur={() => setTimeout(() => setUserMenuOpen(false), 150)}
+                  aria-expanded={userMenuOpen}
+                  aria-haspopup="true"
+                  aria-label="User menu"
                 >
                   {user?.user_metadata?.avatar_url ? (
                     <Image
@@ -231,7 +236,7 @@ export function Header() {
                   <ChevronDown className={`w-4 h-4 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {userMenuOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
+                  <div role="menu" className="absolute top-full right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="font-medium text-gray-800 truncate">{profile?.full_name || user.email}</p>
                       <p className="text-xs text-gray-500 truncate">{user.email}</p>
@@ -301,6 +306,7 @@ export function Header() {
           className="md:hidden p-3 -m-3"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-label="Toggle menu"
+          aria-expanded={mobileMenuOpen}
         >
           {mobileMenuOpen ? (
             <X className="h-6 w-6" />
@@ -313,7 +319,7 @@ export function Header() {
       {/* Mobile Menu */}
       {mobileMenuOpen && (
         <div className="md:hidden border-t bg-white px-4 py-6">
-          <nav className="flex flex-col space-y-4">
+          <nav aria-label="Mobile navigation" className="flex flex-col space-y-4">
             {navLinks.map((link) => (
               <Link
                 key={link.href}

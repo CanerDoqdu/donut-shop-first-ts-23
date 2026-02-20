@@ -28,6 +28,7 @@ export function Footer() {
           {/* Quick Links */}
           <div>
             <h3 className="font-fredoka text-lg font-semibold mb-4">Quick Links</h3>
+            <nav aria-label="Footer navigation">
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/" className="text-gray-600 hover:text-[#FF6BBF]">
@@ -45,6 +46,7 @@ export function Footer() {
                 </Link>
               </li>
             </ul>
+            </nav>
           </div>
 
           {/* Contact */}

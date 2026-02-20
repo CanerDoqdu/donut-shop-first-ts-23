@@ -128,13 +128,14 @@ export default function AdminPage() {
                 <span className="font-bold text-gray-800">{t.adminPanel}</span>
               </div>
 
-              <nav className="space-y-1">
+              <nav role="navigation" aria-label="Admin navigation" className="space-y-1">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   return (
                     <button
                       key={item.id}
                       onClick={() => setActiveTab(item.id)}
+                      aria-current={activeTab === item.id ? 'page' : undefined}
                       className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-left transition-colors ${
                         activeTab === item.id
                           ? 'bg-amber-50 text-amber-700'
@@ -169,12 +170,14 @@ export default function AdminPage() {
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+            aria-label="Toggle sidebar"
+            aria-expanded={sidebarOpen}
           >
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
 
           <div className="flex items-center gap-4">
-            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+            <button className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" aria-label="Notifications">
               <Bell className="w-5 h-5 text-gray-600" />
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
             </button>
