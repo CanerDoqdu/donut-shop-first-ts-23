@@ -27,6 +27,7 @@ import {
   E_STRIPE_CHECKOUT_FAILED,
   E_OUT_OF_STOCK,
   E_PROMO_APPLY_FAILED,
+  E_CHECKOUT_IDEMPOTENCY_CONFLICT,
 } from '@/lib/error-codes';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
@@ -81,7 +82,35 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       throw new ApiError(E_VALIDATION_FAILED, parsed.error, 400);
     }
 
-    const { items, customerEmail, customerName, customerAddress, locale, cartTimestamp, promoCode } = parsed.data;
+    const { items, customerEmail, customerName, customerAddress, locale, cartTimestamp, promoCode, idempotencyKey } = parsed.data;
+
+    // -- Idempotency check: prevent duplicate orders from double-submit --
+    if (idempotencyKey) {
+      const { data: existingOrder } = await createAdminClient()
+        .from('orders')
+        .select('id, stripe_session_id')
+        .eq('idempotency_key', idempotencyKey)
+        .maybeSingle();
+
+      if (existingOrder) {
+        log.info('checkout.idempotency_hit', {
+          code: E_CHECKOUT_IDEMPOTENCY_CONFLICT,
+          idempotencyKey,
+          existingOrderId: existingOrder.id,
+        });
+        // Return the existing session URL if available (replay-safe)
+        if (existingOrder.stripe_session_id) {
+          return NextResponse.json(
+            { error: 'Order already exists', orderId: existingOrder.id },
+            { status: 409, headers: { 'X-Idempotent-Replay': 'true' } },
+          );
+        }
+        return NextResponse.json(
+          { error: 'Duplicate checkout request', orderId: existingOrder.id },
+          { status: 409 },
+        );
+      }
+    }
 
     // -- Server-side cart expiry check --
     if (cartTimestamp) {
@@ -172,6 +201,7 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
         discount_amount: discountAmount,
         promo_code_id: appliedPromoId,
         shipping_address: customerAddress || '',
+        ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
       })
       .select()
       .single();

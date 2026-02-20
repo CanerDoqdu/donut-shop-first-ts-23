@@ -63,6 +63,11 @@ export const CHECKOUT_TIMEOUT_MS = 30_000; // 30 seconds
 export const CHECKOUT_MAX_RETRIES = 3;
 export const CHECKOUT_STALE_MS = 5 * 60 * 1000; // 5 min
 
+// ─── Fetch / Network ─────────────────────────────────────────────
+export const DEFAULT_FETCH_TIMEOUT_MS = 15_000; // 15 seconds
+export const DEFAULT_FETCH_RETRIES = 2;
+export const IDEMPOTENCY_KEY_STORAGE = 'donut-idempotency-key';
+
 // ─── Product categories ─────────────────────────────────────────
 export const PRODUCT_CATEGORIES = [
   'all',

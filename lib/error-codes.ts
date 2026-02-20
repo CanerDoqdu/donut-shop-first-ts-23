@@ -61,3 +61,6 @@ export const E_PROMO_EXPIRED = 'E_PROMO_EXPIRED';
 export const E_PROMO_DEPLETED = 'E_PROMO_DEPLETED';
 export const E_PROMO_MIN_ORDER = 'E_PROMO_MIN_ORDER';
 export const E_PROMO_APPLY_FAILED = 'E_PROMO_APPLY_FAILED';
+
+// ── Checkout ─────────────────────────────────────────────────
+export const E_CHECKOUT_IDEMPOTENCY_CONFLICT = 'E_CHECKOUT_IDEMPOTENCY_CONFLICT';
