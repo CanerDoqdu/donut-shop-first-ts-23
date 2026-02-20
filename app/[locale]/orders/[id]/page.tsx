@@ -6,6 +6,7 @@ import { Link } from '@/i18n/routing';
 import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import { useOrderRealtime } from '@/hooks/use-order-realtime';
 import {
   ArrowLeft,
   Package,
@@ -15,6 +16,7 @@ import {
   CheckCircle2,
   MapPin,
   Calendar,
+  Radio,
 } from 'lucide-react';
 
 // Sample order data (will be fetched from Supabase in production)
@@ -50,7 +52,10 @@ export default function OrderTrackingPage() {
   const orderId = params.id as string;
 
   const order = sampleOrder; // In production: fetch from Supabase by orderId
-  const currentStatusIndex = orderStatuses.indexOf(order.status);
+
+  // Subscribe to real-time order status updates via Supabase Realtime
+  const { status: liveStatus, isLive } = useOrderRealtime(orderId, order.status);
+  const currentStatusIndex = orderStatuses.indexOf(liveStatus);
 
   if (!order) {
     return (
@@ -70,7 +75,7 @@ export default function OrderTrackingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-linear-to-b from-pink-50 to-orange-50">
+    <div className="min-h-screen bg-linear-to-b from-pink-50 to-orange-50 dark:from-gray-900 dark:to-gray-950">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
@@ -83,9 +88,17 @@ export default function OrderTrackingPage() {
             <h1 className="text-3xl font-fredoka font-bold text-gray-900">
               {t('orders.trackOrder')}
             </h1>
-            <p className="text-gray-500">
-              {t('orders.orderNumber')}{orderId}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-gray-500">
+                {t('orders.orderNumber')}{orderId}
+              </p>
+              {isLive && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400">
+                  <Radio className="w-3 h-3 animate-pulse" />
+                  {t('orders.live')}
+                </span>
+              )}
+            </div>
           </div>
         </div>
 

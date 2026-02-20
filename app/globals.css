@@ -34,6 +34,28 @@
   --donut-chocolate: 25 37% 32%;
 }
 
+.dark {
+  --background: 240 10% 4%;
+  --foreground: 0 0% 95%;
+  --card: 240 10% 8%;
+  --card-foreground: 0 0% 95%;
+  --popover: 240 10% 8%;
+  --popover-foreground: 0 0% 95%;
+  --primary: 346 100% 70%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 24 100% 63%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 240 6% 15%;
+  --muted-foreground: 0 0% 65%;
+  --accent: 48 100% 62%;
+  --accent-foreground: 20 14.3% 4.1%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 6% 20%;
+  --input: 240 6% 20%;
+  --ring: 346 100% 70%;
+}
+
 html, body {
   overflow-x: hidden;
   max-width: 100%;

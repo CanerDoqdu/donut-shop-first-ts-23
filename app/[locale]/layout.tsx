@@ -6,6 +6,7 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { PromoBanner } from '@/components/layout/promo-banner';
 import { AuthProvider } from '@/lib/auth/context';
+import { ThemeProvider } from '@/components/theme/theme-provider';
 import { routing } from '@/i18n/routing';
 import { WebVitals } from '@/components/monitoring/web-vitals';
 
@@ -42,8 +43,8 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${inter.variable} ${fredoka.variable}`}>
-      <body className="flex min-h-screen flex-col">
+    <html lang={locale} className={`${inter.variable} ${fredoka.variable}`} suppressHydrationWarning>
+      <body className="flex min-h-screen flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
         <a
           href="#main-content"
           className="absolute  z-50 bg-white px-4 py-3 text-amber-600 font-bold focus:left-4 focus:top-4 rounded-md shadow-lg"
@@ -51,13 +52,15 @@ export default async function LocaleLayout({
           Skip to main content
         </a>
         <NextIntlClientProvider messages={messages}>
-          <AuthProvider>
+          <ThemeProvider>
+            <AuthProvider>
             <WebVitals />
             <Header />
             <PromoBanner />
             <main id="main-content" className="flex-1">{children}</main>
             <Footer />
           </AuthProvider>
+          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

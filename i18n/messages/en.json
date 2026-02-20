@@ -128,6 +128,7 @@
     "estimatedDelivery": "Estimated Delivery",
     "deliveryAddress": "Delivery Address",
     "noOrder": "Order not found",
+    "live": "Live",
     "myOrders": "My Orders",
     "orderHistory": "Your order history",
     "noOrders": "You have no orders yet",

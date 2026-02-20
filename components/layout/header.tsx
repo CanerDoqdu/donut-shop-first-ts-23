@@ -7,6 +7,7 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/theme/theme-toggle';
 import { useCartStore } from '@/store/cart-store';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
@@ -182,6 +183,9 @@ export function Header() {
                 </Badge>
               )}
           </Link>
+
+          {/* Theme Toggle */}
+          <ThemeToggle />
 
           {/* Language Switcher */}
           <div className="flex gap-1">
