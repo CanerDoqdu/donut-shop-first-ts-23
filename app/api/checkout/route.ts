@@ -14,6 +14,7 @@ import { featureFlags } from '@/lib/config';
 import { withTimeout } from '@/lib/fetch-with-timeout';
 import { logger, startTimer } from '@/lib/logger';
 import { reserveStock, releaseReservations } from '@/lib/inventory';
+import { applyPromo, rollbackPromo } from '@/lib/promo';
 import {
   E_RATE_LIMITED,
   E_VALIDATION_FAILED,
@@ -24,6 +25,7 @@ import {
   E_DB_PROFILE_UPSERT_FAILED,
   E_STRIPE_CHECKOUT_FAILED,
   E_OUT_OF_STOCK,
+  E_PROMO_APPLY_FAILED,
 } from '@/lib/error-codes';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
@@ -78,7 +80,7 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       throw new ApiError(E_VALIDATION_FAILED, parsed.error, 400);
     }
 
-    const { items, customerEmail, customerName, customerAddress, locale, cartTimestamp } = parsed.data;
+    const { items, customerEmail, customerName, customerAddress, locale, cartTimestamp, promoCode } = parsed.data;
 
     // -- Server-side cart expiry check --
     if (cartTimestamp) {
@@ -132,11 +134,32 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     }
 
     // Calculate totals from SERVER prices (not client-supplied)
-    const totalAmount = serverItems.reduce(
+    const subtotal = serverItems.reduce(
       (sum: number, item: { price: number; quantity: number }) => 
         sum + item.price * item.quantity, 
       0
     );
+
+    // -- Promo code application --
+    let discountAmount = 0;
+    let appliedPromoId: string | null = null;
+
+    if (promoCode) {
+      try {
+        const promo = await applyPromo(admin, promoCode, subtotal);
+        if (!promo.success) {
+          throw new Error(promo.message);
+        }
+        discountAmount = promo.discountValue;
+        appliedPromoId = promo.promoId;
+        log.info('checkout.promo_applied', { promoCode, discountAmount, promoId: appliedPromoId });
+      } catch (promoErr) {
+        log.error('checkout.promo_failed', { code: E_PROMO_APPLY_FAILED, promoCode, error: promoErr instanceof Error ? promoErr.message : String(promoErr) });
+        throw new ApiError(E_PROMO_APPLY_FAILED, promoErr instanceof Error ? promoErr.message : 'Invalid promo code', 400);
+      }
+    }
+
+    const totalAmount = Math.max(subtotal - discountAmount, 0);
 
     // Create order using admin client to bypass RLS
     const { data: order, error: orderError } = await admin
@@ -145,6 +168,8 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
         user_id: validUserId,
         status: 'pending',
         total_amount: totalAmount,
+        discount_amount: discountAmount,
+        promo_code_id: appliedPromoId,
         shipping_address: customerAddress || '',
       })
       .select()
@@ -211,6 +236,11 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
           error: releaseErr instanceof Error ? releaseErr.message : String(releaseErr),
         });
       });
+      // Rollback promo usage if Stripe fails
+      if (appliedPromoId) {
+        await rollbackPromo(admin, appliedPromoId);
+        log.info('checkout.promo_rolled_back', { promoId: appliedPromoId });
+      }
       throw stripeErr;
     }
 

@@ -28,6 +28,20 @@ export interface ProductVariant {
   updated_at: string;
 }
 
+export interface PromoCode {
+  id: string;
+  code: string;
+  discount_type: 'flat' | 'pct';
+  amount: number;
+  min_order: number;
+  max_uses: number;
+  used_count: number;
+  active: boolean;
+  expires_at: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface StockReservation {
   id: string;
   product_id: string;

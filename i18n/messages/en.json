@@ -107,7 +107,13 @@
     "phone": "Phone",
     "orderSummary": "Order Summary",
     "pay": "Pay Now",
-    "error": "Failed to create checkout session"
+    "error": "Failed to create checkout session",
+    "promoCode": "Promo Code",
+    "promoPlaceholder": "Enter code",
+    "promoApply": "Apply",
+    "promoDiscount": "Discount",
+    "promoInvalid": "Invalid promo code",
+    "promoError": "Could not validate code. Try again."
   },
   "orders": {
     "title": "Order Tracking",
