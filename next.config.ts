@@ -1,6 +1,7 @@
 import type { NextConfig } from 'next';
 import createNextIntlPlugin from 'next-intl/plugin';
 import bundleAnalyzer from '@next/bundle-analyzer';
+import { withSentryConfig } from '@sentry/nextjs';
 
 const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
@@ -147,4 +148,21 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default withBundleAnalyzer(withNextIntl(nextConfig));
+export default withSentryConfig(
+  withBundleAnalyzer(withNextIntl(nextConfig)),
+  {
+    // Upload sourcemaps for better stack traces in Sentry
+    silent: true,
+    org: process.env.SENTRY_ORG,
+    project: process.env.SENTRY_PROJECT,
+
+    // Automatically tree-shake Sentry logger statements in production
+    disableLogger: true,
+
+    // Upload & delete source maps so they are available in Sentry
+    // but not served to the client
+    sourcemaps: {
+      deleteSourcemapsAfterUpload: true,
+    },
+  },
+);
