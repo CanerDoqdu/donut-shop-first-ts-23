@@ -8,6 +8,7 @@ import { featureFlags } from '@/lib/config';
 import { withTimeout } from '@/lib/fetch-with-timeout';
 import { logger, startTimer } from '@/lib/logger';
 import type { Logger } from '@/lib/logger';
+import { captureWithContext } from '@/lib/sentry';
 import { confirmReservations, releaseReservations } from '@/lib/inventory';
 import {
   E_WEBHOOK_SIGNATURE_MISSING,
@@ -176,6 +177,7 @@ export async function POST(request: NextRequest) {
       type: event.type,
       error: err instanceof Error ? err.message : String(err),
     });
+    captureWithContext(err, 'webhook', { eventId: event.id, eventType: event.type, requestId });
     log.count('webhook_error');
     log.metric('webhook_duration_ms', elapsed());
     // Return 500 so Stripe retries this event
