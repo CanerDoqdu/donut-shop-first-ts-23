@@ -4,3 +4,5 @@ export { useMediaQuery } from './use-media-query';
 export { useFormValidation } from './use-form-validation';
 export { useAddToCart } from './use-add-to-cart';
 export { useOrderRealtime } from './use-order-realtime';
+export { useCheckoutMachine } from './use-checkout-machine';
+export type { CheckoutState, CheckoutEvent, UseCheckoutMachineReturn } from './use-checkout-machine';

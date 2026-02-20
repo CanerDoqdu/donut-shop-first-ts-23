@@ -57,6 +57,12 @@ export const LOCALES = ['tr', 'en'] as const;
 export type SupportedLocale = (typeof LOCALES)[number];
 export const DEFAULT_LOCALE: SupportedLocale = 'tr';
 
+// ─── Checkout Machine ────────────────────────────────────────────
+export const CHECKOUT_MACHINE_STORAGE_KEY = 'donut-checkout-machine';
+export const CHECKOUT_TIMEOUT_MS = 30_000; // 30 seconds
+export const CHECKOUT_MAX_RETRIES = 3;
+export const CHECKOUT_STALE_MS = 5 * 60 * 1000; // 5 min
+
 // ─── Product categories ─────────────────────────────────────────
 export const PRODUCT_CATEGORIES = [
   'all',
