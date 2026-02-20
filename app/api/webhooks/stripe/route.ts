@@ -8,6 +8,7 @@ import { featureFlags } from '@/lib/config';
 import { withTimeout } from '@/lib/fetch-with-timeout';
 import { logger, startTimer } from '@/lib/logger';
 import type { Logger } from '@/lib/logger';
+import { confirmReservations, releaseReservations } from '@/lib/inventory';
 import {
   E_WEBHOOK_SIGNATURE_MISSING,
   E_WEBHOOK_SIGNATURE_INVALID,
@@ -249,6 +250,17 @@ async function handleCheckoutCompleted(
     }
 
     log.info('webhook.order_paid_fallback', { sessionId: session.id });
+
+    // Confirm reservations via fallback path too
+    const fallbackOrderId = session.metadata?.orderId;
+    if (fallbackOrderId) {
+      await confirmReservations(fallbackOrderId, fallbackOrderId).catch((err) => {
+        log.error('webhook.reservation_confirm_failed_fallback', {
+          sessionId: session.id,
+          error: err instanceof Error ? err.message : String(err),
+        });
+      });
+    }
     return;
   }
 
@@ -271,6 +283,18 @@ async function handleCheckoutCompleted(
     orderId: result.order_id,
     pointsAwarded: result.points_awarded,
   });
+
+  // Confirm stock reservations — moves status from 'pending' → 'confirmed'
+  const orderId = result.order_id ?? session.metadata?.orderId;
+  if (orderId) {
+    await confirmReservations(orderId, orderId).catch((err) => {
+      log.error('webhook.reservation_confirm_failed', {
+        sessionId: session.id,
+        orderId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
+  }
 }
 
 // ── checkout.session.expired ─────────────────────────────────
@@ -294,6 +318,18 @@ async function handleCheckoutExpired(
       error: error.message,
     });
     throw error;
+  }
+
+  // Release stock reservations — restores stock from 'pending' reservations
+  const orderId = session.metadata?.orderId;
+  if (orderId) {
+    await releaseReservations(orderId).catch((err) => {
+      log.error('webhook.reservation_release_failed', {
+        sessionId: session.id,
+        orderId,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    });
   }
 }
 

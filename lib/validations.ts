@@ -12,6 +12,7 @@ const sanitizedString = z.string().trim().max(500).default('');
 const checkoutItem = z.object({
   id: z.string().uuid('Invalid product ID'),
   quantity: z.number().int().min(1).max(100),
+  variantId: z.string().uuid('Invalid variant ID').optional(),
 });
 
 export const checkoutSchema = z.object({
