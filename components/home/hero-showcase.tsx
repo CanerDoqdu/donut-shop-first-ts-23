@@ -2,10 +2,9 @@
 
 /* ──────────────────────────────────────────────────────
    Hero Showcase — Graffiti-editorial style.
-   Left : Drink tilted -30°, caramel blocks + bars behind it,
-          milk splash, "SMOOTH" text split around drink.
-   Right: Donut tilted, chocolate bars + caramel behind it,
-          milk splash, "SWEET" text split around donut.
+   Left : Beverage composite (decorations baked in).
+   Right: Donut composite (decorations baked in).
+   Labels, separator, vertical text remain.
    ────────────────────────────────────────────────────── */
 
 import NextImage from 'next/image';
@@ -172,38 +171,18 @@ export function HeroShowcase() {
             ══════════════════════════════════════════════ */}
         <div className="relative flex-1 flex items-start justify-center pt-2">
 
-          {/* ── Milk splash directly behind drink ── */}
-          <div className="absolute pointer-events-none" style={{ top: '-60%', left: '-40%', width: '100%', height: '100%', zIndex: 1 }}>
-            <Image src="/milk splash.png" alt="" fill sizes="320px" className="object-contain" draggable={false} />
-          </div>
-
-          {/* ── Caramel blocks — big, right behind the drink ── */}
-          <div className="absolute w-22 h-22 sm:w-24 sm:h-24 md:w-28 md:h-28 pointer-events-none" style={{ top: '60%', left: '-2%', transform: 'rotate(12deg)', zIndex: 2 }}>
-            <Image src="/caramel blocks.png" alt="" fill sizes="112px" className="object-contain" draggable={false} />
-          </div>
-          <div className="absolute w-12 h-12 sm:w-18 sm:h-18 md:w-22 md:h-22 pointer-events-none" style={{ bottom: '25%', left: '10%', transform: 'rotate(-8deg)', zIndex: 2 }}>
-            <Image src="/caramel bloks 2.png" alt="" fill sizes="88px" className="object-contain" draggable={false} />
-          </div>
-
-          {/* ── Caramel blocks — big, right behind the donut ── */}
-          <div className="absolute w-22 h-22 sm:w-32 sm:h-32 md:w-40 md:h-40 pointer-events-none" style={{ bottom: '15%', right: '50%', transform: 'rotate(15deg)', zIndex: 2 }}>
-            <Image src="/caramel blocks (2).png" alt="" fill sizes="160px" className="object-contain" draggable={false} />
-          </div>
-          
-
-          {/* ── Drink image — tilted -30° ── */}
-          <div className="relative" style={{ transform: 'translateX(-45%) translateY(-25%) scale(1.4)', zIndex: 6 }}>
-            <div className="relative" style={{ width: '320px', height: '320px' }}>
+          {/* ── Beverage composite (decorations baked in) ── */}
+          <div className="relative shrink-0" style={{ transform: 'translateX(-70%) translateY(-20%) scale(2.3)', zIndex: 6 }}>
+            <div className="relative" style={{ width: '240px', height: '240px' }}>
               <Image
-                src="/beverage 1.png"
+                src="/hero-left-image.webp"
                 alt="Berry Bliss Beverage"
                 fill
-                sizes="320px"
+                sizes="540px"
                 priority
                 fetchPriority="high"
                 className="object-contain"
                 style={{
-                  transform: 'rotate(-30deg)',
                   filter: 'drop-shadow(0 12px 32px rgba(224,64,160,0.4))',
                 }}
                 draggable={false}
@@ -212,11 +191,14 @@ export function HeroShowcase() {
           </div>
 
           {/* ── Label ── */}
-          <div className="absolute bottom-0 sm:-bottom-1 left-1/2 -translate-x-1/2 text-center pointer-events-none" style={{ zIndex: 4 }}>
+          <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ left: '10%', bottom: '-100px', zIndex: 4 }}>
             <p className="font-fredoka text-base sm:text-lg md:text-xl font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
               Berry Bliss
             </p>
             <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">Signature Drink</p>
+            <p className="mt-1 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] select-none">
+              made with love
+            </p>
           </div>
 
           {/* ── SMOOTH vertical text ── */}
@@ -261,35 +243,18 @@ export function HeroShowcase() {
             ══════════════════════════════════════════════ */}
         <div className="relative flex-1 flex items-start justify-center pt-2">
 
-          {/* ── Chocolate bars — behind and near the donut ── */}
-          <div className="absolute w-28 h-28 sm:w-44 sm:h-44 md:w-52 md:h-52 pointer-events-none" style={{ top: '10%', right: '-10%', transform: 'rotate(-20deg)', zIndex: 2 }}>
-            <Image src="/bars 2.png" alt="" fill sizes="208px" className="object-contain" draggable={false} />
-          </div>
-          <div className="absolute w-56 h-56 sm:w-56 sm:h-56 md:w-60 md:h-60 pointer-events-none" style={{ bottom: '50%', left: '60%', transform: 'rotate(18deg)', zIndex: 2 }}>
-            <Image src="/bars 1.png" alt="" fill sizes="240px" className="object-contain" draggable={false} />
-          </div>
-
-          {/* ── Caramel blocks — big, right behind the donut ── */}
-          <div className="absolute w-28 h-28 sm:w-40 sm:h-40 md:w-48 md:h-48 pointer-events-none" style={{ bottom: '15%', right: '-15%', transform: 'rotate(15deg)', zIndex: 2 }}>
-            <Image src="/caramel blocks (2).png" alt="" fill sizes="192px" className="object-contain" draggable={false} />
-          </div>
-          <div className="absolute w-22 h-22 sm:w-32 sm:h-32 md:w-40 md:h-40 pointer-events-none" style={{ top: '5%', left: '30%', transform: 'rotate(-10deg)', zIndex: 2 }}>
-            <Image src="/caramel blocks.png" alt="" fill sizes="160px" className="object-contain" draggable={false} />
-          </div>
-
-          {/* ── Donut image — bigger, tilted 15° ── */}
-          <div className="relative" style={{ transform: 'translateX(35%) translateY(-0%)', zIndex: 3 }}>
-            <div className="relative w-44 h-44 sm:w-56 sm:h-56 md:w-72 md:h-72 lg:w-80 lg:h-80">
+          {/* ── Donut composite (decorations baked in) ── */}
+          <div className="relative shrink-0" style={{ transform: 'translateX(60%) translateY(-9%) scale(1.62)', zIndex: 3 }}>
+            <div className="relative" style={{ width: '240px', height: '240px' }}>
               <Image
-                src="/donut 5.png"
+                src="/hero-right-image.webp"
                 alt="Chocolate Dream Donut"
                 fill
-                sizes="320px"
+                sizes="390px"
                 priority
                 fetchPriority="high"
                 className="object-contain"
                 style={{
-                  transform: 'rotate(15deg)',
                   filter: 'drop-shadow(0 12px 32px rgba(255,107,191,0.4))',
                 }}
                 draggable={false}
@@ -298,11 +263,14 @@ export function HeroShowcase() {
           </div>
 
           {/* ── Label ── */}
-          <div className="absolute bottom-0 sm:-bottom-1 left-1/2 -translate-x-1/2 text-center pointer-events-none" style={{ zIndex: 4 }}>
+          <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ right: '10%', bottom: '-100px', zIndex: 4 }}>
             <p className="font-fredoka text-base sm:text-lg md:text-xl font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
               Chocolate Dream
             </p>
             <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">Best Seller</p>
+            <p className="mt-1 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] select-none">
+              glazed &amp; sipped
+            </p>
           </div>
 
           {/* ── SWEET vertical text ── */}
@@ -333,13 +301,6 @@ export function HeroShowcase() {
           daily fresh
         </span>
 
-        <span className="absolute -bottom-4 sm:-bottom-6 left-4 sm:left-2 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] pointer-events-none select-none rotate-3 hidden sm:block">
-          made with love
-        </span>
-
-        <span className="absolute -bottom-4 sm:-bottom-6 right-4 sm:right-2 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] pointer-events-none select-none -rotate-3 hidden sm:block">
-          glazed &amp; sipped
-        </span>
       </div>
     </div>
   );
