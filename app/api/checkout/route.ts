@@ -13,6 +13,7 @@ import { ApiError } from '@/lib/api-error';
 import { featureFlags } from '@/lib/config';
 import { withTimeout } from '@/lib/fetch-with-timeout';
 import { logger, startTimer } from '@/lib/logger';
+import { captureWithContext } from '@/lib/sentry';
 import { reserveStock, releaseReservations } from '@/lib/inventory';
 import { applyPromo, rollbackPromo } from '@/lib/promo';
 import {
@@ -259,6 +260,7 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     // Log metrics before re-throwing for withHandler
     if (!(err instanceof ApiError)) {
       log.error('checkout.failed', { code: E_STRIPE_CHECKOUT_FAILED, error: err instanceof Error ? err.message : String(err) });
+      captureWithContext(err, 'checkout', { requestId });
     }
     log.count('checkout_error');
     log.metric('checkout_duration_ms', elapsed());

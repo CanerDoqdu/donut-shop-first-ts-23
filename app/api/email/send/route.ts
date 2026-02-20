@@ -9,9 +9,16 @@ import { ApiError } from '@/lib/api-error';
 import { withTimeout } from '@/lib/fetch-with-timeout';
 import { logger, startTimer } from '@/lib/logger';
 import { E_RATE_LIMITED, E_VALIDATION_FAILED, E_EMAIL_SEND_FAILED } from '@/lib/error-codes';
+import { captureWithContext } from '@/lib/sentry';
+import { logEmail } from '@/lib/email-log';
+import { createClient } from '@supabase/supabase-js';
 
 function getResendClient() {
   return new Resend(env.RESEND_API_KEY);
+}
+
+function createAdminClient() {
+  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
 }
 
 const emailTemplates = {
@@ -97,11 +104,12 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
 
     const { type, to, data, locale } = parsed.data;
     const resend = getResendClient();
+    const admin = createAdminClient();
 
     const template = emailTemplates[type][locale as 'tr' | 'en'];
 
     // Send email with Resend + timeout
-    const { error } = await withTimeout(
+    const { data: resendData, error } = await withTimeout(
       resend.emails.send({
         from: 'Donut Shop <onboarding@resend.dev>',
         to,
@@ -114,8 +122,19 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
 
     if (error) {
       log.error('email.resend_error', { code: E_EMAIL_SEND_FAILED, error: String(error) });
+      await logEmail(admin, { to, subject: template.subject, template: type, status: 'failed', error: String(error), metadata: data });
       throw error;
     }
+
+    // Log successful email to email_logs table
+    await logEmail(admin, {
+      to,
+      subject: template.subject,
+      template: type,
+      status: 'sent',
+      resendId: resendData?.id ?? null,
+      metadata: { ...data, locale },
+    });
 
     log.info('email.sent', { type, to });
     log.metric('email_send_duration_ms', elapsed());
@@ -125,6 +144,7 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
   } catch (error) {
     if (!(error instanceof ApiError)) {
       log.error('email.failed', { code: E_EMAIL_SEND_FAILED, error: error instanceof Error ? error.message : String(error) });
+      captureWithContext(error, 'email', { requestId });
     }
     log.count('email_send_error');
     log.metric('email_send_duration_ms', elapsed());
