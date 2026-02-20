@@ -6,6 +6,7 @@ import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import InventoryManager from '@/components/admin/InventoryManager';
+import { SectionSuspense } from '@/components/ui/section-suspense';
 import { 
   LayoutDashboard, Package, ShoppingBag, Users, Settings, 
   ChevronLeft, Menu, X, Store, Crown, Bell
@@ -182,8 +183,16 @@ export default function AdminPage() {
 
         {/* Content */}
         <div className="p-6">
-          {activeTab === 'dashboard' && <AdminDashboard locale={locale as 'tr' | 'en'} />}
-          {activeTab === 'inventory' && <InventoryManager locale={locale as 'tr' | 'en'} />}
+          {activeTab === 'dashboard' && (
+            <SectionSuspense name="AdminDashboard">
+              <AdminDashboard locale={locale as 'tr' | 'en'} />
+            </SectionSuspense>
+          )}
+          {activeTab === 'inventory' && (
+            <SectionSuspense name="InventoryManager">
+              <InventoryManager locale={locale as 'tr' | 'en'} />
+            </SectionSuspense>
+          )}
           {activeTab === 'orders' && (
             <div className="bg-white rounded-2xl p-8 text-center text-gray-500">
               Orders management coming soon...

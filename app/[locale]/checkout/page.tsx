@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from '@/i18n/routing';
 import Image from 'next/image';
@@ -10,22 +10,25 @@ import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
-import { Loader2, Tag, Check, X } from 'lucide-react';
-import { useFormValidation } from '@/hooks';
+import { Loader2, Tag, Check, X, RefreshCw, AlertTriangle } from 'lucide-react';
+import { useFormValidation, useCheckoutMachine } from '@/hooks';
 import { checkoutSchema } from '@/lib/validations';
 import { FieldError } from '@/components/ui/field-error';
+import { CHECKOUT_TIMEOUT_MS } from '@/lib/constants';
+import { getRetryCooldownMs } from '@/hooks/use-checkout-machine';
 
 export default function CheckoutPage() {
   const t = useTranslations();
   const locale = useLocale();
   const router = useRouter();
   const { items, getTotalPrice } = useCartStore();
-  const [loading, setLoading] = useState(false);
+  const machine = useCheckoutMachine();
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
   const [promoDiscount, setPromoDiscount] = useState<{ discountValue: number; discountType: string } | null>(null);
   const [promoError, setPromoError] = useState('');
+  const [retryCooldown, setRetryCooldown] = useState(0);
   const [formData, setFormData] = useState({
     email: '',
     name: '',
@@ -33,7 +36,7 @@ export default function CheckoutPage() {
     address: '',
   });
 
-  const { fieldErrors, validateField } = useFormValidation(checkoutSchema);
+  const { fieldErrors, validateField, validateAll } = useFormValidation(checkoutSchema);
 
   const subtotal = getTotalPrice();
   const discount = promoDiscount?.discountValue ?? 0;
@@ -76,17 +79,58 @@ export default function CheckoutPage() {
     }
   }, [items.length, router]);
 
+  // Retry cooldown timer
+  useEffect(() => {
+    if (retryCooldown <= 0) return;
+    const id = setInterval(() => setRetryCooldown((c) => Math.max(c - 1, 0)), 1000);
+    return () => clearInterval(id);
+  }, [retryCooldown]);
+
+  // Clean up machine on successful redirect
+  useEffect(() => {
+    if (machine.state === 'success') {
+      machine.reset();
+    }
+  }, [machine]);
+
+  const handleRetry = useCallback(() => {
+    if (!machine.canRetry) return;
+    const cooldownMs = getRetryCooldownMs(machine.retryCount);
+    setRetryCooldown(Math.ceil(cooldownMs / 1000));
+    machine.send({ type: 'RETRY' });
+  }, [machine]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
+
+    // Start the state machine
+    machine.send({ type: 'START_CHECKOUT' });
+
+    // Validate form
+    const valid = validateAll({
+      customerEmail: formData.email,
+      customerName: formData.name,
+      customerPhone: formData.phone,
+      customerAddress: formData.address,
+    });
+
+    if (!valid) {
+      machine.send({ type: 'VALIDATION_FAIL', error: 'Form validation failed' });
+      return;
+    }
+
+    machine.send({ type: 'VALIDATION_OK' });
 
     try {
+      // Set up timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), CHECKOUT_TIMEOUT_MS);
+
       // Call checkout API to create Stripe session & save order to Supabase
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          // Only send id + quantity — prices are looked up server-side
           items: items.map(i => ({
             id: i.product.id,
             quantity: i.quantity,
@@ -98,7 +142,10 @@ export default function CheckoutPage() {
           locale,
           ...(promoDiscount ? { promoCode: promoCode.trim() } : {}),
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       const data = await response.json();
 
@@ -106,12 +153,16 @@ export default function CheckoutPage() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      // Redirect to Stripe checkout
+      // Transition to redirecting and hand off to Stripe
+      machine.send({ type: 'RESERVATION_OK', url: data.url });
       window.location.href = data.url;
     } catch (error) {
-      console.error('Checkout error:', error);
-      alert(error instanceof Error ? error.message : 'Payment failed. Please try again.');
-      setLoading(false);
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        machine.send({ type: 'TIMEOUT' });
+      } else {
+        const message = error instanceof Error ? error.message : 'Payment failed. Please try again.';
+        machine.send({ type: 'RESERVATION_FAIL', error: message });
+      }
     }
   };
 
@@ -214,16 +265,47 @@ export default function CheckoutPage() {
                 </label>
               </div>
 
-              <Button type="submit" className="w-full mt-6" size="lg" disabled={loading || !termsAccepted}>
-                {loading ? (
+              <Button type="submit" className="w-full mt-6" size="lg" disabled={machine.isBusy || !termsAccepted}>
+                {machine.isBusy ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
+                    {machine.state === 'validating' ? 'Validating...' : machine.state === 'reserving' ? 'Processing...' : 'Redirecting...'}
                   </>
                 ) : (
                   t('checkout.pay') + ' ' + formatPrice(total)
                 )}
               </Button>
+
+              {/* Machine error display with retry */}
+              {(machine.state === 'failed' || machine.state === 'timeout') && machine.error && (
+                <div role="alert" className="mt-4 p-4 rounded-xl bg-red-50 border border-red-200">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
+                    <div className="flex-1">
+                      <p className="text-sm font-medium text-red-800">
+                        {machine.state === 'timeout' ? 'Request Timed Out' : 'Checkout Failed'}
+                      </p>
+                      <p className="text-sm text-red-600 mt-1">{machine.error}</p>
+                    </div>
+                  </div>
+                  {machine.canRetry && (
+                    <Button
+                      type="button"
+                      onClick={handleRetry}
+                      disabled={retryCooldown > 0}
+                      size="sm"
+                      variant="outline"
+                      className="mt-3 gap-2"
+                    >
+                      <RefreshCw className={`h-3 w-3 ${retryCooldown > 0 ? 'animate-spin' : ''}`} />
+                      {retryCooldown > 0 ? `Retry in ${retryCooldown}s` : 'Try Again'}
+                    </Button>
+                  )}
+                  {!machine.canRetry && (
+                    <p className="text-xs text-red-400 mt-2">Max retries reached. Please refresh the page.</p>
+                  )}
+                </div>
+              )}
             </form>
           </CardContent>
         </Card>
