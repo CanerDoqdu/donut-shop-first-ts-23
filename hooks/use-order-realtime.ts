@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -12,46 +12,97 @@ interface OrderUpdate {
   updated_at: string;
 }
 
+/** Backoff config */
+const INITIAL_BACKOFF_MS = 1_000;
+const MAX_BACKOFF_MS = 30_000;
+const BACKOFF_FACTOR = 2;
+
 /**
  * Subscribe to real-time order status changes via Supabase Realtime.
  *
- * Returns the latest status and a flag indicating if a live update was received.
- * Cleans up the subscription on unmount.
+ * Features:
+ * - Exponential reconnect backoff (1 s → 2 s → 4 s → … → 30 s cap)
+ * - Automatic re-subscribe on channel error / timeout
+ * - Cleans up on unmount or when orderId changes
  */
 export function useOrderRealtime(orderId: string, initialStatus: OrderStatus) {
   const [status, setStatus] = useState<OrderStatus>(initialStatus);
   const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [isLive, setIsLive] = useState(false);
-  const channelRef = useRef<RealtimeChannel | null>(null);
 
   useEffect(() => {
     if (!orderId) return;
 
-    const supabase = createClient();
+    let mounted = true;
+    let backoff = INITIAL_BACKOFF_MS;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let currentChannel: RealtimeChannel | null = null;
 
-    const channel = supabase
-      .channel(`order-${orderId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `id=eq.${orderId}`,
-        },
-        (payload: { new: Record<string, unknown> }) => {
-          const update = payload.new as unknown as OrderUpdate;
-          setStatus(update.status);
-          setLastUpdate(update.updated_at);
-          setIsLive(true);
-        },
-      )
-      .subscribe();
+    function subscribe() {
+      if (!mounted) return;
 
-    channelRef.current = channel;
+      const supabase = createClient();
+
+      // Clean up any previous channel
+      if (currentChannel) {
+        supabase.removeChannel(currentChannel);
+        currentChannel = null;
+      }
+
+      const channel = supabase
+        .channel(`order-${orderId}`)
+        .on(
+          'postgres_changes',
+          {
+            event: 'UPDATE',
+            schema: 'public',
+            table: 'orders',
+            filter: `id=eq.${orderId}`,
+          },
+          (payload: { new: Record<string, unknown> }) => {
+            const update = payload.new as unknown as OrderUpdate;
+            setStatus(update.status);
+            setLastUpdate(update.updated_at);
+            setIsLive(true);
+          },
+        )
+        .subscribe((subscriptionStatus: string) => {
+          if (subscriptionStatus === 'SUBSCRIBED') {
+            // Reset backoff on successful connection
+            backoff = INITIAL_BACKOFF_MS;
+            setIsLive(true);
+          } else if (
+            subscriptionStatus === 'CHANNEL_ERROR' ||
+            subscriptionStatus === 'TIMED_OUT'
+          ) {
+            setIsLive(false);
+            // Schedule reconnect with backoff
+            if (mounted) {
+              const delay = backoff;
+              backoff = Math.min(backoff * BACKOFF_FACTOR, MAX_BACKOFF_MS);
+              timer = setTimeout(() => {
+                subscribe();
+              }, delay);
+            }
+          }
+        });
+
+      currentChannel = channel;
+    }
+
+    subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      mounted = false;
+      if (timer) {
+        clearTimeout(timer);
+        timer = null;
+      }
+      if (currentChannel) {
+        const supabase = createClient();
+        supabase.removeChannel(currentChannel);
+        currentChannel = null;
+      }
     };
   }, [orderId]);
 

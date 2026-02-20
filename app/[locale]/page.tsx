@@ -1,23 +1,36 @@
 'use client';
 
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
-import { SprinkleRain } from '@/components/ui/sprinkle-rain';
 import { HeroShowcase } from '@/components/home/hero-showcase';
 import { DonutConveyor } from '@/components/home/donut-conveyor';
-import {
-  FadeIn,
-  StaggerContainer,
-  StaggerItem,
-  FloatingElement,
-} from '@/components/ui/animations';
 import { formatPrice } from '@/lib/utils';
 import { sampleProducts } from '@/lib/data';
 import { Star, Clock, Heart, ArrowRight, MapPin, Phone, Award, ShoppingBag } from 'lucide-react';
 import { AddToCartButton } from '@/components/ui/add-to-cart-button';
+
+/* ── Lazy-loaded heavy components ── */
+const SprinkleRain = dynamic(
+  () => import('@/components/ui/sprinkle-rain').then((m) => m.SprinkleRain),
+  { ssr: false },
+);
+
+const FadeIn = dynamic(
+  () => import('@/components/ui/animations').then((m) => m.FadeIn),
+);
+const StaggerContainer = dynamic(
+  () => import('@/components/ui/animations').then((m) => m.StaggerContainer),
+);
+const StaggerItem = dynamic(
+  () => import('@/components/ui/animations').then((m) => m.StaggerItem),
+);
+const FloatingElement = dynamic(
+  () => import('@/components/ui/animations').then((m) => m.FloatingElement),
+);
 
 export default function Home() {
   const t = useTranslations();

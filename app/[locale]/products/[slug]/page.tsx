@@ -57,7 +57,7 @@ export default function ProductDetailPage() {
     <div className="min-h-screen bg-linear-to-b from-pink-50 to-orange-50">
       <div className="container mx-auto px-4 py-8">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-gray-500 mb-8">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm text-gray-500 mb-8">
           <Link href="/" className="hover:text-pink-500 transition-colors">
             {t('nav.home')}
           </Link>
@@ -137,14 +137,16 @@ export default function ProductDetailPage() {
                   onClick={() => setQuantity(Math.max(1, quantity - 1))}
                   className="text-gray-500 hover:text-pink-500 transition-colors"
                   disabled={quantity <= 1}
+                  aria-label="Decrease quantity"
                 >
                   <Minus className="w-5 h-5" />
                 </button>
-                <span className="font-fredoka text-xl font-bold w-8 text-center">{quantity}</span>
+                <span className="font-fredoka text-xl font-bold w-8 text-center" aria-live="polite">{quantity}</span>
                 <button
                   onClick={() => setQuantity(Math.min(product.stock, quantity + 1))}
                   className="text-gray-500 hover:text-pink-500 transition-colors"
                   disabled={quantity >= product.stock}
+                  aria-label="Increase quantity"
                 >
                   <Plus className="w-5 h-5" />
                 </button>

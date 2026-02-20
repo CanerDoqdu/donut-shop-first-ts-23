@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { useAddToCart } from '@/hooks';
 import { Button } from '@/components/ui/button';
 import { ShoppingCart, Check } from 'lucide-react';
@@ -15,8 +16,9 @@ interface AddToCartButtonProps {
 /**
  * Cart add button with optimistic feedback.
  * Shows a brief "Added!" confirmation after clicking.
+ * Memoised — only re-renders when its own props change.
  */
-export function AddToCartButton({ product, label, outOfStockLabel, className }: AddToCartButtonProps) {
+export const AddToCartButton = memo(function AddToCartButton({ product, label, outOfStockLabel, className }: AddToCartButtonProps) {
   const { justAdded, addToCart } = useAddToCart();
   const disabled = product.stock === 0;
 
@@ -39,4 +41,4 @@ export function AddToCartButton({ product, label, outOfStockLabel, className }: 
       )}
     </Button>
   );
-}
+});
