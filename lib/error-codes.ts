@@ -50,3 +50,7 @@ export const E_RATE_LIMITED = 'E_RATE_LIMITED';
 export const E_CART_EXPIRED = 'E_CART_EXPIRED';
 export const E_PRODUCT_NOT_FOUND = 'E_PRODUCT_NOT_FOUND';
 export const E_INTERNAL = 'E_INTERNAL';
+
+// ── Inventory ────────────────────────────────────────────────
+export const E_OUT_OF_STOCK = 'E_OUT_OF_STOCK';
+export const E_STOCK_RESERVE_FAILED = 'E_STOCK_RESERVE_FAILED';

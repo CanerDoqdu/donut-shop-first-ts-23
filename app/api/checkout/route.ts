@@ -13,6 +13,7 @@ import { ApiError } from '@/lib/api-error';
 import { featureFlags } from '@/lib/config';
 import { withTimeout } from '@/lib/fetch-with-timeout';
 import { logger, startTimer } from '@/lib/logger';
+import { reserveStock, releaseReservations } from '@/lib/inventory';
 import {
   E_RATE_LIMITED,
   E_VALIDATION_FAILED,
@@ -22,6 +23,7 @@ import {
   E_DB_ORDER_ITEMS_FAILED,
   E_DB_PROFILE_UPSERT_FAILED,
   E_STRIPE_CHECKOUT_FAILED,
+  E_OUT_OF_STOCK,
 } from '@/lib/error-codes';
 
 // Helper: create admin-level client that bypasses RLS using service_role key
@@ -170,12 +172,47 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       log.error('checkout.order_items_failed', { code: E_DB_ORDER_ITEMS_FAILED, error: itemsError.message });
     }
 
+    // ── Atomic stock reservation ──────────────────────────────
+    // Each item's stock is decremented inside a Postgres function that uses
+    // WHERE stock >= quantity, preventing concurrent oversell.
+    const reservationItems = serverItems.map((item) => ({
+      productId: item.id,
+      variantId: items.find((i: { id: string; variantId?: string }) => i.id === item.id)?.variantId ?? null,
+      quantity: item.quantity,
+    }));
+
+    const reservation = await reserveStock(reservationItems, order.id);
+
+    if (!reservation.success) {
+      // Cancel the pending order — nothing was charged yet
+      await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
+      log.warn('checkout.out_of_stock', {
+        code: E_OUT_OF_STOCK,
+        productId: reservation.insufficientStockFor,
+        orderId: order.id,
+      });
+      log.count('checkout_out_of_stock');
+      throw new ApiError(E_OUT_OF_STOCK, 'One or more items in your cart are out of stock', 409);
+    }
+
     // Create Stripe checkout session with server-verified prices + timeout
-    const session = await withTimeout(
-      createCheckoutSession(serverItems, customerEmail, order.id, locale || 'en'),
-      10_000,
-      'stripe.createCheckoutSession',
-    );
+    let session;
+    try {
+      session = await withTimeout(
+        createCheckoutSession(serverItems, customerEmail, order.id, locale || 'en'),
+        10_000,
+        'stripe.createCheckoutSession',
+      );
+    } catch (stripeErr) {
+      // Stripe failed → release the stock we just locked
+      await releaseReservations(order.id).catch((releaseErr) => {
+        log.error('checkout.reservation_release_failed', {
+          orderId: order.id,
+          error: releaseErr instanceof Error ? releaseErr.message : String(releaseErr),
+        });
+      });
+      throw stripeErr;
+    }
 
     // Update order with Stripe session ID
     await admin
