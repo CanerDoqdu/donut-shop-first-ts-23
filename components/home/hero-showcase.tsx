@@ -191,7 +191,7 @@ export function HeroShowcase() {
           </div>
 
           {/* ── Label ── */}
-          <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ left: '10%', bottom: '-100px', zIndex: 4 }}>
+          <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ left: '10%', bottom: '-100px', zIndex: 10 }}>
             <p className="font-fredoka text-base sm:text-lg md:text-xl font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
               Berry Bliss
             </p>
