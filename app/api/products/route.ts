@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { sampleProducts } from '@/lib/data';
+import { cache, CACHE_TTL } from '@/lib/redis';
 
 // Edge runtime for faster cold starts
 export const runtime = 'edge';
@@ -12,6 +13,20 @@ export async function GET(request: Request) {
   const category = searchParams.get('category');
   const featured = searchParams.get('featured');
   const limit = searchParams.get('limit');
+
+  // Build cache key from query parameters
+  const cacheKey = `products:${category || 'all'}:${featured || 'any'}:${limit || 'all'}`;
+
+  // Try Redis cache first
+  const cached = await cache.get<{ products: typeof sampleProducts; total: number }>(cacheKey);
+  if (cached) {
+    return NextResponse.json(cached, {
+      headers: {
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+        'X-Cache': 'HIT',
+      },
+    });
+  }
 
   let products = [...sampleProducts];
 
@@ -30,12 +45,15 @@ export async function GET(request: Request) {
     products = products.slice(0, parseInt(limit));
   }
 
-  return NextResponse.json(
-    { products, total: products.length },
-    {
-      headers: {
-        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
-      },
-    }
-  );
+  const result = { products, total: products.length };
+
+  // Cache in Redis
+  await cache.set(cacheKey, result, CACHE_TTL.PRODUCTS);
+
+  return NextResponse.json(result, {
+    headers: {
+      'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      'X-Cache': 'MISS',
+    },
+  });
 }
