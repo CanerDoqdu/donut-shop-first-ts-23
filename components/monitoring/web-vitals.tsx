@@ -22,8 +22,8 @@ function routeTag(pathname: string): string {
   const clean = pathname.replace(/^\/(tr|en)/, '') || '/';
   if (clean === '/') return 'home';
 
-  const segment = clean.split('/').filter(Boolean)[0];
-  return segment ?? 'home';
+  const segment = clean.split('/').filter(Boolean)[0]!;
+  return segment;
 }
 
 /**

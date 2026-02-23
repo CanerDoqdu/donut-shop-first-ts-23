@@ -262,10 +262,10 @@ export class MetricsCollector {
 
     return {
       count: len,
-      p50: sorted[Math.floor(len * 0.5)] ?? 0,
-      p95: sorted[Math.floor(len * 0.95)] ?? 0,
-      p99: sorted[Math.floor(len * 0.99)] ?? 0,
-      max: sorted[len - 1] ?? 0,
+      p50: sorted[Math.floor(len * 0.5)]!,
+      p95: sorted[Math.floor(len * 0.95)]!,
+      p99: sorted[Math.floor(len * 0.99)]!,
+      max: sorted[len - 1]!,
       avg: Math.round(sorted.reduce((a, b) => a + b, 0) / len),
     };
   }

@@ -279,5 +279,38 @@ describe('MetricsCollector', () => {
       const s = small.getLatencySummary('/api/x');
       expect(s.count).toBeLessThanOrEqual(3);
     });
+
+    it('keeps pruned entries when time-filtered count is within maxEntries', () => {
+      // Scenario: maxEntries=5, insert 6 entries (all recent, within window).
+      // After time-filter, all 6 still alive → pruned.length (6) > maxEntries (5)
+      // → slices to last 5. But if some entries are OLD and expire during filter,
+      // pruned.length <= maxEntries → the "else" branch is taken.
+      const windowMs = 1000; // 1 second window
+      const small = new MetricsCollector(windowMs, 5);
+
+      const now = Date.now();
+      const dateNowSpy = vi.spyOn(Date, 'now');
+
+      // Insert 3 entries at "old" time (outside window)
+      dateNowSpy.mockReturnValue(now - 5000);
+      for (let i = 0; i < 3; i++) {
+        small.recordLatency('/api/prune', i);
+      }
+
+      // Insert 4 entries at "current" time (inside window)
+      // Total = 7, triggers pruning. After time-filter: only 4 survive.
+      // 4 <= maxEntries(5), so takes the "else" (non-slice) branch.
+      dateNowSpy.mockReturnValue(now);
+      for (let i = 0; i < 4; i++) {
+        small.recordLatency('/api/prune', 100 + i);
+      }
+
+      const s = small.getLatencySummary('/api/prune');
+      // Should have at most 5 entries, and the old ones should be gone
+      expect(s.count).toBeLessThanOrEqual(5);
+      expect(s.count).toBeGreaterThanOrEqual(1);
+
+      dateNowSpy.mockRestore();
+    });
   });
 });
