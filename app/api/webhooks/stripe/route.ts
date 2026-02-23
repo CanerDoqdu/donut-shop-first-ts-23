@@ -19,6 +19,7 @@ import {
   E_WEBHOOK_ORDER_UPDATE_FAILED,
   E_WEBHOOK_RPC_UNAVAILABLE,
 } from '@/lib/error-codes';
+import { dualWriteStripeSession } from '@/lib/migration';
 
 // ── Supabase admin client (service_role — bypasses RLS) ──────
 function createSupabaseAdminClient() {
@@ -239,6 +240,8 @@ async function handleCheckoutCompleted(
         status: 'paid',
         stripe_payment_intent_id: session.payment_intent as string,
         updated_at: new Date().toISOString(),
+        // Dual-write: ensure v2 column is populated even on fallback path
+        ...dualWriteStripeSession(session.id),
       })
       .eq('stripe_session_id', session.id)
       .eq('status', 'pending');

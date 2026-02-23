@@ -3,6 +3,7 @@ import { ApiError, getRequestId, apiErrorResponse } from './api-error';
 import { logger, extractCorrelationId, startTimer } from './logger';
 import { classifyError } from './error-classification';
 import { captureWithContext, addCorrelatedBreadcrumb } from './sentry';
+import { metrics } from './metrics';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -56,15 +57,45 @@ export function withHandler(handler: RouteHandler, domain?: string) {
       res.headers.set('x-request-id', requestId);
       res.headers.set('x-correlation-id', correlationId);
 
+      const durationMs = elapsed();
+
+      // Record API metrics
+      const endpoint = req.nextUrl.pathname;
+      metrics.recordLatency(endpoint, durationMs);
+
+      // Track checkout outcomes
+      if (endpoint === '/api/checkout') {
+        if (res.status >= 200 && res.status < 300) {
+          metrics.recordCheckoutOutcome('success');
+        }
+      }
+
       // Structured log: request completed
       log.info('api.request_completed', {
         status: res.status,
-        durationMs: elapsed(),
+        durationMs,
       });
 
       return res;
     } catch (err) {
+      const durationMs = elapsed();
       const classification = classifyError(err);
+      const endpoint = req.nextUrl.pathname;
+
+      // Record error metric
+      metrics.recordLatency(endpoint, durationMs);
+      metrics.recordError(endpoint, err instanceof ApiError ? err.code : undefined);
+
+      // Track checkout failure outcomes
+      if (endpoint === '/api/checkout') {
+        if (err instanceof ApiError && err.code === 'E_VALIDATION_FAILED') {
+          metrics.recordCheckoutOutcome('validation_fail');
+        } else if (err instanceof ApiError && err.status === 408) {
+          metrics.recordCheckoutOutcome('timeout');
+        } else {
+          metrics.recordCheckoutOutcome('error');
+        }
+      }
 
       if (err instanceof ApiError) {
         log.classifiedError('api.known_error', err, {

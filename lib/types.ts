@@ -68,6 +68,7 @@ export interface Order {
   total_amount: number;
   shipping_address: string;
   stripe_session_id: string | null;
+  stripe_session_v2: string | null;
   created_at: string;
   updated_at: string;
 }
