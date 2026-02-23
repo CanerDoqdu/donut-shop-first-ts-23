@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { captureWithContext, setSentryUser, clearSentryUser, addBreadcrumb } from '@/lib/sentry';
+import { captureWithContext, setSentryUser, clearSentryUser, addBreadcrumb, addCorrelatedBreadcrumb } from '@/lib/sentry';
 
 // ─── Mock @sentry/nextjs ────────────────────────────────────
 
@@ -68,14 +68,18 @@ describe('Sentry helpers', () => {
       expect(mockScope.setLevel).toHaveBeenCalledWith('warning');
     });
 
-    it('attaches extra context to scope', () => {
+    it('attaches extra context to scope (including classification)', () => {
       captureWithContext(new Error('x'), 'inventory', { productId: 'p-1', stock: 0 });
 
       const scopeCallback = mockWithScope.mock.calls[0][0];
       const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
       scopeCallback(mockScope);
 
-      expect(mockScope.setExtras).toHaveBeenCalledWith({ productId: 'p-1', stock: 0 });
+      const extrasCall = mockScope.setExtras.mock.calls[0][0];
+      expect(extrasCall.productId).toBe('p-1');
+      expect(extrasCall.stock).toBe(0);
+      expect(extrasCall['error.bucket']).toBeDefined();
+      expect(extrasCall['error.retryable']).toBeDefined();
     });
   });
 
@@ -100,6 +104,117 @@ describe('Sentry helpers', () => {
         category: 'navigation',
         message: 'User clicked checkout',
         data: { cartSize: 3 },
+        level: 'info',
+      });
+    });
+  });
+
+  // ── Enhanced captureWithContext (PR28) ─────────────────────
+
+  describe('captureWithContext — error classification tags', () => {
+    it('adds error.bucket and error.retryable tags', () => {
+      const error = Object.assign(new Error('rate limited'), { code: 'E_RATE_LIMITED', status: 429 });
+      captureWithContext(error, 'auth', {});
+
+      const scopeCallback = mockWithScope.mock.calls[0][0];
+      const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
+      scopeCallback(mockScope);
+
+      expect(mockScope.setTag).toHaveBeenCalledWith('error.bucket', 'operational');
+      expect(mockScope.setTag).toHaveBeenCalledWith('error.retryable', 'true');
+    });
+
+    it('auto-classifies severity when not explicitly provided', () => {
+      const error = new TypeError('Cannot read property');
+      captureWithContext(error, 'checkout', {});
+
+      const scopeCallback = mockWithScope.mock.calls[0][0];
+      const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
+      scopeCallback(mockScope);
+
+      // TypeError → programmer → error severity
+      expect(mockScope.setLevel).toHaveBeenCalledWith('error');
+    });
+  });
+
+  describe('captureWithContext — extended options', () => {
+    it('attaches requestId and correlationId as tags', () => {
+      captureWithContext(new Error('fail'), 'checkout', { orderId: 'ord-1' }, {
+        requestId: 'req-abc',
+        correlationId: 'corr-xyz',
+      });
+
+      const scopeCallback = mockWithScope.mock.calls[0][0];
+      const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
+      scopeCallback(mockScope);
+
+      expect(mockScope.setTag).toHaveBeenCalledWith('requestId', 'req-abc');
+      expect(mockScope.setTag).toHaveBeenCalledWith('correlationId', 'corr-xyz');
+    });
+
+    it('includes classification in extras', () => {
+      captureWithContext(new Error('x'), 'webhook', {}, {
+        requestId: 'req-1',
+      });
+
+      const scopeCallback = mockWithScope.mock.calls[0][0];
+      const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
+      scopeCallback(mockScope);
+
+      const extrasCall = mockScope.setExtras.mock.calls[0][0];
+      expect(extrasCall['error.bucket']).toBeDefined();
+      expect(extrasCall['error.retryable']).toBeDefined();
+      expect(extrasCall.requestId).toBe('req-1');
+    });
+
+    it('accepts custom classification override', () => {
+      captureWithContext(new Error('x'), 'checkout', {}, {
+        classification: { bucket: 'infrastructure', retryable: true, severity: 'fatal' },
+      });
+
+      const scopeCallback = mockWithScope.mock.calls[0][0];
+      const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
+      scopeCallback(mockScope);
+
+      expect(mockScope.setTag).toHaveBeenCalledWith('error.bucket', 'infrastructure');
+      expect(mockScope.setLevel).toHaveBeenCalledWith('fatal');
+    });
+
+    it('remains backward compatible with string level', () => {
+      captureWithContext(new Error('x'), 'email', {}, 'warning');
+      expect(mockCaptureException).toHaveBeenCalled();
+    });
+  });
+
+  // ── addCorrelatedBreadcrumb ───────────────────────────────
+
+  describe('addCorrelatedBreadcrumb', () => {
+    it('adds breadcrumb with requestId and correlationId', () => {
+      addCorrelatedBreadcrumb('http', 'POST /api/checkout', {
+        requestId: 'req-1',
+        correlationId: 'corr-1',
+        data: { status: 200 },
+      });
+
+      expect(mockAddBreadcrumb).toHaveBeenCalledWith({
+        category: 'http',
+        message: 'POST /api/checkout',
+        data: {
+          status: 200,
+          requestId: 'req-1',
+          correlationId: 'corr-1',
+        },
+        level: 'info',
+      });
+    });
+
+    it('works without optional fields', () => {
+      addCorrelatedBreadcrumb('navigation', 'page load');
+
+      expect(mockAddBreadcrumb).toHaveBeenCalledWith({
+        category: 'navigation',
+        message: 'page load',
+        data: {},
         level: 'info',
       });
     });
