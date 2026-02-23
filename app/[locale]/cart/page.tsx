@@ -1,15 +1,14 @@
 'use client';
 
-import Image from 'next/image';
-import { useSyncExternalStore } from 'react';
+import { useSyncExternalStore, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { useCartStore } from '@/store/cart-store';
 import { formatPrice } from '@/lib/utils';
-import { Minus, Plus, Trash2, ShoppingBag } from 'lucide-react';
+import { ShoppingBag } from 'lucide-react';
+import { CartItemRow } from '@/components/ui/cart-item-row';
 
 // Stable subscription for Zustand persist hydration
 const subscribeHydration = (onStoreChange: () => void) => {
@@ -22,6 +21,15 @@ export default function CartPage() {
   const t = useTranslations();
   const hydrated = useSyncExternalStore(subscribeHydration, getHydrated, getServerHydrated);
   const { items, updateQuantity, removeItem, getTotalPrice, clearCart } = useCartStore();
+
+  const handleUpdateQuantity = useCallback(
+    (productId: string, quantity: number) => updateQuantity(productId, quantity),
+    [updateQuantity],
+  );
+  const handleRemove = useCallback(
+    (productId: string) => removeItem(productId),
+    [removeItem],
+  );
 
   if (!hydrated) {
     return <div className="container mx-auto px-4 py-12" />;
@@ -56,70 +64,13 @@ export default function CartPage() {
         {/* Cart Items */}
         <div className="lg:col-span-2 space-y-4">
           {items.map((item) => (
-            <Card key={item.product.id}>
-              <CardContent className="p-4 sm:p-6">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 sm:gap-6">
-                  <div className="w-16 h-16 sm:w-20 sm:h-20 relative shrink-0 mx-auto sm:mx-0">
-                    <Image
-                      src={item.product.image_url?.startsWith('/') || item.product.image_url?.startsWith('http') ? item.product.image_url : '/donut.png'}
-                      alt={item.product.name_en}
-                      fill
-                      sizes="80px"
-                      className="object-contain"
-                    />
-                  </div>
-                  
-                  <div className="flex-1 text-center sm:text-left w-full">
-                    <CardTitle className="mb-1 sm:mb-2 text-base sm:text-lg">{item.product.name_en}</CardTitle>
-                    <p className="text-gray-600 text-sm hidden sm:block">{item.product.description_en}</p>
-                    <p className="font-fredoka text-lg sm:text-xl font-bold text-[#FF6BBF] mt-1 sm:mt-2">
-                      {formatPrice(item.product.price)}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 sm:gap-4 w-full sm:w-auto">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 sm:h-10 sm:w-10"
-                        onClick={() => updateQuantity(item.product.id, item.quantity - 1)}
-                        aria-label={`Decrease quantity of ${item.product.name_en}`}
-                      >
-                        <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                      <Input
-                        type="number"
-                        value={item.quantity}
-                        onChange={(e) =>
-                          updateQuantity(item.product.id, parseInt(e.target.value) || 0)
-                        }
-                        className="w-12 sm:w-16 text-center h-8 sm:h-10 text-sm"
-                        min="0"
-                      />
-                      <Button
-                        variant="outline"
-                        size="icon"
-                        className="h-8 w-8 sm:h-10 sm:w-10"
-                        onClick={() => updateQuantity(item.product.id, item.quantity + 1)}
-                        aria-label={`Increase quantity of ${item.product.name_en}`}
-                      >
-                        <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
-                      </Button>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => removeItem(item.product.id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 sm:h-10"
-                    >
-                      <Trash2 className="h-4 w-4 sm:mr-2" />
-                      <span className="hidden sm:inline">{t('cart.remove')}</span>
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <CartItemRow
+              key={item.product.id}
+              item={item}
+              removeLabel={t('cart.remove')}
+              onUpdateQuantity={handleUpdateQuantity}
+              onRemove={handleRemove}
+            />
           ))}
 
           <div className="flex justify-between">

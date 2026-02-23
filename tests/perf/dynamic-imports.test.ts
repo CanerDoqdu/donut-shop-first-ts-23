@@ -60,3 +60,79 @@ describe('AddToCartButton memo', () => {
     expect(src).toContain("import { memo } from 'react'");
   });
 });
+
+// ─── Header: ThemeToggle dynamic import ──────────────────────
+
+describe('Header ThemeToggle dynamic import', () => {
+  const src = readComponent('components/layout/header.tsx');
+
+  it('imports next/dynamic', () => {
+    expect(src).toContain("import dynamic from 'next/dynamic'");
+  });
+
+  it('lazy-loads ThemeToggle with ssr: false', () => {
+    expect(src).toContain("import('@/components/theme/theme-toggle')");
+    expect(src).toContain('ssr: false');
+  });
+
+  it('does NOT have direct static import of ThemeToggle', () => {
+    expect(src).not.toContain("import { ThemeToggle } from '@/components/theme/theme-toggle'");
+  });
+});
+
+// ─── Admin: AdminDashboard dynamic import ────────────────────
+
+describe('Admin dashboard dynamic import', () => {
+  const src = readComponent('app/[locale]/admin/page.tsx');
+
+  it('imports next/dynamic', () => {
+    expect(src).toContain("import dynamic from 'next/dynamic'");
+  });
+
+  it('lazy-loads AdminDashboard with ssr: false', () => {
+    expect(src).toContain("import('@/components/admin/AdminDashboard')");
+    expect(src).toContain('ssr: false');
+  });
+
+  it('does NOT have direct static import of AdminDashboard', () => {
+    expect(src).not.toContain("import AdminDashboard from '@/components/admin/AdminDashboard'");
+  });
+});
+
+// ─── Memoised components ─────────────────────────────────────
+
+describe('ProductCard memo', () => {
+  const src = readComponent('components/ui/product-card.tsx');
+
+  it('uses React.memo wrapper', () => {
+    expect(src).toContain('memo(function ProductCard');
+  });
+
+  it('imports memo from react', () => {
+    expect(src).toContain("import { memo");
+  });
+});
+
+describe('CartItemRow memo', () => {
+  const src = readComponent('components/ui/cart-item-row.tsx');
+
+  it('uses React.memo wrapper', () => {
+    expect(src).toContain('memo(function CartItemRow');
+  });
+
+  it('imports memo from react', () => {
+    expect(src).toContain("import { memo } from 'react'");
+  });
+});
+
+describe('OrderRow memo', () => {
+  const src = readComponent('components/ui/order-row.tsx');
+
+  it('uses React.memo wrapper', () => {
+    expect(src).toContain('memo(function OrderRow');
+  });
+
+  it('imports memo from react', () => {
+    expect(src).toContain("import { memo } from 'react'");
+  });
+});

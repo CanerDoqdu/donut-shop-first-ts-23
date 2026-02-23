@@ -137,6 +137,55 @@ describe('Layout accessibility', () => {
   it('sets html lang attribute', () => {
     expect(src).toContain('lang={locale}');
   });
+
+  it('skip-to-content uses sr-only pattern', () => {
+    expect(src).toContain('sr-only');
+    expect(src).toContain('focus:not-sr-only');
+  });
+});
+
+// ─── Cart page ARIA ─────────────────────────────────────────
+
+describe('Cart page accessibility', () => {
+  const src = readComponent('components/ui/cart-item-row.tsx');
+
+  it('has aria-label on decrease quantity button', () => {
+    expect(src).toContain('aria-label={`Decrease quantity of ${item.product.name_en}`}');
+  });
+
+  it('has aria-label on increase quantity button', () => {
+    expect(src).toContain('aria-label={`Increase quantity of ${item.product.name_en}`}');
+  });
+
+  it('has aria-label on remove button', () => {
+    expect(src).toContain('aria-label={`Remove ${item.product.name_en} from cart`}');
+  });
+
+  it('has aria-label on quantity input', () => {
+    expect(src).toContain('aria-label={`Quantity of ${item.product.name_en}`}');
+  });
+});
+
+// ─── Checkout retry focus (Bug #5) ──────────────────────────
+
+describe('Checkout retry accessibility', () => {
+  const src = readComponent('app/[locale]/checkout/page.tsx');
+
+  it('has retryButtonRef on retry button', () => {
+    expect(src).toContain('ref={retryButtonRef}');
+  });
+
+  it('has data-focus-trap-disabled on retry button', () => {
+    expect(src).toContain('data-focus-trap-disabled');
+  });
+
+  it('auto-focuses retry button on failure', () => {
+    expect(src).toContain('retryButtonRef.current?.focus()');
+  });
+
+  it('has role="alert" on error display', () => {
+    expect(src).toContain('role="alert"');
+  });
 });
 
 // ─── Sprinkle rain ARIA ─────────────────────────────────────

@@ -68,6 +68,10 @@ export const DEFAULT_FETCH_TIMEOUT_MS = 15_000; // 15 seconds
 export const DEFAULT_FETCH_RETRIES = 2;
 export const IDEMPOTENCY_KEY_STORAGE = 'donut-idempotency-key';
 
+// ─── Realtime ────────────────────────────────────────────────────
+export const REALTIME_TIMEOUT_MS = 30_000; // 30s — higher than default to allow reconnect
+export const REALTIME_FETCH_SOURCE = 'realtime-reconnect';
+
 // ─── Product categories ─────────────────────────────────────────
 export const PRODUCT_CATEGORIES = [
   'all',

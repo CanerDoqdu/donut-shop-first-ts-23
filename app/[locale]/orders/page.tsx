@@ -5,21 +5,15 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { createClient } from '@/lib/supabase/client';
-import { formatPrice } from '@/lib/utils';
 import {
   Package,
   ArrowLeft,
-  CreditCard,
-  ChefHat,
-  Truck,
-  CheckCircle2,
-  XCircle,
-  Clock,
   ShoppingBag,
   Loader2,
 } from 'lucide-react';
+import { SectionSuspense } from '@/components/ui/section-suspense';
+import { OrderRow } from '@/components/ui/order-row';
 
 interface Order {
   id: string;
@@ -36,15 +30,6 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
 }
-
-const statusConfig: Record<string, { icon: React.ReactNode; color: string; label_tr: string; label_en: string }> = {
-  pending: { icon: <Clock className="w-4 h-4" />, color: 'bg-yellow-100 text-yellow-800', label_tr: 'Beklemede', label_en: 'Pending' },
-  paid: { icon: <CreditCard className="w-4 h-4" />, color: 'bg-green-100 text-green-800', label_tr: 'Ödendi', label_en: 'Paid' },
-  preparing: { icon: <ChefHat className="w-4 h-4" />, color: 'bg-blue-100 text-blue-800', label_tr: 'Hazırlanıyor', label_en: 'Preparing' },
-  shipped: { icon: <Truck className="w-4 h-4" />, color: 'bg-purple-100 text-purple-800', label_tr: 'Yolda', label_en: 'Shipped' },
-  delivered: { icon: <CheckCircle2 className="w-4 h-4" />, color: 'bg-emerald-100 text-emerald-800', label_tr: 'Teslim Edildi', label_en: 'Delivered' },
-  cancelled: { icon: <XCircle className="w-4 h-4" />, color: 'bg-red-100 text-red-800', label_tr: 'İptal', label_en: 'Cancelled' },
-};
 
 export default function OrdersPage() {
   const t = useTranslations();
@@ -141,6 +126,7 @@ export default function OrdersPage() {
         </div>
 
         {/* Orders List */}
+        <SectionSuspense name="OrderList">
         {orders.length === 0 ? (
           <Card>
             <CardContent className="p-12 text-center">
@@ -161,84 +147,18 @@ export default function OrdersPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {orders.map((order) => {
-              const status = statusConfig[order.status] || statusConfig.pending;
-              const date = new Date(order.created_at);
-              const formattedDate = date.toLocaleDateString('tr-TR', {
-                day: 'numeric',
-                month: 'long',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit',
-              });
-
-              return (
-                <Card key={order.id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                  <CardContent className="p-0">
-                    {/* Order Header */}
-                    <div className="flex items-center justify-between p-4 bg-gray-50 border-b">
-                      <div className="flex items-center gap-3">
-                        <Package className="w-5 h-5 text-gray-400" />
-                        <div>
-                          <p className="text-xs text-gray-500">
-                            {t('orders.orderNumber') || 'Sipariş No'}
-                          </p>
-                          <p className="font-mono text-sm font-bold">
-                            {order.id.substring(0, 8).toUpperCase()}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-xs text-gray-500">{formattedDate}</span>
-                        <Badge className={`${status.color} flex items-center gap-1`}>
-                          {status.icon}
-                          {status.label_tr}
-                        </Badge>
-                      </div>
-                    </div>
-
-                    {/* Order Items */}
-                    <div className="p-4">
-                      <div className="space-y-2 mb-4">
-                        {order.order_items.map((item) => (
-                          <div key={item.id} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="text-gray-600">
-                                {item.product_name} × {item.quantity}
-                              </span>
-                            </div>
-                            <span className="font-medium">
-                              {formatPrice(item.unit_price * item.quantity)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* Order Total */}
-                      <div className="flex items-center justify-between pt-3 border-t">
-                        <span className="font-medium text-gray-700">
-                          {t('cart.total') || 'Toplam'}
-                        </span>
-                        <span className="text-lg font-bold text-[#FF6BBF]">
-                          {formatPrice(order.total_amount)}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Track Order Button */}
-                    <div className="px-4 pb-4">
-                      <Button asChild variant="outline" size="sm" className="w-full">
-                        <Link href={`/orders/${order.id}` as '/orders/success'}>
-                          {t('orders.trackOrder') || 'Siparişi Takip Et'}
-                        </Link>
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+            {orders.map((order) => (
+              <OrderRow
+                key={order.id}
+                order={order}
+                orderNumberLabel={t('orders.orderNumber') || 'Sipariş No'}
+                totalLabel={t('cart.total') || 'Toplam'}
+                trackLabel={t('orders.trackOrder') || 'Siparişi Takip Et'}
+              />
+            ))}
           </div>
         )}
+        </SectionSuspense>
       </div>
     </div>
   );

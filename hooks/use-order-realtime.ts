@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { RealtimeChannel } from '@supabase/supabase-js';
+import { REALTIME_TIMEOUT_MS } from '@/lib/constants';
 
 type OrderStatus = 'pending' | 'paid' | 'preparing' | 'shipped' | 'delivered';
 
@@ -12,9 +13,9 @@ interface OrderUpdate {
   updated_at: string;
 }
 
-/** Backoff config */
+/** Backoff config — MAX_BACKOFF_MS mirrors REALTIME_TIMEOUT_MS (30 s) */
 const INITIAL_BACKOFF_MS = 1_000;
-const MAX_BACKOFF_MS = 30_000;
+const MAX_BACKOFF_MS = REALTIME_TIMEOUT_MS; // 30 s
 const BACKOFF_FACTOR = 2;
 
 /**
