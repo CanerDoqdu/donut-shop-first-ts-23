@@ -5,6 +5,7 @@ import {
   dualWriteStripeSession,
   readStripeSession,
   createStripeSessionV2Checks,
+  createStripeSessionV2Executor,
   type MigrationResult,
   type BatchResult,
   type ValidationResult,
@@ -158,6 +159,20 @@ describe('runBatchMigration', () => {
     expect(result.totalMigrated).toBe(0);
     expect(result.batchesRun).toBe(1);
   });
+
+  it('handles non-Error throw (string) gracefully', async () => {
+    const executor = vi.fn(async () => {
+      throw 'raw string error';
+    });
+
+    const result = await runBatchMigration(executor, {
+      id: 'test_non_error_throw',
+      delayMs: 0,
+    });
+
+    expect(result.success).toBe(false);
+    expect(result.error).toBe('raw string error');
+  });
 });
 
 // =============================================
@@ -204,6 +219,20 @@ describe('runValidation', () => {
 
     expect(result.valid).toBe(true);
     expect(result.checks).toHaveLength(0);
+  });
+
+  it('catches non-Error thrown value in checks', async () => {
+    const checks = [
+      async () => {
+        throw 'string error from check';
+      },
+    ];
+
+    const result = await runValidation(checks as never);
+
+    expect(result.valid).toBe(false);
+    expect(result.checks[0].message).toContain('string error from check');
+    expect(result.checks[0].passed).toBe(false);
   });
 });
 
@@ -322,5 +351,38 @@ describe('createStripeSessionV2Checks', () => {
     expect(result.valid).toBe(false);
     expect(result.checks[1].passed).toBe(false);
     expect(result.checks[1].message).toContain('3 rows have invalid');
+  });
+});
+
+// =============================================
+// createStripeSessionV2Executor
+// =============================================
+describe('createStripeSessionV2Executor', () => {
+  it('wraps rpcFn as a BatchExecutor', async () => {
+    const rpcFn = vi.fn(async (batchSize: number) => batchSize * 2);
+    const executor = createStripeSessionV2Executor(rpcFn);
+
+    const result = await executor(50);
+
+    expect(result).toBe(100);
+    expect(rpcFn).toHaveBeenCalledWith(50);
+  });
+
+  it('works end-to-end with runBatchMigration', async () => {
+    let calls = 0;
+    const rpcFn = async (_batchSize: number) => {
+      calls++;
+      return calls <= 1 ? 25 : 0;
+    };
+
+    const executor = createStripeSessionV2Executor(rpcFn);
+    const result = await runBatchMigration(executor, {
+      id: 'test_v2_executor',
+      batchSize: 25,
+      delayMs: 0,
+    });
+
+    expect(result.success).toBe(true);
+    expect(result.totalMigrated).toBe(25);
   });
 });
