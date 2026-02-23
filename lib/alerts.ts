@@ -18,6 +18,7 @@
 import { logger } from './logger';
 import { captureWithContext, type SentryDomain } from './sentry';
 import type { MetricsCollector, EndpointSummary, CheckoutSummary } from './metrics';
+import type { VitalRegression } from './perf-budget';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -43,6 +44,8 @@ export interface AlertContext {
   checkoutSummary: CheckoutSummary;
   /** Current process memory usage in MB. */
   memoryUsageMB?: number;
+  /** Web Vital regressions detected by perf-budget, if available. */
+  vitalRegressions?: VitalRegression[];
 }
 
 export interface FiredAlert {
@@ -120,6 +123,30 @@ export const ALERT_RULES: AlertRule[] = [
     message: (ctx) =>
       `Memory usage is ${ctx.memoryUsageMB?.toFixed(0) ?? '?'}MB (threshold: 512MB)`,
   },
+  {
+    id: 'vital_fcp_regression',
+    description: 'FCP regression > 5%',
+    severity: 'warn',
+    domain: 'checkout',
+    evaluate: (ctx) =>
+      !!ctx.vitalRegressions?.some((r) => r.name === 'FCP'),
+    message: (ctx) => {
+      const r = ctx.vitalRegressions?.find((v) => v.name === 'FCP');
+      return r?.message ?? 'FCP regression detected';
+    },
+  },
+  {
+    id: 'vital_lcp_regression',
+    description: 'LCP regression > 3%',
+    severity: 'critical',
+    domain: 'checkout',
+    evaluate: (ctx) =>
+      !!ctx.vitalRegressions?.some((r) => r.name === 'LCP'),
+    message: (ctx) => {
+      const r = ctx.vitalRegressions?.find((v) => v.name === 'LCP');
+      return r?.message ?? 'LCP regression detected';
+    },
+  },
 ];
 
 // ── Evaluation Engine ───────────────────────────────────────
@@ -134,6 +161,7 @@ export const ALERT_RULES: AlertRule[] = [
 export function evaluateAlerts(
   collector: MetricsCollector,
   memoryUsageMB?: number,
+  vitalRegressions?: VitalRegression[],
 ): FiredAlert[] {
   // Build context
   const endpointSummaries = new Map<string, EndpointSummary>();
@@ -145,6 +173,7 @@ export function evaluateAlerts(
     endpointSummaries,
     checkoutSummary: collector.getCheckoutSummary(),
     memoryUsageMB,
+    vitalRegressions,
   };
 
   const fired: FiredAlert[] = [];
@@ -195,6 +224,7 @@ export function evaluateAlerts(
 export function buildAlertContext(
   collector: MetricsCollector,
   memoryUsageMB?: number,
+  vitalRegressions?: VitalRegression[],
 ): AlertContext {
   const endpointSummaries = new Map<string, EndpointSummary>();
   for (const endpoint of collector.getTrackedEndpoints()) {
@@ -204,5 +234,6 @@ export function buildAlertContext(
     endpointSummaries,
     checkoutSummary: collector.getCheckoutSummary(),
     memoryUsageMB,
+    vitalRegressions,
   };
 }
