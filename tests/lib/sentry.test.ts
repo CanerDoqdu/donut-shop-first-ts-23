@@ -184,6 +184,31 @@ describe('Sentry helpers', () => {
       captureWithContext(new Error('x'), 'email', {}, 'warning');
       expect(mockCaptureException).toHaveBeenCalled();
     });
+
+    it('maps fatal severity via mapSeverity when no explicit level', () => {
+      captureWithContext(new Error('x'), 'checkout', {}, {
+        classification: { bucket: 'infrastructure', retryable: false, severity: 'fatal' },
+      });
+
+      const scopeCallback = mockWithScope.mock.calls[0][0];
+      const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
+      scopeCallback(mockScope);
+
+      // mapSeverity('fatal') → 'fatal'
+      expect(mockScope.setLevel).toHaveBeenCalledWith('fatal');
+    });
+
+    it('maps info severity via mapSeverity', () => {
+      captureWithContext(new Error('x'), 'checkout', {}, {
+        classification: { bucket: 'operational', retryable: true, severity: 'info' },
+      });
+
+      const scopeCallback = mockWithScope.mock.calls[0][0];
+      const mockScope = { setTag: vi.fn(), setLevel: vi.fn(), setExtras: vi.fn() };
+      scopeCallback(mockScope);
+
+      expect(mockScope.setLevel).toHaveBeenCalledWith('info');
+    });
   });
 
   // ── addCorrelatedBreadcrumb ───────────────────────────────

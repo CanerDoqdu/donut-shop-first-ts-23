@@ -187,6 +187,34 @@ describe('classifyByErrorCode', () => {
   });
 });
 
+// ── Severity mapping ────────────────────────────────────────
+
+describe('classifyError — severity mapping per bucket', () => {
+  it('returns warning severity for operational bucket', () => {
+    const c = classifyError(makeError({ code: 'E_RATE_LIMITED' }));
+    expect(c.bucket).toBe('operational');
+    expect(c.severity).toBe('warning');
+  });
+
+  it('returns error severity for programmer bucket', () => {
+    const c = classifyError(new TypeError('x'));
+    expect(c.bucket).toBe('programmer');
+    expect(c.severity).toBe('error');
+  });
+
+  it('returns error severity for infrastructure bucket', () => {
+    const c = classifyError(makeError({ code: 'E_DB_QUERY_FAILED' }));
+    expect(c.bucket).toBe('infrastructure');
+    expect(c.severity).toBe('error');
+  });
+
+  it('infrastructure bucket via status code also gets error severity', () => {
+    const c = classifyError(makeError({ status: 503 }));
+    expect(c.bucket).toBe('infrastructure');
+    expect(c.severity).toBe('error');
+  });
+});
+
 // ── Priority: JS type > Code > Status ───────────────────────
 
 describe('classifyError — resolution priority', () => {
