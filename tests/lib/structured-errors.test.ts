@@ -149,3 +149,27 @@ describe('getClassification', () => {
     expect(c.retryable).toBe(true);
   });
 });
+
+// ── extractCode edge cases ──────────────────────────────────
+
+describe('extractCode edge cases (via formatDomainError)', () => {
+  it('returns UNKNOWN for non-Error, non-object values', () => {
+    const payload = formatDomainError('just a string', 'test');
+    expect(payload['error.code']).toBe('UNKNOWN');
+  });
+
+  it('returns UNKNOWN for null', () => {
+    const payload = formatDomainError(null, 'test');
+    expect(payload['error.code']).toBe('UNKNOWN');
+  });
+
+  it('returns UNKNOWN for number', () => {
+    const payload = formatDomainError(42, 'test');
+    expect(payload['error.code']).toBe('UNKNOWN');
+  });
+
+  it('returns Error name for plain Error without code', () => {
+    const payload = formatDomainError(new Error('oops'), 'test');
+    expect(payload['error.code']).toBe('Error');
+  });
+});
