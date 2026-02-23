@@ -45,6 +45,34 @@ describe('withHandler — response contract', () => {
     expect(rid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
   });
 
+  // ── CorrelationId support (PR28) ──────────────────────────
+
+  it('passes correlationId to handler and attaches x-correlation-id header', async () => {
+    const handler = withHandler(async (_req, { correlationId }) => {
+      return NextResponse.json({ correlationId });
+    });
+
+    const res = await handler(makeRequest({
+      'x-correlation-id': 'corr-test-456',
+    }));
+    const body = await res.json();
+
+    expect(res.headers.get('x-correlation-id')).toBe('corr-test-456');
+    expect(body.correlationId).toBe('corr-test-456');
+  });
+
+  it('generates a UUID correlationId when header is missing', async () => {
+    const handler = withHandler(async (_req, { correlationId }) => {
+      return NextResponse.json({ correlationId });
+    });
+
+    const res = await handler(makeRequest());
+    const cid = res.headers.get('x-correlation-id');
+
+    expect(cid).toBeTruthy();
+    expect(cid).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i);
+  });
+
   // ── ApiError path ──────────────────────────────────────────
 
   it('converts ApiError to { code, message, requestId } JSON', async () => {
@@ -62,6 +90,15 @@ describe('withHandler — response contract', () => {
       requestId: 'rid-err',
     });
     expect(res.headers.get('x-request-id')).toBe('rid-err');
+  });
+
+  it('attaches x-correlation-id header on ApiError responses', async () => {
+    const handler = withHandler(async () => {
+      throw new ApiError('E_TEST', 'fail', 400);
+    });
+
+    const res = await handler(makeRequest({ 'x-correlation-id': 'corr-err' }));
+    expect(res.headers.get('x-correlation-id')).toBe('corr-err');
   });
 
   it('uses default 500 status when ApiError has no explicit status', async () => {
@@ -90,6 +127,15 @@ describe('withHandler — response contract', () => {
     expect(body.message).toBe('An unexpected error occurred');
     expect(body.requestId).toBe('rid-crash');
     expect(res.headers.get('x-request-id')).toBe('rid-crash');
+  });
+
+  it('attaches x-correlation-id on unhandled error responses', async () => {
+    const handler = withHandler(async () => {
+      throw new Error('boom');
+    });
+
+    const res = await handler(makeRequest({ 'x-correlation-id': 'corr-crash' }));
+    expect(res.headers.get('x-correlation-id')).toBe('corr-crash');
   });
 
   it('catches non-Error throws (string, object)', async () => {
