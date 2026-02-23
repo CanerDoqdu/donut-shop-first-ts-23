@@ -74,10 +74,10 @@ function clearPersistedState(): void {
 // ─── Allowed transitions (deterministic) ────────────────────────
 
 const TRANSITIONS: Record<CheckoutState, Partial<Record<CheckoutEvent['type'], CheckoutState>>> = {
-  idle:        { START_CHECKOUT: 'validating', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'idle' },
-  validating:  { VALIDATION_OK: 'reserving', VALIDATION_FAIL: 'failed', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed' },
-  reserving:   { RESERVATION_OK: 'redirecting', RESERVATION_FAIL: 'failed', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed' },
-  redirecting: { REDIRECT_OK: 'success', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed' },
+  idle:        { START_CHECKOUT: 'validating', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'idle', RESET: 'idle' },
+  validating:  { VALIDATION_OK: 'reserving', VALIDATION_FAIL: 'failed', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed', RESET: 'idle' },
+  reserving:   { RESERVATION_OK: 'redirecting', RESERVATION_FAIL: 'failed', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed', RESET: 'idle' },
+  redirecting: { REDIRECT_OK: 'success', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed', RESET: 'idle' },
   success:     { RESET: 'idle' },
   failed:      { RETRY: 'idle', RESET: 'idle' },
   timeout:     { RETRY: 'idle', RESET: 'idle' },

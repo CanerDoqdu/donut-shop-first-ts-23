@@ -26,6 +26,10 @@ Run sequentially in Supabase SQL Editor:
 3. `supabase/migrations/003_stores_seed.sql`
 4. `supabase/migrations/004_stripe_events.sql`
 5. `supabase/migrations/005_soft_delete_audit.sql`
+6. `supabase/migrations/006_security_rls_hardening.sql` — Function search_path + referral_codes policy cleanup
+7. `supabase/migrations/007_consolidate_permissive_policies.sql` — Duplicate permissive policy merging (points_transactions, referral_codes)
+8. `supabase/migrations/008_auth_rls_initplan_optimization.sql` — auth.uid() → (select auth.uid()) across all 14 policies
+9. `supabase/migrations/009_consolidate_final_permissive_policies.sql` — Final policy consolidation (orders + order_items)
 
 All migrations are idempotent (`IF NOT EXISTS`, `CREATE OR REPLACE`, `DROP ... IF EXISTS`).
 
@@ -115,7 +119,7 @@ DROP FUNCTION IF EXISTS process_payment_completed(TEXT, TEXT) CASCADE;
 
 ### Step 3 — Re-run migrations
 
-`001 -> 002 -> 003 -> 004 -> 005`
+`001 -> 002 -> 003 -> 004 -> 005 -> 006 -> 007 -> 008 -> 009`
 
 ## Operations
 
@@ -141,6 +145,53 @@ SELECT schemaname, tablename, policyname, permissive, roles, cmd, qual
 FROM pg_policies
 WHERE schemaname = 'public'
 ORDER BY tablename, policyname;
+```
+
+### Auth RLS Initialization Plan (Lint Remediation) ✅ RESOLVED
+
+**Status:** Migrations 006–009 applied (2026-02-21). All Supabase lint items resolved except Leaked Password Protection (plan limitation).
+
+**What was fixed:**
+- ✅ Function search_path hardening (get_user_tenant, create_user_referral_code)
+- ✅ Overly-permissive RLS policy removed (referral_codes service role)
+- ✅ Duplicate permissive policies consolidated (orders, order_items, points_transactions, referral_codes)
+- ✅ All 14 RLS policies converted to initplan-safe `(select auth.uid())` format
+- ⚠️ Leaked Password Protection — requires Supabase Pro plan (workaround documented below)
+
+**Affected tables:** orders, order_items, profiles, loyalty_points, points_transactions, referral_codes, referrals
+
+#### Verification queries
+```sql
+-- Check no unoptimized policies remain
+SELECT schemaname, tablename, policyname, cmd, qual, with_check
+FROM pg_policies
+WHERE schemaname = 'public'
+  AND (
+    coalesce(qual, '') ~ 'auth\.(uid|role)\s*\('
+    OR coalesce(with_check, '') ~ 'auth\.(uid|role)\s*\('
+  )
+ORDER BY tablename, policyname;
+-- Expected: rows show (select auth.uid()) format only
+
+-- Check function search_path
+SELECT n.nspname, p.proname, p.proconfig
+FROM pg_proc p
+JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public'
+  AND p.proname IN ('get_user_tenant', 'create_user_referral_code')
+ORDER BY p.proname;
+-- Expected: proconfig contains search_path=public, pg_temp
+
+-- Check no duplicate permissive policies
+WITH expanded AS (
+  SELECT tablename, policyname, permissive, cmd, unnest(roles) AS role_name
+  FROM pg_policies WHERE schemaname = 'public'
+)
+SELECT tablename, cmd, role_name, count(*), array_agg(policyname)
+FROM expanded WHERE permissive = 'PERMISSIVE'
+GROUP BY tablename, cmd, role_name
+HAVING count(*) > 1;
+-- Expected: empty (no duplicates)
 ```
 
 ### Index usage
@@ -211,10 +262,39 @@ Client reports CLS, FID, FCP, LCP, TTFB to `/api/vitals`.
 ### Request tracing
 Every request carries `x-request-id` (generated in middleware if missing).
 
+## Authentication & Security
+
+### Leaked Password Protection (HIBP)
+
+**Status:** ⚠️ Requires Supabase Pro plan — cannot enable on free tier.
+
+**Dashboard action (if upgraded):**
+Authentication → Settings → Password Security → enable "Leaked password protection"
+
+**Current workarounds (free plan):**
+1. **Password complexity** — min 12 chars, upper + lower + digit + special (enforce frontend + backend)
+2. **Rate limiting** — signup: 5 req/10min/IP, reset: 3 req/hr/email
+3. **Failed login lockout** — 5 failures → 15 min lockout
+4. **Auth event logging** — track login attempts for anomaly detection
+5. **MFA** — planned for admin roles (TOTP)
+
+### Supabase Lint Status (2026-02-21)
+
+| Lint Item | Status | Migration |
+|-----------|--------|-----------|
+| Function Search Path Mutable | ✅ Fixed | 006 |
+| RLS Policy Always True | ✅ Fixed | 006 |
+| Auth RLS Initialization Plan (×18) | ✅ Fixed | 008 |
+| Multiple Permissive Policies (×7) | ✅ Fixed | 007 + 009 |
+| Leaked Password Protection | ⚠️ Plan limit | N/A (Dashboard) |
+
+---
+
 ## Deployment Checklist
 
 - [ ] All env vars set (check `.env.example`)
-- [ ] Supabase migrations applied
+- [ ] Supabase migrations applied (001–009)
+- [ ] Supabase lint clean (except Leaked Password — plan limitation)
 - [ ] Stripe webhook configured and verified
 - [ ] Admin users seeded in `admin_users` table
 - [ ] HTTPS enabled
