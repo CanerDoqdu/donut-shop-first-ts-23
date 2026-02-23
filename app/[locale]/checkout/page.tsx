@@ -101,9 +101,10 @@ export default function CheckoutPage() {
   useEffect(() => {
     if ((machine.state === 'failed' || machine.state === 'timeout') && machine.canRetry) {
       // Wait a tick for the button to render, then focus
-      requestAnimationFrame(() => {
+      const id = requestAnimationFrame(() => {
         retryButtonRef.current?.focus();
       });
+      return () => cancelAnimationFrame(id);
     }
   }, [machine.state, machine.canRetry]);
 
