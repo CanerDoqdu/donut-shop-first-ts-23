@@ -2,17 +2,25 @@
  * k6 Load Test — Donut Shop API
  *
  * Scenarios:
- *   1. Product browsing (GET /api/products)
- *   2. Product search (GET /api/products/search)
- *   3. Checkout flow (POST /api/checkout)
+ *   1. Product browsing  (GET  /api/products)        — 60% of traffic
+ *   2. Product search    (GET  /api/products/search)  — 20% of traffic
+ *   3. Checkout flow     (POST /api/checkout)         — 20% of traffic
+ *
+ * Load profile (500 concurrent users):
+ *   Stage 1 — Ramp-up:   0 → 500 VUs over 60 s
+ *   Stage 2 — Sustained: 500 VUs for 3 min
+ *   Stage 3 — Ramp-down: 500 → 0 VUs over 60 s
  *
  * Thresholds:
- *   - p95 response time < 2 seconds
- *   - Error rate < 1%
+ *   - Overall p95 response time < 2 s
+ *   - Checkout p95 < 500 ms
+ *   - Browse   p95 < 500 ms
+ *   - Search   p95 < 1 s
+ *   - Error rate < 1 %
  *
  * Usage:
  *   k6 run scripts/load-test.js
- *   k6 run --vus 50 --duration 3m scripts/load-test.js
+ *   k6 run --env BASE_URL=https://staging.example.com scripts/load-test.js
  *
  * Environment:
  *   BASE_URL (default: http://localhost:3000)
@@ -30,39 +38,50 @@ const productSearchTrend = new Trend('product_search_duration');
 const checkoutTrend = new Trend('checkout_duration');
 
 // ─── Configuration ──────────────────────────────────────────
+// 500 concurrent users: ramp-up 60 s → sustained 3 min → ramp-down 60 s
+// Traffic split roughly 60 / 20 / 20 across browse / search / checkout.
 
 export const options = {
   scenarios: {
     browse: {
-      executor: 'constant-vus',
-      vus: 30,
-      duration: '3m',
+      executor: 'ramping-vus',
+      stages: [
+        { duration: '60s',  target: 300 },  // ramp 0 → 300
+        { duration: '3m',   target: 300 },  // hold 300
+        { duration: '60s',  target: 0 },    // ramp down
+      ],
       exec: 'browseProducts',
       tags: { scenario: 'browse' },
     },
     search: {
-      executor: 'constant-vus',
-      vus: 10,
-      duration: '3m',
+      executor: 'ramping-vus',
+      stages: [
+        { duration: '60s',  target: 100 },
+        { duration: '3m',   target: 100 },
+        { duration: '60s',  target: 0 },
+      ],
       exec: 'searchProducts',
-      startTime: '10s',
+      startTime: '5s',
       tags: { scenario: 'search' },
     },
     checkout: {
-      executor: 'constant-vus',
-      vus: 10,
-      duration: '3m',
+      executor: 'ramping-vus',
+      stages: [
+        { duration: '60s',  target: 100 },
+        { duration: '3m',   target: 100 },
+        { duration: '60s',  target: 0 },
+      ],
       exec: 'checkoutFlow',
-      startTime: '20s',
+      startTime: '10s',
       tags: { scenario: 'checkout' },
     },
   },
   thresholds: {
-    http_req_duration: ['p(95)<2000'],      // p95 < 2 seconds
-    errors: ['rate<0.01'],                   // Error rate < 1%
-    product_browse_duration: ['p(95)<1000'], // Browse p95 < 1s
-    product_search_duration: ['p(95)<1500'], // Search p95 < 1.5s
-    checkout_duration: ['p(95)<3000'],       // Checkout p95 < 3s
+    http_req_duration: ['p(95)<2000'],       // overall p95 < 2 s
+    errors: ['rate<0.01'],                    // error rate < 1 %
+    product_browse_duration: ['p(95)<500'],   // browse  p95 < 500 ms
+    product_search_duration: ['p(95)<1000'],  // search  p95 < 1 s
+    checkout_duration: ['p(95)<500'],         // checkout p95 < 500 ms
   },
 };
 
@@ -230,26 +249,49 @@ export function checkoutFlow() {
 // ─── Summary Handler ────────────────────────────────────────
 
 export function handleSummary(data) {
+  const val = (metric, key = 'p(95)') =>
+    data.metrics[metric]?.values?.[key] ?? 0;
+
   const summary = {
     timestamp: new Date().toISOString(),
-    totalRequests: data.metrics.http_reqs?.values?.count || 0,
-    p95Duration: data.metrics.http_req_duration?.values?.['p(95)'] || 0,
-    p99Duration: data.metrics.http_req_duration?.values?.['p(99)'] || 0,
-    errorRate: data.metrics.errors?.values?.rate || 0,
+    totalRequests: val('http_reqs', 'count'),
+    latency: {
+      p50: val('http_req_duration', 'p(50)'),
+      p95: val('http_req_duration', 'p(95)'),
+      p99: val('http_req_duration', 'p(99)'),
+      max: val('http_req_duration', 'max'),
+      avg: val('http_req_duration', 'avg'),
+    },
+    errorRate: val('errors', 'rate'),
     scenarios: {
       browse: {
-        p95: data.metrics.product_browse_duration?.values?.['p(95)'] || 0,
+        p50: val('product_browse_duration', 'p(50)'),
+        p95: val('product_browse_duration', 'p(95)'),
+        p99: val('product_browse_duration', 'p(99)'),
       },
       search: {
-        p95: data.metrics.product_search_duration?.values?.['p(95)'] || 0,
+        p50: val('product_search_duration', 'p(50)'),
+        p95: val('product_search_duration', 'p(95)'),
+        p99: val('product_search_duration', 'p(99)'),
       },
       checkout: {
-        p95: data.metrics.checkout_duration?.values?.['p(95)'] || 0,
+        p50: val('checkout_duration', 'p(50)'),
+        p95: val('checkout_duration', 'p(95)'),
+        p99: val('checkout_duration', 'p(99)'),
       },
     },
     thresholds: {
-      'p95 < 2s': (data.metrics.http_req_duration?.values?.['p(95)'] || 0) < 2000,
-      'error rate < 1%': (data.metrics.errors?.values?.rate || 0) < 0.01,
+      'overall p95 < 2s':     val('http_req_duration') < 2000,
+      'browse p95 < 500ms':   val('product_browse_duration') < 500,
+      'search p95 < 1s':      val('product_search_duration') < 1000,
+      'checkout p95 < 500ms': val('checkout_duration') < 500,
+      'error rate < 1%':      val('errors', 'rate') < 0.01,
+    },
+    loadProfile: {
+      peakVUs: 500,
+      rampUpSeconds: 60,
+      sustainedSeconds: 180,
+      rampDownSeconds: 60,
     },
   };
 

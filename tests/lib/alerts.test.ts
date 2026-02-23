@@ -302,4 +302,73 @@ describe('Alert Thresholds', () => {
       ALERT_RULES.push(...originalRules);
     });
   });
+
+  // ── Rule: vital_fcp_regression ────────────────────────────
+
+  describe('vital_fcp_regression', () => {
+    it('does not fire when no vital regressions provided', () => {
+      const fired = evaluateAlerts(collector);
+      expect(fired.find((a) => a.ruleId === 'vital_fcp_regression')).toBeUndefined();
+    });
+
+    it('does not fire when vitalRegressions is empty', () => {
+      const fired = evaluateAlerts(collector, undefined, []);
+      expect(fired.find((a) => a.ruleId === 'vital_fcp_regression')).toBeUndefined();
+    });
+
+    it('fires when FCP regression is present', () => {
+      const regressions = [
+        {
+          name: 'FCP',
+          baseline: 1000,
+          current: 1060,
+          growthFraction: 0.06,
+          threshold: 0.05,
+          message: 'FCP regressed 6.0% (1000ms → 1060ms, threshold: 5%)',
+        },
+      ];
+      const fired = evaluateAlerts(collector, undefined, regressions);
+      const alert = fired.find((a) => a.ruleId === 'vital_fcp_regression');
+      expect(alert).toBeDefined();
+      expect(alert!.severity).toBe('warn');
+      expect(alert!.message).toContain('FCP');
+    });
+  });
+
+  // ── Rule: vital_lcp_regression ────────────────────────────
+
+  describe('vital_lcp_regression', () => {
+    it('does not fire when no LCP regression exists', () => {
+      const regressions = [
+        {
+          name: 'FCP',
+          baseline: 1000,
+          current: 1060,
+          growthFraction: 0.06,
+          threshold: 0.05,
+          message: 'FCP regressed 6.0%',
+        },
+      ];
+      const fired = evaluateAlerts(collector, undefined, regressions);
+      expect(fired.find((a) => a.ruleId === 'vital_lcp_regression')).toBeUndefined();
+    });
+
+    it('fires when LCP regression is present', () => {
+      const regressions = [
+        {
+          name: 'LCP',
+          baseline: 2000,
+          current: 2080,
+          growthFraction: 0.04,
+          threshold: 0.03,
+          message: 'LCP regressed 4.0% (2000ms → 2080ms, threshold: 3%)',
+        },
+      ];
+      const fired = evaluateAlerts(collector, undefined, regressions);
+      const alert = fired.find((a) => a.ruleId === 'vital_lcp_regression');
+      expect(alert).toBeDefined();
+      expect(alert!.severity).toBe('critical');
+      expect(alert!.message).toContain('LCP');
+    });
+  });
 });
