@@ -16,6 +16,7 @@ import { logger, startTimer } from '@/lib/logger';
 import { captureWithContext } from '@/lib/sentry';
 import { reserveStock, releaseReservations } from '@/lib/inventory';
 import { applyPromo, rollbackPromo } from '@/lib/promo';
+import { dualWriteStripeSession } from '@/lib/migration';
 import {
   E_RATE_LIMITED,
   E_VALIDATION_FAILED,
@@ -275,10 +276,10 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       throw stripeErr;
     }
 
-    // Update order with Stripe session ID
+    // Update order with Stripe session ID (dual-write: both v1 and v2 columns)
     await admin
       .from('orders')
-      .update({ stripe_session_id: session.id })
+      .update(dualWriteStripeSession(session.id))
       .eq('id', order.id);
 
     log.info('checkout.success', { orderId: order.id, totalAmount, items: items.length });
