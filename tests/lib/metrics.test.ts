@@ -245,4 +245,39 @@ describe('MetricsCollector', () => {
       expect(result.avg).toBe(50);
     });
   });
+
+  // ── Pruning / overflow ───────────────────────────────────
+
+  describe('push overflow pruning', () => {
+    it('prunes latency entries when exceeding maxEntries', () => {
+      // Use a tiny maxEntries to trigger pruning
+      const small = new MetricsCollector(60_000, 5);
+      for (let i = 0; i < 8; i++) {
+        small.recordLatency('/api/test', i * 10);
+      }
+      // After pruning, should have at most 5 entries
+      const summary = small.getLatencySummary('/api/test');
+      expect(summary.count).toBeLessThanOrEqual(5);
+    });
+
+    it('prunes checkout outcomes when exceeding maxEntries', () => {
+      const small = new MetricsCollector(60_000, 5);
+      for (let i = 0; i < 8; i++) {
+        small.recordCheckoutOutcome('success');
+      }
+      // After pruning, total should be capped
+      const summary = small.getCheckoutSummary();
+      expect(summary.total).toBeLessThanOrEqual(5);
+    });
+
+    it('retains only recent entries after pruning (push path)', () => {
+      const small = new MetricsCollector(60_000, 3);
+      // Push 5 latency entries — triggers pruning at > 3
+      for (let i = 1; i <= 5; i++) {
+        small.recordLatency('/api/x', i * 100);
+      }
+      const s = small.getLatencySummary('/api/x');
+      expect(s.count).toBeLessThanOrEqual(3);
+    });
+  });
 });

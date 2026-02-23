@@ -277,4 +277,29 @@ describe('Alert Thresholds', () => {
       expect(ruleIds).toContain('memory_growth_high');
     });
   });
+
+  // ── Rule evaluation error handling ────────────────────────
+
+  describe('evaluation error handling', () => {
+    it('catches and logs errors from broken rule evaluate functions', () => {
+      // Temporarily inject a broken rule
+      const originalRules = [...ALERT_RULES];
+      const brokenRule = {
+        id: 'test_broken',
+        description: 'Always throws',
+        severity: 'warn' as const,
+        domain: 'checkout' as const,
+        evaluate: () => { throw new Error('boom'); },
+        message: () => 'should not reach',
+      };
+      ALERT_RULES.push(brokenRule);
+
+      // Should not throw, just log the error
+      expect(() => evaluateAlerts(collector)).not.toThrow();
+
+      // Clean up
+      ALERT_RULES.length = 0;
+      ALERT_RULES.push(...originalRules);
+    });
+  });
 });

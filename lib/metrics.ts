@@ -30,7 +30,7 @@ import { logger } from './logger';
 const DEFAULT_WINDOW_MS = 5 * 60 * 1000;
 
 /** Maximum data points per metric key (memory safety). */
-const MAX_ENTRIES_PER_KEY = 10_000;
+const DEFAULT_MAX_ENTRIES = 10_000;
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -78,14 +78,16 @@ export interface VitalSummary {
 
 export class MetricsCollector {
   private windowMs: number;
+  private maxEntries: number;
   private latencies = new Map<string, TimestampedValue[]>();
   private errors = new Map<string, TimestampedValue[]>();
   private requests = new Map<string, TimestampedValue[]>();
   private checkoutOutcomes: Array<{ ts: number; outcome: CheckoutOutcome }> = [];
   private vitals = new Map<string, TimestampedValue[]>();
 
-  constructor(windowMs: number = DEFAULT_WINDOW_MS) {
+  constructor(windowMs: number = DEFAULT_WINDOW_MS, maxEntries: number = DEFAULT_MAX_ENTRIES) {
     this.windowMs = windowMs;
+    this.maxEntries = maxEntries;
   }
 
   // ── Recording ───────────────────────────────────────────
@@ -225,21 +227,21 @@ export class MetricsCollector {
     arr.push({ ts: Date.now(), value });
 
     // Prune old + enforce max
-    if (arr.length > MAX_ENTRIES_PER_KEY) {
+    if (arr.length > this.maxEntries) {
       const cutoff = Date.now() - this.windowMs;
       const pruned = arr.filter((e) => e.ts >= cutoff);
-      map.set(key, pruned.length > MAX_ENTRIES_PER_KEY
-        ? pruned.slice(-MAX_ENTRIES_PER_KEY)
+      map.set(key, pruned.length > this.maxEntries
+        ? pruned.slice(-this.maxEntries)
         : pruned);
     }
   }
 
   private pruneArray<T extends { ts: number }>(arr: T[]): void {
-    if (arr.length > MAX_ENTRIES_PER_KEY) {
+    if (arr.length > this.maxEntries) {
       const cutoff = Date.now() - this.windowMs;
       const pruned = arr.filter((e) => e.ts >= cutoff);
       arr.length = 0;
-      arr.push(...pruned.slice(-MAX_ENTRIES_PER_KEY));
+      arr.push(...pruned.slice(-this.maxEntries));
     }
   }
 
