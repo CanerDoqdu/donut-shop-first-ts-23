@@ -4,9 +4,14 @@ import { useState, useEffect, type ElementType } from 'react';
 import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
-import AdminDashboard from '@/components/admin/AdminDashboard';
+import dynamic from 'next/dynamic';
 import InventoryManager from '@/components/admin/InventoryManager';
 import { SectionSuspense } from '@/components/ui/section-suspense';
+
+const AdminDashboard = dynamic(
+  () => import('@/components/admin/AdminDashboard'),
+  { ssr: false },
+);
 import { 
   LayoutDashboard, Package, ShoppingBag, Users, Settings, 
   ChevronLeft, Menu, X, Store, Crown, Bell

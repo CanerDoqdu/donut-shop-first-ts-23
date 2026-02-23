@@ -26,6 +26,7 @@ export default function CheckoutPage() {
   const { items, getTotalPrice } = useCartStore();
   const machine = useCheckoutMachine();
   const idempotencyKeyRef = useRef<string>(getOrCreateIdempotencyKey());
+  const retryButtonRef = useRef<HTMLButtonElement>(null);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [promoCode, setPromoCode] = useState('');
   const [promoLoading, setPromoLoading] = useState(false);
@@ -95,6 +96,16 @@ export default function CheckoutPage() {
       machine.reset();
     }
   }, [machine]);
+
+  // Bug #5: Move focus to retry button on failure for a11y
+  useEffect(() => {
+    if ((machine.state === 'failed' || machine.state === 'timeout') && machine.canRetry) {
+      // Wait a tick for the button to render, then focus
+      requestAnimationFrame(() => {
+        retryButtonRef.current?.focus();
+      });
+    }
+  }, [machine.state, machine.canRetry]);
 
   const handleRetry = useCallback(() => {
     if (!machine.canRetry) return;
@@ -294,12 +305,14 @@ export default function CheckoutPage() {
                   </div>
                   {machine.canRetry && (
                     <Button
+                      ref={retryButtonRef}
                       type="button"
                       onClick={handleRetry}
                       disabled={retryCooldown > 0}
                       size="sm"
                       variant="outline"
                       className="mt-3 gap-2"
+                      data-focus-trap-disabled
                     >
                       <RefreshCw className={`h-3 w-3 ${retryCooldown > 0 ? 'animate-spin' : ''}`} />
                       {retryCooldown > 0 ? `Retry in ${retryCooldown}s` : 'Try Again'}

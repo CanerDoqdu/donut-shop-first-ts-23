@@ -47,7 +47,7 @@ export default async function LocaleLayout({
       <body className="flex min-h-screen flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
         <a
           href="#main-content"
-          className="absolute  z-50 bg-white px-4 py-3 text-amber-600 font-bold focus:left-4 focus:top-4 rounded-md shadow-lg"
+          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:left-4 focus:top-4 bg-white px-4 py-3 text-amber-600 font-bold rounded-md shadow-lg"
         >
           Skip to main content
         </a>
