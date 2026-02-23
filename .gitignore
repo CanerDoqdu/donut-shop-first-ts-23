@@ -49,3 +49,8 @@ next-env.d.ts
 
 # project notes
 TODO.md
+TODO-Max.md
+toLearn.md
+
+# Sentry Config File
+.env.sentry-build-plugin
