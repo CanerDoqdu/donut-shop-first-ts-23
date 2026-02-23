@@ -1,46 +1,15 @@
 'use client';
 
-import Image from 'next/image';
 import { useState } from 'react';
 import { useTranslations } from 'next-intl';
-import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Badge } from '@/components/ui/badge';
-import { formatPrice } from '@/lib/utils';
 import { Search } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
-import { Link } from '@/i18n/routing';
 import { useDebounce } from '@/hooks';
 import { SEARCH_DEBOUNCE_MS, PRODUCT_CATEGORIES } from '@/lib/constants';
-import { AddToCartButton } from '@/components/ui/add-to-cart-button';
-
-function ProductImage({ src, alt }: { src: string; alt: string }) {
-  const [loaded, setLoaded] = useState(false);
-
-  return (
-    <div className="w-full aspect-square relative mb-4 group-hover:scale-110 transition-transform">
-      {!loaded && (
-        <div className="absolute inset-0 rounded-2xl overflow-hidden">
-          <div className="w-full h-full bg-linear-to-r from-pink-100 via-white to-pink-100 animate-[shimmer_1.5s_infinite]"
-            style={{
-              backgroundSize: '200% 100%',
-              animation: 'shimmer 1.5s infinite linear',
-            }}
-          />
-        </div>
-      )}
-      <Image
-        src={src}
-        alt={alt}
-        fill
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-        className={`object-contain drop-shadow-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        onLoad={() => setLoaded(true)}
-      />
-    </div>
-  );
-}
+import { ProductCard } from '@/components/ui/product-card';
+import { SectionSuspense } from '@/components/ui/section-suspense';
 
 export default function ProductsPage() {
   const t = useTranslations();
@@ -97,35 +66,16 @@ export default function ProductsPage() {
       </div>
 
       {/* Products Grid */}
+      <SectionSuspense name="ProductGrid">
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {filteredProducts.map((product) => (
-          <Card key={product.id} className="group hover:scale-105 transition-transform">
-            <Link href={{ pathname: '/products/[slug]', params: { slug: product.slug } }}>
-              <CardContent className="pt-6 cursor-pointer">
-                <ProductImage src={product.image_url} alt={product.name_en} />
-                <CardTitle className="text-center mb-2 text-lg">
-                  {product.name_en}
-                </CardTitle>
-                <p className="text-center text-sm text-gray-600 mb-3 line-clamp-2">
-                  {product.description_en}
-                </p>
-                <div className="flex items-center justify-between mb-3">
-                  <Badge variant="secondary">{t(`products.categories.${product.category}`)}</Badge>
-                  <span className="text-sm text-gray-500">Stock: {product.stock}</span>
-                </div>
-                <p className="text-center font-fredoka text-2xl font-bold text-[#FF6BBF]">
-                  {formatPrice(product.price)}
-                </p>
-              </CardContent>
-            </Link>
-            <CardFooter>
-              <AddToCartButton
-                product={product}
-                label={t('products.addToCart')}
-                outOfStockLabel={t('products.outOfStock')}
-              />
-            </CardFooter>
-          </Card>
+          <ProductCard
+            key={product.id}
+            product={product}
+            categoryLabel={t(`products.categories.${product.category}`)}
+            addToCartLabel={t('products.addToCart')}
+            outOfStockLabel={t('products.outOfStock')}
+          />
         ))}
       </div>
 
@@ -134,6 +84,7 @@ export default function ProductsPage() {
           <p className="text-gray-500 text-lg">No products found. Try a different search!</p>
         </div>
       )}
+      </SectionSuspense>
     </div>
   );
 }

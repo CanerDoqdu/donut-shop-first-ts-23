@@ -7,11 +7,16 @@ import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ThemeToggle } from '@/components/theme/theme-toggle';
+import dynamic from 'next/dynamic';
 import { useCartStore } from '@/store/cart-store';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import type { User as SupabaseUser, AuthChangeEvent, Session } from '@supabase/supabase-js';
+
+const ThemeToggle = dynamic(
+  () => import('@/components/theme/theme-toggle').then((m) => m.ThemeToggle),
+  { ssr: false },
+);
 
 interface Profile {
   full_name: string | null;
