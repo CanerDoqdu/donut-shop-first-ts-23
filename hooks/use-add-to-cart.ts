@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { useCartStore } from '@/store/cart-store';
 import type { Product, CartItem } from '@/lib/types';
 
@@ -43,6 +43,14 @@ export function useAddToCart(): UseAddToCartReturn {
   const [error, setError] = useState<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const abortRef = useRef<AbortController | null>(null);
+
+  // Cleanup timer + abort on unmount to prevent setState-after-unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+      abortRef.current?.abort();
+    };
+  }, []);
 
   const addToCart = useCallback(
     (product: Product, quantity = 1) => {
