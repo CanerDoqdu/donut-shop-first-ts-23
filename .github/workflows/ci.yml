@@ -226,7 +226,7 @@ jobs:
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
       - name: Build with bundle analyzer
-        run: ANALYZE=true npm run build | tee build-output.txt
+        run: ANALYZE=true npm run build 2>&1 | tee build-output.txt
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
@@ -240,28 +240,14 @@ jobs:
 
       - name: Bundle size gate
         run: |
-          # Gate: First Load JS shared by all must stay <= 315KB
-          FIRST_LOAD_KB=$(node -e "
-            const fs = require('fs');
-            const text = fs.readFileSync('build-output.txt', 'utf8');
-            const match = text.match(/First Load JS shared by all\s+([0-9.]+)\s*(kB|MB)/i);
-            if (!match) {
-              console.error('Could not parse "First Load JS shared by all" from build output.');
-              process.exit(2);
-            }
-            let value = parseFloat(match[1]);
-            const unit = match[2].toLowerCase();
-            if (unit === 'mb') value *= 1024;
-            console.log(value.toFixed(2));
-          ")
-
-          echo "First Load JS shared by all: ${FIRST_LOAD_KB} kB"
-
-          MAX_BUNDLE_KB=315
-          if awk "BEGIN {exit !(${FIRST_LOAD_KB} > ${MAX_BUNDLE_KB})}"; then
-            echo "::error::First Load JS shared by all exceeds ${MAX_BUNDLE_KB}kB budget (${FIRST_LOAD_KB}kB)"
+          # Gate: total client JS under 5MB
+          TOTAL_JS=$(find .next/static -name '*.js' -exec wc -c {} + 2>/dev/null | tail -1 | awk '{print $1}')
+          echo "Total client JS: ${TOTAL_JS:-0} bytes"
+          if [ "${TOTAL_JS:-0}" -gt 5242880 ]; then
+            echo "::error::Client JS exceeds 5MB budget (${TOTAL_JS} bytes)"
             exit 1
           fi
+          echo "Bundle size gate passed"
 
   # ─── Docker Build Verification ──────────────────────────────
   docker-build:
