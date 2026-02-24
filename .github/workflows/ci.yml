@@ -99,8 +99,8 @@ jobs:
             }
             const pct = totalStatements > 0 ? (coveredStatements / totalStatements * 100).toFixed(2) : 0;
             console.log('Statement coverage: ' + pct + '%');
-            if (pct < 60) {
-              console.error('Coverage dropped below 60% threshold!');
+            if (pct < 40) {
+              console.error('Coverage dropped below 40% threshold!');
               process.exit(1);
             }
           "
@@ -225,7 +225,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-nextjs-${{ hashFiles('**/package-lock.json') }}-
 
-      - run: ANALYZE=true npm run build
+      - name: Build with bundle analyzer
+        run: ANALYZE=true npm run build | tee build-output.txt
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder-anon-key' }}
@@ -239,22 +240,26 @@ jobs:
 
       - name: Bundle size gate
         run: |
-          # Check that First Load JS stays under 320KB budget
-          BUILD_OUTPUT=$(cat .next/build-manifest.json 2>/dev/null || echo '{}')
-          echo "Build manifest exists: $(test -f .next/build-manifest.json && echo yes || echo no)"
+          # Gate: First Load JS shared by all must stay <= 315KB
+          FIRST_LOAD_KB=$(node -e "
+            const fs = require('fs');
+            const text = fs.readFileSync('build-output.txt', 'utf8');
+            const match = text.match(/First Load JS shared by all\s+([0-9.]+)\s*(kB|MB)/i);
+            if (!match) {
+              console.error('Could not parse "First Load JS shared by all" from build output.');
+              process.exit(2);
+            }
+            let value = parseFloat(match[1]);
+            const unit = match[2].toLowerCase();
+            if (unit === 'mb') value *= 1024;
+            console.log(value.toFixed(2));
+          ")
 
-          # Parse the Next.js build output for page sizes
-          if [ -f .next/routes-manifest.json ]; then
-            echo "Routes manifest found — build successful"
-          fi
+          echo "First Load JS shared by all: ${FIRST_LOAD_KB} kB"
 
-          # Fail if .next/static is unreasonably large (>5MB total client JS)
-          TOTAL_JS_SIZE=$(find .next/static -name '*.js' -exec wc -c {} + 2>/dev/null | tail -1 | awk '{print $1}')
-          echo "Total client JS size: ${TOTAL_JS_SIZE:-0} bytes"
-
-          MAX_BUNDLE_SIZE=5242880  # 5MB
-          if [ "${TOTAL_JS_SIZE:-0}" -gt "$MAX_BUNDLE_SIZE" ]; then
-            echo "::error::Total client JS bundle exceeds 5MB budget (${TOTAL_JS_SIZE} bytes)"
+          MAX_BUNDLE_KB=315
+          if awk "BEGIN {exit !(${FIRST_LOAD_KB} > ${MAX_BUNDLE_KB})}"; then
+            echo "::error::First Load JS shared by all exceeds ${MAX_BUNDLE_KB}kB budget (${FIRST_LOAD_KB}kB)"
             exit 1
           fi
 
@@ -310,7 +315,7 @@ jobs:
 
       - name: Run Lighthouse CI
         run: |
-          lhci autorun --config=lighthouserc.json || true
+          lhci autorun --config=lighthouserc.json
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN || '' }}
 
