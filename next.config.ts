@@ -7,9 +7,13 @@ const withNextIntl = createNextIntlPlugin('./i18n/request.ts');
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
+  openAnalyzer: false,
 });
 
 const nextConfig: NextConfig = {
+  // Standalone output for Docker deployments
+  output: 'standalone',
+
   // Build-time env injection
   env: {
     NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version ?? '0.0.0-dev',
