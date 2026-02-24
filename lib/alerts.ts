@@ -46,6 +46,8 @@ export interface AlertContext {
   memoryUsageMB?: number;
   /** Web Vital regressions detected by perf-budget, if available. */
   vitalRegressions?: VitalRegression[];
+  /** Circuit breaker trip counts per service (e.g. { stripe: 5 }). */
+  circuitBreakerTrips?: Record<string, number>;
 }
 
 export interface FiredAlert {
@@ -147,6 +149,26 @@ export const ALERT_RULES: AlertRule[] = [
       return r?.message ?? 'LCP regression detected';
     },
   },
+  {
+    id: 'stripe_circuit_breaker_tripped',
+    description: 'Stripe circuit breaker tripped 5+ times',
+    severity: 'critical',
+    domain: 'checkout',
+    evaluate: (ctx) =>
+      (ctx.circuitBreakerTrips?.['stripe'] ?? 0) >= 5,
+    message: (ctx) =>
+      `Stripe circuit breaker tripped ${ctx.circuitBreakerTrips?.['stripe'] ?? 0} times (threshold: 5)`,
+  },
+  {
+    id: 'redis_circuit_breaker_tripped',
+    description: 'Redis circuit breaker tripped 3+ times',
+    severity: 'warn',
+    domain: 'queue',
+    evaluate: (ctx) =>
+      (ctx.circuitBreakerTrips?.['redis'] ?? 0) >= 3,
+    message: (ctx) =>
+      `Redis circuit breaker tripped ${ctx.circuitBreakerTrips?.['redis'] ?? 0} times (threshold: 3)`,
+  },
 ];
 
 // ── Evaluation Engine ───────────────────────────────────────
@@ -162,6 +184,7 @@ export function evaluateAlerts(
   collector: MetricsCollector,
   memoryUsageMB?: number,
   vitalRegressions?: VitalRegression[],
+  circuitBreakerTrips?: Record<string, number>,
 ): FiredAlert[] {
   // Build context
   const endpointSummaries = new Map<string, EndpointSummary>();
@@ -174,6 +197,7 @@ export function evaluateAlerts(
     checkoutSummary: collector.getCheckoutSummary(),
     memoryUsageMB,
     vitalRegressions,
+    circuitBreakerTrips,
   };
 
   const fired: FiredAlert[] = [];
@@ -225,6 +249,7 @@ export function buildAlertContext(
   collector: MetricsCollector,
   memoryUsageMB?: number,
   vitalRegressions?: VitalRegression[],
+  circuitBreakerTrips?: Record<string, number>,
 ): AlertContext {
   const endpointSummaries = new Map<string, EndpointSummary>();
   for (const endpoint of collector.getTrackedEndpoints()) {
@@ -235,5 +260,6 @@ export function buildAlertContext(
     checkoutSummary: collector.getCheckoutSummary(),
     memoryUsageMB,
     vitalRegressions,
+    circuitBreakerTrips,
   };
 }
