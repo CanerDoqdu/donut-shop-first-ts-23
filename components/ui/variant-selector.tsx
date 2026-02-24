@@ -75,7 +75,7 @@ export function VariantSelector({
 
   return (
     <div className="space-y-2">
-      <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
+      <p className="text-sm font-medium text-neutral-700">
         {groupLabel}
       </p>
 
@@ -98,8 +98,8 @@ export function VariantSelector({
                 'relative px-3 py-2 rounded-lg border text-sm font-medium transition-all duration-150',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-500',
                 isSelected
-                  ? 'border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
-                  : 'border-neutral-200 bg-white text-neutral-700 hover:border-amber-300 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300',
+                  ? 'border-amber-500 bg-amber-50 text-amber-700'
+                  : 'border-neutral-200 bg-white text-neutral-700 hover:border-amber-300',
                 isOutOfStock
                   ? 'opacity-40 cursor-not-allowed line-through'
                   : 'cursor-pointer',
@@ -107,7 +107,7 @@ export function VariantSelector({
             >
               <span className="block">{label}</span>
               {variant.price_offset !== 0 && (
-                <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+                <span className="block text-xs text-neutral-500">
                   {formatPrice(finalPrice)}
                   {variant.price_offset > 0 ? ' (+)' : ' (-)'}
                 </span>
