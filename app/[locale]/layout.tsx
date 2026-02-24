@@ -6,9 +6,10 @@ import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { PromoBanner } from '@/components/layout/promo-banner';
 import { AuthProvider } from '@/lib/auth/context';
-import { ThemeProvider } from '@/components/theme/theme-provider';
 import { routing } from '@/i18n/routing';
 import { WebVitals } from '@/components/monitoring/web-vitals';
+import { SpeedInsights } from '@vercel/speed-insights/next';
+import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -43,7 +44,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={locale} className={`${inter.variable} ${fredoka.variable}`} suppressHydrationWarning>
+    <html lang={locale} className={`${inter.variable} ${fredoka.variable}`}>
       <body className="flex min-h-screen flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
         <a
           href="#main-content"
@@ -52,15 +53,15 @@ export default async function LocaleLayout({
           Skip to main content
         </a>
         <NextIntlClientProvider messages={messages}>
-          <ThemeProvider>
             <AuthProvider>
             <WebVitals />
+            <SpeedInsights />
+            <Analytics />
             <Header />
             <PromoBanner />
             <main id="main-content" className="flex-1">{children}</main>
             <Footer />
           </AuthProvider>
-          </ThemeProvider>
         </NextIntlClientProvider>
       </body>
     </html>

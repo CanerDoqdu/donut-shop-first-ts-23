@@ -61,25 +61,6 @@ describe('AddToCartButton memo', () => {
   });
 });
 
-// ─── Header: ThemeToggle dynamic import ──────────────────────
-
-describe('Header ThemeToggle dynamic import', () => {
-  const src = readComponent('components/layout/header.tsx');
-
-  it('imports next/dynamic', () => {
-    expect(src).toContain("import dynamic from 'next/dynamic'");
-  });
-
-  it('lazy-loads ThemeToggle with ssr: false', () => {
-    expect(src).toContain("import('@/components/theme/theme-toggle')");
-    expect(src).toContain('ssr: false');
-  });
-
-  it('does NOT have direct static import of ThemeToggle', () => {
-    expect(src).not.toContain("import { ThemeToggle } from '@/components/theme/theme-toggle'");
-  });
-});
-
 // ─── Admin: AdminDashboard dynamic import ────────────────────
 
 describe('Admin dashboard dynamic import', () => {
