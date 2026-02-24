@@ -1,0 +1,46 @@
+# Dependencies
+node_modules
+npm-debug.log*
+
+# Build output
+.next
+out
+
+# Version control
+.git
+.gitignore
+
+# IDE
+.vscode
+*.swp
+*.swo
+
+# Testing
+coverage
+e2e
+tests
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+vitest.config.ts
+playwright.config.ts
+
+# Docs
+docs
+*.md
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
+
+# CI
+.github
+
+# Misc
+.env*.local
+.env.example
+*.log
+scripts
+supabase
+tasks

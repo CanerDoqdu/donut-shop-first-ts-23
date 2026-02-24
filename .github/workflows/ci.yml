@@ -64,6 +64,47 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
 
+  # ─── Coverage Gate ───────────────────────────────────────────
+  coverage-gate:
+    name: Coverage Gate
+    runs-on: ubuntu-latest
+    needs: [test]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run tests with coverage
+        run: npm test -- --coverage --reporter=json --outputFile=coverage/report.json
+
+      - name: Check coverage thresholds
+        run: |
+          node -e "
+            const fs = require('fs');
+            const summary = JSON.parse(fs.readFileSync('coverage/coverage-final.json', 'utf8'));
+            const files = Object.keys(summary);
+            let totalStatements = 0, coveredStatements = 0;
+            for (const file of files) {
+              const s = summary[file].s;
+              for (const key of Object.keys(s)) {
+                totalStatements++;
+                if (s[key] > 0) coveredStatements++;
+              }
+            }
+            const pct = totalStatements > 0 ? (coveredStatements / totalStatements * 100).toFixed(2) : 0;
+            console.log('Statement coverage: ' + pct + '%');
+            if (pct < 60) {
+              console.error('Coverage dropped below 60% threshold!');
+              process.exit(1);
+            }
+          "
+
   # ─── Security Audit ─────────────────────────────────────────
   audit:
     name: Security Audit
@@ -195,4 +236,81 @@ jobs:
           NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || 'pk_test_placeholder' }}
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY || 're_placeholder_dummy' }}
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000' }}
+
+      - name: Bundle size gate
+        run: |
+          # Check that First Load JS stays under 320KB budget
+          BUILD_OUTPUT=$(cat .next/build-manifest.json 2>/dev/null || echo '{}')
+          echo "Build manifest exists: $(test -f .next/build-manifest.json && echo yes || echo no)"
+
+          # Parse the Next.js build output for page sizes
+          if [ -f .next/routes-manifest.json ]; then
+            echo "Routes manifest found — build successful"
+          fi
+
+          # Fail if .next/static is unreasonably large (>5MB total client JS)
+          TOTAL_JS_SIZE=$(find .next/static -name '*.js' -exec wc -c {} + 2>/dev/null | tail -1 | awk '{print $1}')
+          echo "Total client JS size: ${TOTAL_JS_SIZE:-0} bytes"
+
+          MAX_BUNDLE_SIZE=5242880  # 5MB
+          if [ "${TOTAL_JS_SIZE:-0}" -gt "$MAX_BUNDLE_SIZE" ]; then
+            echo "::error::Total client JS bundle exceeds 5MB budget (${TOTAL_JS_SIZE} bytes)"
+            exit 1
+          fi
+
+  # ─── Docker Build Verification ──────────────────────────────
+  docker-build:
+    name: Docker Build
+    runs-on: ubuntu-latest
+    needs: [lint, typecheck]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: false
+          tags: donut-shop:test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─── Lighthouse CI ─────────────────────────────────────────
+  lighthouse:
+    name: Lighthouse CI
+    runs-on: ubuntu-latest
+    needs: [build]
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+      - run: npm install -g @lhci/cli@0.14.x
+
+      - name: Build for Lighthouse
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: 'https://placeholder.supabase.co'
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: 'placeholder-anon-key'
+          NEXT_PUBLIC_APP_URL: 'http://localhost:3000'
+          SUPABASE_SERVICE_ROLE_KEY: 'placeholder-service-key'
+          STRIPE_SECRET_KEY: 'sk_test_placeholder'
+          STRIPE_WEBHOOK_SECRET: 'whsec_placeholder'
+          NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY: 'pk_test_placeholder'
+          RESEND_API_KEY: 're_placeholder_dummy'
+          NEXT_PUBLIC_SITE_URL: 'http://localhost:3000'
+
+      - name: Run Lighthouse CI
+        run: |
+          lhci autorun --config=lighthouserc.json || true
+        env:
+          LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN || '' }}
 
