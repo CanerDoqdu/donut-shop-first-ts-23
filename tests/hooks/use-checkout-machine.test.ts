@@ -341,7 +341,7 @@ describe('useCheckoutMachine — sessionStorage', () => {
     expect(storage.removeItem).toHaveBeenCalledWith('donut-checkout-machine');
   });
 
-  it('hydrates from sessionStorage on mount', () => {
+  it('does not hydrate non-resumable failed state on mount', () => {
     // Pre-populate sessionStorage with a persisted "failed" state
     const persisted = {
       state: 'failed',
@@ -353,9 +353,9 @@ describe('useCheckoutMachine — sessionStorage', () => {
     storage.getItem.mockReturnValue(JSON.stringify(persisted));
 
     const { result } = renderHook(() => useCheckoutMachine());
-    expect(result.current.state).toBe('failed');
-    expect(result.current.error).toBe('Previous error');
-    expect(result.current.retryCount).toBe(1);
+    expect(result.current.state).toBe('idle');
+    expect(result.current.error).toBeNull();
+    expect(result.current.retryCount).toBe(0);
   });
 
   it('ignores stale transient states (>5 min old)', () => {
@@ -372,6 +372,21 @@ describe('useCheckoutMachine — sessionStorage', () => {
     const { result } = renderHook(() => useCheckoutMachine());
     // Should fall back to initial state because "reserving" is stale
     expect(result.current.state).toBe('idle');
+  });
+
+  it('does not hydrate redirecting state (prevents stuck loading after Stripe back)', () => {
+    const persisted = {
+      state: 'redirecting',
+      error: null,
+      redirectUrl: 'https://checkout.stripe.com/test',
+      retryCount: 0,
+      lastTransitionAt: Date.now(),
+    };
+    storage.getItem.mockReturnValue(JSON.stringify(persisted));
+
+    const { result } = renderHook(() => useCheckoutMachine());
+    expect(result.current.state).toBe('idle');
+    expect(result.current.isBusy).toBe(false);
   });
 });
 

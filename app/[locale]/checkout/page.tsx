@@ -17,7 +17,7 @@ import { FieldError } from '@/components/ui/field-error';
 import { CHECKOUT_TIMEOUT_MS } from '@/lib/constants';
 import { getRetryCooldownMs } from '@/hooks/use-checkout-machine';
 import { safeFetch } from '@/lib/safe-fetch';
-import { generateIdempotencyKey, getOrCreateIdempotencyKey } from '@/lib/idempotency';
+import { generateIdempotencyKey, getOrCreateIdempotencyKey, rotateIdempotencyKey } from '@/lib/idempotency';
 
 export default function CheckoutPage() {
   const t = useTranslations();
@@ -61,10 +61,10 @@ export default function CheckoutPage() {
         body: JSON.stringify({ code: promoCode.trim(), subtotal }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Invalid promo code');
+      if (!res.ok) throw new Error(data.error || t('checkout.invalidPromo'));
       setPromoDiscount({ discountValue: data.discountValue, discountType: data.discountType });
     } catch (err) {
-      setPromoError(err instanceof Error ? err.message : 'Invalid promo code');
+      setPromoError(err instanceof Error ? err.message : t('checkout.invalidPromo'));
     } finally {
       setPromoLoading(false);
     }
@@ -97,6 +97,20 @@ export default function CheckoutPage() {
     }
   }, [machine]);
 
+  // Stripe return/back can restore page from bfcache with stale in-memory state.
+  // If restored while busy, reset to idle so submit button is usable again.
+  useEffect(() => {
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted) return;
+      if (machine.isBusy) {
+        machine.reset();
+      }
+    };
+
+    window.addEventListener('pageshow', handlePageShow);
+    return () => window.removeEventListener('pageshow', handlePageShow);
+  }, [machine]);
+
   // Bug #5: Move focus to retry button on failure for a11y
   useEffect(() => {
     if ((machine.state === 'failed' || machine.state === 'timeout') && machine.canRetry) {
@@ -112,22 +126,37 @@ export default function CheckoutPage() {
     if (!machine.canRetry) return;
     const cooldownMs = getRetryCooldownMs(machine.retryCount);
     setRetryCooldown(Math.ceil(cooldownMs / 1000));
+    // Rotate idempotency key: previous attempt may have created a stale order.
+    // Fresh key ensures the server treats this as a new checkout, not a duplicate.
+    idempotencyKeyRef.current = rotateIdempotencyKey();
     machine.send({ type: 'RETRY' });
   }, [machine]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Start the state machine
+    // Reset machine if it was stuck in a terminal state, then start
+    if (machine.state === 'failed' || machine.state === 'timeout') {
+      machine.reset();
+    }
     machine.send({ type: 'START_CHECKOUT' });
 
     // Validate form
-    const valid = validateAll({
+    const payload = {
+      items: items.map((item) => ({
+        id: item.product.id,
+        quantity: item.quantity,
+      })),
       customerEmail: formData.email,
       customerName: formData.name,
       customerPhone: formData.phone,
       customerAddress: formData.address,
-    });
+      locale,
+      idempotencyKey: idempotencyKeyRef.current,
+      ...(promoDiscount ? { promoCode: promoCode.trim() } : {}),
+    };
+
+    const valid = validateAll(payload);
 
     if (!valid) {
       machine.send({ type: 'VALIDATION_FAIL', error: 'Form validation failed' });
@@ -161,10 +190,18 @@ export default function CheckoutPage() {
       if (!result.ok || !result.data?.url) {
         if (result.error === 'Request timed out') {
           machine.send({ type: 'TIMEOUT' });
+        } else if (result.status === 404) {
+          // Product not found — cart has stale IDs (pre-migration data).
+          // Clear cart so the user can re-add from fresh product listings.
+          useCartStore.getState().clearCart();
+          machine.send({
+            type: 'RESERVATION_FAIL',
+            error: t('checkout.cartExpiredStale'),
+          });
         } else {
           machine.send({
             type: 'RESERVATION_FAIL',
-            error: result.error || 'Failed to create checkout session',
+            error: result.error || t('checkout.failedSession'),
           });
         }
         return;
@@ -177,7 +214,7 @@ export default function CheckoutPage() {
       machine.send({ type: 'RESERVATION_OK', url: result.data.url });
       window.location.href = result.data.url;
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Payment failed. Please try again.';
+      const message = error instanceof Error ? error.message : t('checkout.paymentFailed');
       machine.send({ type: 'RESERVATION_FAIL', error: message });
     }
   };
@@ -225,7 +262,7 @@ export default function CheckoutPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   onBlur={(e) => validateField('customerName', e.target.value)}
-                  placeholder="John Doe"
+                  placeholder={t('checkout.namePlaceholder')}
                   className={fieldErrors.customerName ? 'border-red-300 focus:ring-red-400' : ''}
                 />
                 <FieldError message={fieldErrors.customerName} />
@@ -253,7 +290,7 @@ export default function CheckoutPage() {
                   required
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-                  placeholder="Full delivery address"
+                  placeholder={t('checkout.addressPlaceholder')}
                 />
               </div>
 
@@ -265,19 +302,11 @@ export default function CheckoutPage() {
                   className="mt-0.5"
                 />
                 <label htmlFor="terms" className="text-xs text-gray-600 leading-relaxed cursor-pointer">
-                  Siparişimi onaylayarak{' '}
-                  <span className="text-[#FF6BBF] underline hover:text-[#FF3DA0]">
-                    Satış Sözleşmesi
-                  </span>
-                  ,{' '}
-                  <span className="text-[#FF6BBF] underline hover:text-[#FF3DA0]">
-                    Gizlilik Politikası
-                  </span>
-                  {' '}ve{' '}
-                  <span className="text-[#FF6BBF] underline hover:text-[#FF3DA0]">
-                    İade Koşulları
-                  </span>
-                  &apos;nı okuduğumu ve kabul ettiğimi onaylıyorum.
+                  {t.rich('checkout.termsLabel', {
+                    terms: (chunks) => <span className="text-[#FF6BBF] underline hover:text-[#FF3DA0]">{chunks}</span>,
+                    privacy: (chunks) => <span className="text-[#FF6BBF] underline hover:text-[#FF3DA0]">{chunks}</span>,
+                    returns: (chunks) => <span className="text-[#FF6BBF] underline hover:text-[#FF3DA0]">{chunks}</span>,
+                  })}
                 </label>
               </div>
 
@@ -285,7 +314,7 @@ export default function CheckoutPage() {
                 {machine.isBusy ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {machine.state === 'validating' ? 'Validating...' : machine.state === 'reserving' ? 'Processing...' : 'Redirecting...'}
+                    {machine.state === 'validating' ? t('checkout.stateValidating') : machine.state === 'reserving' ? t('checkout.stateProcessing') : t('checkout.stateRedirecting')}
                   </>
                 ) : (
                   t('checkout.pay') + ' ' + formatPrice(total)
@@ -299,7 +328,7 @@ export default function CheckoutPage() {
                     <AlertTriangle className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
                     <div className="flex-1">
                       <p className="text-sm font-medium text-red-800">
-                        {machine.state === 'timeout' ? 'Request Timed Out' : 'Checkout Failed'}
+                        {machine.state === 'timeout' ? t('checkout.requestTimeout') : t('checkout.checkoutFailed')}
                       </p>
                       <p className="text-sm text-red-600 mt-1">{machine.error}</p>
                     </div>
@@ -316,11 +345,11 @@ export default function CheckoutPage() {
                       data-focus-trap-disabled
                     >
                       <RefreshCw className={`h-3 w-3 ${retryCooldown > 0 ? 'animate-spin' : ''}`} />
-                      {retryCooldown > 0 ? `Retry in ${retryCooldown}s` : 'Try Again'}
+                      {retryCooldown > 0 ? t('checkout.retryIn', { seconds: retryCooldown }) : t('checkout.tryAgain')}
                     </Button>
                   )}
                   {!machine.canRetry && (
-                    <p className="text-xs text-red-400 mt-2">Max retries reached. Please refresh the page.</p>
+                    <p className="text-xs text-red-400 mt-2">{t('checkout.maxRetries')}</p>
                   )}
                 </div>
               )}
@@ -340,14 +369,14 @@ export default function CheckoutPage() {
                     <div className="w-12 h-12 relative shrink-0">
                       <Image
                         src={item.product.image_url?.startsWith('/') || item.product.image_url?.startsWith('http') ? item.product.image_url : '/donut.png'}
-                        alt={item.product.name_en}
+                        alt={locale === 'tr' ? item.product.name_tr : item.product.name_en}
                         fill
                         sizes="48px"
                         className="object-contain"
                       />
                     </div>
                     <div className="flex-1">
-                      <p className="font-medium">{item.product.name_en}</p>
+                      <p className="font-medium">{locale === 'tr' ? item.product.name_tr : item.product.name_en}</p>
                       <p className="text-sm text-gray-600">
                         {t('cart.quantity')}: {item.quantity}
                       </p>
@@ -421,8 +450,9 @@ export default function CheckoutPage() {
 
           <div className="bg-[#FFF8E7] rounded-3xl p-6">
             <p className="text-sm text-gray-700">
-              🔒 <strong>Secure Payment:</strong> Your payment information is encrypted and secure.
-              We accept all major credit cards via Stripe.
+              {t.rich('checkout.securePayment', {
+                strong: (chunks) => <strong>{chunks}</strong>,
+              })}
             </p>
           </div>
         </div>

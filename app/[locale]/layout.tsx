@@ -5,6 +5,7 @@ import { notFound } from 'next/navigation';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { PromoBanner } from '@/components/layout/promo-banner';
+import { AuthToast } from '@/components/ui/registration-toast';
 import { AuthProvider } from '@/lib/auth/context';
 import { routing } from '@/i18n/routing';
 import { WebVitals } from '@/components/monitoring/web-vitals';
@@ -41,22 +42,17 @@ export default async function LocaleLayout({
     notFound();
   }
 
-  const messages = await getMessages();
+  const messages = await getMessages({ locale });
 
   return (
     <html lang={locale} className={`${inter.variable} ${fredoka.variable}`}>
       <body className="flex min-h-screen flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:left-4 focus:top-4 bg-white px-4 py-3 text-amber-600 font-bold rounded-md shadow-lg"
-        >
-          Skip to main content
-        </a>
-        <NextIntlClientProvider messages={messages}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
             <AuthProvider>
             <WebVitals />
             <SpeedInsights />
             <Analytics />
+            <AuthToast />
             <Header />
             <PromoBanner />
             <main id="main-content" className="flex-1">{children}</main>
