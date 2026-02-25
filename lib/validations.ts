@@ -10,9 +10,7 @@ const sanitizedString = z.string().trim().max(500).default('');
 // ─── Checkout ───────────────────────────────────────────────
 
 const checkoutItem = z.object({
-  // Accept any non-empty string — UUIDs from Supabase and legacy integer IDs both pass.
-  // The API route validates the ID against the DB anyway, so strict UUID here is wrong.
-  id: z.string().min(1, 'Invalid product ID'),
+  id: z.string().uuid('Invalid product ID'),
   quantity: z.number().int().min(1).max(100),
   variantId: z.string().min(1, 'Invalid variant ID').optional(),
 });

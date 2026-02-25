@@ -47,6 +47,12 @@ export default async function LocaleLayout({
   return (
     <html lang={locale} className={`${inter.variable} ${fredoka.variable}`}>
       <body className="flex min-h-screen flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-white focus:px-4 focus:py-2 focus:text-black"
+        >
+          Skip to main content
+        </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
             <AuthProvider>
             <WebVitals />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, type ElementType } from 'react';
+import { useState, useEffect, useMemo, type ElementType } from 'react';
 import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
@@ -27,7 +27,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const supabase = useRef(createClient()).current;
+  const supabase = useMemo(() => createClient(), []);
 
   const t = {
     tr: {

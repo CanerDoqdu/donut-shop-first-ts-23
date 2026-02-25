@@ -120,7 +120,7 @@ export default function OrderSuccessPage() {
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           {orderId && (
             <Button asChild size="lg" className="w-full sm:w-auto">
-              <Link href={`/orders/${orderId}` as any}>
+              <Link href={{ pathname: '/orders/[id]', params: { id: orderId } }}>
                 <ExternalLink className="mr-2 h-5 w-5" />
                 {locale === 'tr' ? 'Siparişi Takip Et' : 'Track Your Order'}
               </Link>
