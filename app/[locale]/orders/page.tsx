@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,6 +33,7 @@ interface OrderItem {
 
 export default function OrdersPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -105,12 +106,31 @@ export default function OrdersPage() {
     );
   }
 
+  if (error === 'fetch_failed') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-linear-to-b from-pink-50 to-orange-50">
+        <div className="text-center">
+          <Package className="w-16 h-16 text-red-300 mx-auto mb-4" />
+          <h1 className="text-2xl font-fredoka font-bold mb-2">
+            {t('orders.fetchError') || 'Could not load orders'}
+          </h1>
+          <p className="text-gray-500 mb-6">
+            {t('orders.fetchErrorMessage') || 'Something went wrong. Please try again later.'}
+          </p>
+          <Button onClick={() => window.location.reload()}>
+            {t('common.retry') || 'Try Again'}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-linear-to-b from-pink-50 to-orange-50">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Button asChild variant="ghost" size="icon" className="rounded-full">
+          <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label={t('common.back')}>
             <Link href="/">
               <ArrowLeft className="w-5 h-5" />
             </Link>
@@ -151,6 +171,7 @@ export default function OrdersPage() {
               <OrderRow
                 key={order.id}
                 order={order}
+                locale={locale}
                 orderNumberLabel={t('orders.orderNumber') || 'Sipariş No'}
                 totalLabel={t('cart.total') || 'Toplam'}
                 trackLabel={t('orders.trackOrder') || 'Siparişi Takip Et'}

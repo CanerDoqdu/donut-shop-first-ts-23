@@ -1,12 +1,41 @@
 import { NextResponse } from 'next/server';
 import { sampleProducts } from '@/lib/data';
 import { cache, CACHE_TTL } from '@/lib/redis';
+import { createClient } from '@supabase/supabase-js';
+import type { Product } from '@/lib/types';
 
 // Edge runtime for faster cold starts
 export const runtime = 'edge';
 
 // Cache for 5 minutes, revalidate in background
 export const revalidate = 300;
+
+/** Lightweight Supabase client for public reads (edge-safe, no cookies). */
+function getSupabaseReadClient() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+  );
+}
+
+/**
+ * Try fetching products from Supabase. Returns null on any failure so the
+ * caller can fall back to the hardcoded sample data.
+ */
+async function fetchProductsFromDB(): Promise<Product[] | null> {
+  try {
+    const supabase = getSupabaseReadClient();
+    const { data, error } = await supabase
+      .from('products')
+      .select('*')
+      .order('created_at', { ascending: true });
+
+    if (error || !data || data.length === 0) return null;
+    return data as Product[];
+  } catch {
+    return null;
+  }
+}
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
@@ -18,7 +47,7 @@ export async function GET(request: Request) {
   const cacheKey = `products:${category || 'all'}:${featured || 'any'}:${limit || 'all'}`;
 
   // Try Redis cache first
-  const cached = await cache.get<{ products: typeof sampleProducts; total: number }>(cacheKey);
+  const cached = await cache.get<{ products: Product[]; total: number }>(cacheKey);
   if (cached) {
     return NextResponse.json(cached, {
       headers: {
@@ -28,7 +57,8 @@ export async function GET(request: Request) {
     });
   }
 
-  let products = [...sampleProducts];
+  // DB first, fallback to hardcoded sample data
+  let products = (await fetchProductsFromDB()) ?? [...sampleProducts];
 
   // Filter by category
   if (category && category !== 'all') {

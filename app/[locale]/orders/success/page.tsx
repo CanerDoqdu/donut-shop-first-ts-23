@@ -1,29 +1,50 @@
 'use client';
 
-import { useEffect, useState, startTransition } from 'react';
+import { useEffect, useState, useRef, startTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { useCartStore } from '@/store/cart-store';
-import { CheckCircle2, ArrowRight, Package } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
+import { CheckCircle2, ArrowRight, Package, ExternalLink } from 'lucide-react';
 
 export default function OrderSuccessPage() {
   const t = useTranslations();
   const searchParams = useSearchParams();
+  const params = useParams();
+  const locale = (params.locale as string) || 'en';
   const clearCart = useCartStore((state) => state.clearCart);
   const [sessionId, setSessionId] = useState('');
+  const [orderId, setOrderId] = useState<string | null>(null);
+  const clearedRef = useRef(false);
 
   useEffect(() => {
     // Get session ID from URL params
-    const id = searchParams.get('session_id') || searchParams.get('success') || 'unknown';
+    const id = searchParams.get('session_id') || searchParams.get('success') || '';
     startTransition(() => {
       setSessionId(id);
     });
-    
-    // Clear cart
-    clearCart();
+
+    // Only clear cart if we have a valid session_id (not on bookmark/refresh without params)
+    if (id && !clearedRef.current) {
+      clearedRef.current = true;
+      clearCart();
+    }
+
+    // Resolve the real order ID from the Stripe session ID
+    if (id) {
+      const supabase = createClient();
+      supabase
+        .from('orders')
+        .select('id')
+        .eq('stripe_session_id', id)
+        .maybeSingle()
+        .then(({ data }: { data: { id: string } | null }) => {
+          if (data?.id) setOrderId(data.id);
+        });
+    }
   }, [searchParams, clearCart]);
 
   return (
@@ -60,19 +81,25 @@ export default function OrderSuccessPage() {
                 <div>
                   <p className="text-gray-500 text-sm">{t('orders.orderNumber') || 'Sipariş No'}</p>
                   <p className="font-fredoka font-bold text-lg text-gray-900">
-                    {sessionId.substring(0, 24)}...
+                    {orderId
+                      ? orderId.substring(0, 8).toUpperCase()
+                      : sessionId
+                      ? sessionId.substring(0, 24) + '...'
+                      : '—'}
                   </p>
                 </div>
               </div>
               
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-600">{t('orders.status') || 'Durum'}</span>
+                  <span className="text-gray-600">{t('orders.statusLabel') || 'Durum'}</span>
                   <span className="font-semibold text-green-600">✓ {t('orders.paid') || 'Ödendi'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">{t('orders.estimate') || 'Tahmini Teslim'}</span>
-                  <span className="font-semibold text-gray-900">20-30 dakika</span>
+                  <span className="font-semibold text-gray-900">
+                    {locale === 'tr' ? '20-30 dakika' : '20-30 minutes'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -81,9 +108,9 @@ export default function OrderSuccessPage() {
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8 text-left">
               <h3 className="font-bold text-gray-900 mb-3">📋 {t('orders.next') || 'Sonraki Adımlar'}</h3>
               <ol className="space-y-2 text-sm text-gray-600">
-                <li>✓ 1. Ödeme işlendi</li>
-                <li>→ 2. Sipariş hazırlanıyor</li>
-                <li>→ 3. Teslimat için yola çıkıyor</li>
+                <li>✓ 1. {locale === 'tr' ? 'Ödeme işlendi' : 'Payment processed'}</li>
+                <li>→ 2. {locale === 'tr' ? 'Sipariş hazırlanıyor' : 'Order being prepared'}</li>
+                <li>→ 3. {locale === 'tr' ? 'Teslimat için yola çıkıyor' : 'Out for delivery'}</li>
               </ol>
             </div>
           </CardContent>
@@ -91,13 +118,21 @@ export default function OrderSuccessPage() {
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
+          {orderId && (
+            <Button asChild size="lg" className="w-full sm:w-auto">
+              <Link href={`/orders/${orderId}` as any}>
+                <ExternalLink className="mr-2 h-5 w-5" />
+                {locale === 'tr' ? 'Siparişi Takip Et' : 'Track Your Order'}
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
             <Link href="/orders">
               <Package className="mr-2 h-5 w-5" />
               {t('orders.myOrders') || 'Siparişlerim'}
             </Link>
           </Button>
-          <Button asChild size="lg" className="w-full sm:w-auto">
+          <Button asChild size={orderId ? 'sm' : 'lg'} variant="ghost" className="w-full sm:w-auto">
             <Link href="/products">
               {t('cart.continueShopping') || 'Alışverişe Devam Et'}
               <ArrowRight className="ml-2 h-5 w-5" />

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Crown, Star, Gift, TrendingUp, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
@@ -22,7 +22,7 @@ export default function LoyaltyDashboard({ userId, locale }: LoyaltyDashboardPro
   const [loyalty, setLoyalty] = useState<LoyaltyPoints | null>(null);
   const [transactions, setTransactions] = useState<PointsTransaction[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
   const t = {
     tr: {
@@ -65,23 +65,31 @@ export default function LoyaltyDashboard({ userId, locale }: LoyaltyDashboardPro
 
   useEffect(() => {
     async function fetchLoyaltyData() {
-      const [{ data: loyaltyData }, { data: txData }] = await Promise.all([
-        supabase
-          .from('loyalty_points')
-          .select('*')
-          .eq('user_id', userId)
-          .single(),
-        supabase
-          .from('points_transactions')
-          .select('*')
-          .eq('user_id', userId)
-          .order('created_at', { ascending: false })
-          .limit(10),
-      ]);
+      try {
+        const [{ data: loyaltyData, error: loyaltyError }, { data: txData }] = await Promise.all([
+          supabase
+            .from('loyalty_points')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle(),
+          supabase
+            .from('points_transactions')
+            .select('*')
+            .eq('user_id', userId)
+            .order('created_at', { ascending: false })
+            .limit(10),
+        ]);
 
-      if (loyaltyData) setLoyalty(loyaltyData);
-      if (txData) setTransactions(txData);
-      setLoading(false);
+        if (loyaltyError) {
+          console.warn('[LoyaltyDashboard] Failed to fetch loyalty data:', loyaltyError.message);
+        }
+        if (loyaltyData) setLoyalty(loyaltyData);
+        if (txData) setTransactions(txData);
+      } catch (err) {
+        console.warn('[LoyaltyDashboard] Unexpected error:', err);
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchLoyaltyData();

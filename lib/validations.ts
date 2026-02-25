@@ -10,15 +10,18 @@ const sanitizedString = z.string().trim().max(500).default('');
 // ─── Checkout ───────────────────────────────────────────────
 
 const checkoutItem = z.object({
-  id: z.string().uuid('Invalid product ID'),
+  // Accept any non-empty string — UUIDs from Supabase and legacy integer IDs both pass.
+  // The API route validates the ID against the DB anyway, so strict UUID here is wrong.
+  id: z.string().min(1, 'Invalid product ID'),
   quantity: z.number().int().min(1).max(100),
-  variantId: z.string().uuid('Invalid variant ID').optional(),
+  variantId: z.string().min(1, 'Invalid variant ID').optional(),
 });
 
 export const checkoutSchema = z.object({
   items: z.array(checkoutItem).min(1, 'Cart cannot be empty').max(50),
   customerEmail: email,
   customerName: nonEmptyString,
+  customerPhone: z.string().trim().max(20).default(''),
   customerAddress: sanitizedString,
   locale,
   cartTimestamp: z.number().int().positive().optional(),
@@ -85,8 +88,16 @@ export const promoCodeSchema = z.object({
     .min(1, 'Promo code is required')
     .max(50, 'Promo code too long')
     .regex(/^[A-Za-z0-9_-]+$/, 'Invalid promo code format'),
-  orderTotal: z.number().positive('Order total must be positive'),
-});
+  /** Accepts both `orderTotal` and `subtotal` for backwards compatibility */
+  orderTotal: z.number().positive('Order total must be positive').optional(),
+  subtotal: z.number().positive('Subtotal must be positive').optional(),
+}).refine(
+  (data) => data.orderTotal != null || data.subtotal != null,
+  { message: 'Either orderTotal or subtotal is required' },
+).transform((data) => ({
+  code: data.code,
+  orderTotal: data.orderTotal ?? data.subtotal!,
+}));
 
 export type PromoCodeInput = z.infer<typeof promoCodeSchema>;
 

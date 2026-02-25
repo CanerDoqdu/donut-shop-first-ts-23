@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, type ElementType } from 'react';
+import { useState, useEffect, useRef, type ElementType } from 'react';
 import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { createClient } from '@/lib/supabase/client';
@@ -27,7 +27,7 @@ export default function AdminPage() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
   const t = {
     tr: {
@@ -169,7 +169,7 @@ export default function AdminPage() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <main className={`flex-1 transition-all ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+      <section className={`flex-1 transition-all ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
         {/* Top Bar */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
           <button
@@ -222,7 +222,7 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </main>
+      </section>
     </div>
   );
 }

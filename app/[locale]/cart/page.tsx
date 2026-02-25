@@ -32,7 +32,33 @@ export default function CartPage() {
   );
 
   if (!hydrated) {
-    return <div className="container mx-auto px-4 py-12" />;
+    return (
+      <div className="container mx-auto px-4 py-12">
+        <div className="h-10 w-48 bg-gray-200 rounded-lg animate-pulse mb-8" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
+            {[1, 2].map((i) => (
+              <div key={i} className="bg-white rounded-xl p-4 flex gap-4 animate-pulse">
+                <div className="w-24 h-24 bg-gray-200 rounded-lg" />
+                <div className="flex-1 space-y-3">
+                  <div className="h-5 w-40 bg-gray-200 rounded" />
+                  <div className="h-4 w-24 bg-gray-200 rounded" />
+                  <div className="h-4 w-20 bg-gray-200 rounded" />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-xl p-6 space-y-4 animate-pulse">
+              <div className="h-6 w-32 bg-gray-200 rounded" />
+              <div className="h-4 w-full bg-gray-200 rounded" />
+              <div className="h-4 w-full bg-gray-200 rounded" />
+              <div className="h-10 w-full bg-gray-200 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const subtotal = getTotalPrice();
@@ -44,7 +70,7 @@ export default function CartPage() {
       <div className="container mx-auto px-4 py-20 text-center">
         <ShoppingBag className="mx-auto h-24 w-24 text-gray-300 mb-6" />
         <h2 className="font-fredoka text-3xl font-bold mb-4">{t('cart.empty')}</h2>
-        <p className="text-gray-600 mb-8">Add some delicious donuts to get started!</p>
+        <p className="text-gray-600 mb-8">{t('cart.emptyDescription')}</p>
         <Button asChild size="lg">
           <Link href="/products">{t('cart.continueShopping')}</Link>
         </Button>
@@ -78,7 +104,7 @@ export default function CartPage() {
               <Link href="/products">{t('cart.continueShopping')}</Link>
             </Button>
             <Button variant="ghost" onClick={clearCart} className="text-red-500">
-              Clear Cart
+              {t('cart.clearCart')}
             </Button>
           </div>
         </div>

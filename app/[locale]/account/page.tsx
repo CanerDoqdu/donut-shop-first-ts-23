@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
@@ -47,9 +47,9 @@ export default function AccountPage() {
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState('');
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
-  const t = {
+  const translations = {
     tr: {
       title: 'Hesabım',
       profile: 'Profil Bilgileri',
@@ -116,31 +116,46 @@ export default function AccountPage() {
       loginRequired: 'You must be logged in to view this page',
       login: 'Log In',
     },
-  }[locale as 'tr' | 'en'];
+  };
+  const t = translations[locale as keyof typeof translations] ?? translations.en;
 
   useEffect(() => {
     // Wait for AuthProvider to finish loading
     if (authLoading) return;
 
-    // No user — nothing to fetch, mark as loaded
+    // No user — not authenticated, mark as loaded
     if (!authUser) {
-      // Scheduled via microtask to satisfy react-hooks/set-state-in-effect
-      // (the rule disallows synchronous setState inside an effect body)
-      const id = requestAnimationFrame(() => setLoading(false));
-      return () => cancelAnimationFrame(id);
+      setLoading(false);
+      return;
     }
 
     async function fetchAccountData(userId: string) {
-      const [profileRes, loyaltyRes, ordersRes] = await Promise.all([
-        supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
-        supabase.from('loyalty_points').select('*').eq('user_id', userId).maybeSingle(),
-        supabase.from('orders').select('id, total_amount, status, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
-      ]);
+      try {
+        // Add timeout to prevent infinite loading state
+        const timeoutPromise = new Promise<never>((_, reject) => 
+          setTimeout(() => reject(new Error('Account data fetch timeout')), 10000)
+        );
+        
+        const dataPromise = Promise.all([
+          supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
+          supabase.from('loyalty_points').select('*').eq('user_id', userId).maybeSingle(),
+          supabase.from('orders').select('id, total_amount, status, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
+        ]);
 
-      if (profileRes.data) setProfile(profileRes.data);
-      if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
-      if (ordersRes.data) setOrders(ordersRes.data);
-      setLoading(false);
+        const [profileRes, loyaltyRes, ordersRes] = await Promise.race([
+          dataPromise,
+          timeoutPromise
+        ]);
+
+        if (profileRes.data) setProfile(profileRes.data);
+        if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
+        if (ordersRes.data) setOrders(ordersRes.data);
+      } catch (err) {
+        console.error('[AccountPage] Failed to fetch account data:', err instanceof Error ? err.message : String(err));
+        setError('Failed to load account data. Please refresh.');
+      } finally {
+        setLoading(false);
+      }
     }
 
     fetchAccountData(authUser.id);
@@ -209,7 +224,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12">
+      <section className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-4xl mx-auto px-4">
           <div className="animate-pulse space-y-6">
             <div className="h-8 bg-gray-200 rounded w-1/4" />
@@ -217,13 +232,13 @@ export default function AccountPage() {
             <div className="h-48 bg-gray-200 rounded-2xl" />
           </div>
         </div>
-      </main>
+      </section>
     );
   }
 
   if (!authUser && !profile) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
+      <section className="min-h-screen bg-gray-50 flex items-center justify-center py-12">
         <div className="text-center bg-white rounded-2xl p-8 shadow-lg max-w-md">
           <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-amber-600" />
@@ -236,7 +251,7 @@ export default function AccountPage() {
             {t.login}
           </Link>
         </div>
-      </main>
+      </section>
     );
   }
 
@@ -251,7 +266,7 @@ export default function AccountPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
+    <section className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
         <h1 className="text-3xl font-bold text-gray-800 mb-8">{t.title}</h1>
 
@@ -520,6 +535,6 @@ export default function AccountPage() {
           </div>
         </div>
       </div>
-    </main>
+    </section>
   );
 }

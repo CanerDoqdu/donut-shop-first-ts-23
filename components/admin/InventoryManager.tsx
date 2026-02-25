@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, startTransition } from 'react';
+import { useState, useEffect, useCallback, startTransition, useRef } from 'react';
 import { 
   Package, Search, AlertTriangle, Plus, Minus, 
   Save, RefreshCw, ArrowUpDown 
@@ -34,7 +34,7 @@ export default function InventoryManager({ locale, storeId }: InventoryManagerPr
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
   const [editingStock, setEditingStock] = useState<Record<string, number>>({});
   const [saving, setSaving] = useState<string | null>(null);
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
   const t = {
     tr: {

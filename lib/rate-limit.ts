@@ -12,14 +12,31 @@ interface RateLimitEntry {
 const store = new Map<string, RateLimitEntry>();
 
 // Clean up old entries every 5 minutes
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of store) {
-    if (now - entry.lastRefill > 600_000) {
-      store.delete(key);
+let cleanupTimer: ReturnType<typeof setInterval> | null = null;
+
+function ensureCleanup() {
+  if (cleanupTimer) return;
+  cleanupTimer = setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of store) {
+      if (now - entry.lastRefill > 600_000) {
+        store.delete(key);
+      }
     }
+  }, 300_000);
+  // Allow the Node.js process to exit even if this timer is active
+  if (typeof cleanupTimer === 'object' && 'unref' in cleanupTimer) {
+    cleanupTimer.unref();
   }
-}, 300_000);
+}
+
+/** Stop the cleanup timer (useful for tests and graceful shutdown). */
+export function stopRateLimitCleanup() {
+  if (cleanupTimer) {
+    clearInterval(cleanupTimer);
+    cleanupTimer = null;
+  }
+}
 
 interface RateLimitOptions {
   /** Max requests per window */
@@ -38,6 +55,7 @@ export function rateLimit(
   identifier: string,
   options: RateLimitOptions = {}
 ): RateLimitResult {
+  ensureCleanup();
   const { maxRequests = 10, windowSizeSeconds = 60 } = options;
   const now = Date.now();
   const windowMs = windowSizeSeconds * 1000;

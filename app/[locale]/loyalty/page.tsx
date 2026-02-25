@@ -14,7 +14,7 @@ export default function LoyaltyPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const t = {
+  const translations = {
     tr: {
       title: 'Sadakat Programı',
       loginRequired: 'Sadakat puanlarınızı görmek için giriş yapın',
@@ -35,7 +35,8 @@ export default function LoyaltyPage() {
       benefit3: 'Higher tiers earn more points',
       benefit4: 'Early access to special campaigns',
     },
-  }[locale as 'tr' | 'en'];
+  };
+  const t = translations[locale as keyof typeof translations] ?? translations.en;
 
   useEffect(() => {
     async function checkUser() {
@@ -50,20 +51,20 @@ export default function LoyaltyPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12">
+      <section className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-2xl mx-auto px-4">
           <div className="animate-pulse space-y-4">
             <div className="h-10 bg-gray-200 rounded w-1/3" />
             <div className="h-60 bg-gray-200 rounded-2xl" />
           </div>
         </div>
-      </main>
+      </section>
     );
   }
 
   if (!userId) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12">
+      <section className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-2xl mx-auto px-4">
           <div className="text-center py-16">
             <div className="w-20 h-20 bg-amber-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -95,15 +96,15 @@ export default function LoyaltyPage() {
             </div>
           </div>
         </div>
-      </main>
+      </section>
     );
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
+    <section className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-2xl mx-auto px-4">
         <LoyaltyDashboard userId={userId} locale={locale as 'tr' | 'en'} />
       </div>
-    </main>
+    </section>
   );
 }

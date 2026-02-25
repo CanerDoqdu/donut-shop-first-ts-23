@@ -39,7 +39,7 @@ BEGIN
       updated_at          = NOW()
   WHERE stripe_session_id = p_stripe_session_id
     AND status            = 'pending'
-  RETURNING id, user_id, total INTO v_order;
+  RETURNING id, user_id, total_amount INTO v_order;
 
   IF v_order.id IS NULL THEN
     RETURN jsonb_build_object(
@@ -50,13 +50,13 @@ BEGIN
 
   -- 2. Award loyalty points (1 pt per 10 TRY) — only if tables exist
   IF v_order.user_id IS NOT NULL
-     AND v_order.total > 0
+     AND v_order.total_amount > 0
      AND EXISTS (
        SELECT 1 FROM information_schema.tables
        WHERE table_schema = 'public' AND table_name = 'loyalty_points'
      )
   THEN
-    v_points := FLOOR(v_order.total / 10);
+    v_points := FLOOR(v_order.total_amount / 10);
 
     IF v_points > 0 THEN
       -- Upsert loyalty record

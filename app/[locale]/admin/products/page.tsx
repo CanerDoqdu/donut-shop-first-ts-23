@@ -21,8 +21,7 @@ import {
 } from 'lucide-react';
 import { useDebounce } from '@/hooks';
 import { SEARCH_DEBOUNCE_MS } from '@/lib/constants';
-
-type Product = (typeof sampleProducts)[number];
+import type { Product } from '@/lib/types';
 
 export default function AdminProductsPage() {
   const t = useTranslations();

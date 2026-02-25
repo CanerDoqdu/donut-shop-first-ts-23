@@ -31,7 +31,7 @@ export default function Page() {
         <meta name="description" content="Test Sentry for your Next.js app!" />
       </Head>
 
-      <main>
+      <section>
         <div className="flex-spacer" />
         <svg
           height="40"
@@ -108,7 +108,7 @@ export default function Page() {
         )}
 
         <div className="flex-spacer" />
-      </main>
+      </section>
 
       <style>{`
         main {

@@ -64,6 +64,7 @@ export class CircuitBreaker {
   private consecutiveFailures = 0;
   private lastFailureTime: number | null = null;
   private totalTrips = 0;
+  private halfOpenLock = false;
 
   private readonly failureThreshold: number;
   private readonly cooldownMs: number;
@@ -81,10 +82,18 @@ export class CircuitBreaker {
   async call<T>(fn: () => Promise<T>): Promise<T> {
     if (this.state === 'OPEN') {
       if (this.shouldProbe()) {
+        // Acquire the half-open lock so only ONE probe request goes through
+        if (this.halfOpenLock) {
+          throw new CircuitOpenError(this.name, this.cooldownMs);
+        }
+        this.halfOpenLock = true;
         this.transitionTo('HALF_OPEN');
       } else {
         throw new CircuitOpenError(this.name, this.cooldownMs);
       }
+    } else if (this.state === 'HALF_OPEN') {
+      // Already probing — reject concurrent requests
+      throw new CircuitOpenError(this.name, this.cooldownMs);
     }
 
     try {
@@ -106,6 +115,7 @@ export class CircuitBreaker {
       });
     }
     this.consecutiveFailures = 0;
+    this.halfOpenLock = false;
     this.transitionTo('CLOSED');
   }
 
@@ -113,6 +123,7 @@ export class CircuitBreaker {
   private onFailure(): void {
     this.consecutiveFailures++;
     this.lastFailureTime = Date.now();
+    this.halfOpenLock = false;
 
     if (this.consecutiveFailures >= this.failureThreshold) {
       this.trip();
@@ -170,6 +181,7 @@ export class CircuitBreaker {
     this.state = 'CLOSED';
     this.consecutiveFailures = 0;
     this.lastFailureTime = null;
+    this.halfOpenLock = false;
   }
 }
 

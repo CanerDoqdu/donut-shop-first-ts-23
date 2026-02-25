@@ -20,8 +20,8 @@ interface VariantSelectorProps {
 // Helpers
 // ─────────────────────────────────────────────────────────────────────────────
 
-function formatPrice(price: number) {
-  return new Intl.NumberFormat('tr-TR', {
+function formatPrice(price: number, locale: string = 'tr') {
+  return new Intl.NumberFormat(locale === 'tr' ? 'tr-TR' : 'en-US', {
     style: 'currency',
     currency: 'TRY',
     minimumFractionDigits: 2,
@@ -108,7 +108,7 @@ export function VariantSelector({
               <span className="block">{label}</span>
               {variant.price_offset !== 0 && (
                 <span className="block text-xs text-neutral-500">
-                  {formatPrice(finalPrice)}
+                  {formatPrice(finalPrice, locale)}
                   {variant.price_offset > 0 ? ' (+)' : ' (-)'}
                 </span>
               )}

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createCheckoutSession } from '@/lib/stripe/server';
+import { createCheckoutSession, getStripe } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServerClient } from '@supabase/ssr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
-import { getProductsByIds } from '@/lib/data';
+import { getProductsByIds } from '@/lib/data.server';
 import { validateOrigin } from '@/lib/security';
 import { CART_EXPIRY_MS } from '@/lib/constants';
 import { checkoutSchema, parseBody } from '@/lib/validations';
@@ -83,15 +83,23 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       throw new ApiError(E_VALIDATION_FAILED, parsed.error, 400);
     }
 
-    const { items, customerEmail, customerName, customerAddress, locale, cartTimestamp, promoCode, idempotencyKey } = parsed.data;
+    const { items, customerEmail, customerName, customerPhone, customerAddress, locale, cartTimestamp, promoCode, idempotencyKey } = parsed.data;
+
+    // Admin client (service_role) — created once and reused throughout the handler.
+    const admin = createAdminClient();
 
     // -- Idempotency check: prevent duplicate orders from double-submit --
     if (idempotencyKey) {
-      const { data: existingOrder } = await createAdminClient()
+      const { data: existingOrder, error: idemError } = await admin
         .from('orders')
         .select('id, stripe_session_id')
         .eq('idempotency_key', idempotencyKey)
         .maybeSingle();
+
+      if (idemError) {
+        // Fail-open: log the issue (likely missing column — run migration 016) but don't block checkout.
+        log.warn('checkout.idempotency_check_failed', { error: idemError.message });
+      }
 
       if (existingOrder) {
         log.info('checkout.idempotency_hit', {
@@ -99,17 +107,45 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
           idempotencyKey,
           existingOrderId: existingOrder.id,
         });
-        // Return the existing session URL if available (replay-safe)
+
         if (existingOrder.stripe_session_id) {
-          return NextResponse.json(
-            { error: 'Order already exists', orderId: existingOrder.id },
-            { status: 409, headers: { 'X-Idempotent-Replay': 'true' } },
-          );
+          // Stripe session already created — attempt replay redirect.
+          try {
+            const existingSession = await getStripe().checkout.sessions.retrieve(
+              existingOrder.stripe_session_id,
+            );
+            if (existingSession.url && existingSession.status === 'open') {
+              log.info('checkout.idempotency_replay_redirect', { orderId: existingOrder.id });
+              return NextResponse.json(
+                { url: existingSession.url, orderId: existingOrder.id },
+                { status: 200, headers: { 'X-Idempotent-Replay': 'true' } },
+              );
+            }
+          } catch (stripeErr) {
+            log.warn('checkout.idempotency_session_retrieve_failed', {
+              orderId: existingOrder.id,
+              error: stripeErr instanceof Error ? stripeErr.message : String(stripeErr),
+            });
+          }
+          // Session expired — cancel the stale order and proceed with fresh checkout
+          await admin
+            .from('orders')
+            .update({ status: 'cancelled' })
+            .eq('id', existingOrder.id);
+          log.info('checkout.idempotency_expired_session_cancelled', {
+            orderId: existingOrder.id,
+          });
+          // Fall through to create a new order with fresh Stripe session
+        } else {
+          // No Stripe session — checkout failed before reaching Stripe.
+          // Cancel the stale pending order so this request can proceed cleanly.
+          await admin
+            .from('orders')
+            .update({ status: 'cancelled' })
+            .eq('id', existingOrder.id);
+          log.info('checkout.idempotency_cancelled_incomplete', { orderId: existingOrder.id });
+          // Fall through — treat this as a fresh checkout.
         }
-        return NextResponse.json(
-          { error: 'Duplicate checkout request', orderId: existingOrder.id },
-          { status: 409 },
-        );
       }
     }
 
@@ -122,9 +158,9 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       }
     }
 
-    // -- Server-truth pricing: look up real prices from lib/data.ts --
+    // -- Server-truth pricing: look up real prices from DB (fallback: sample data) --
     const productIds = items.map((item) => item.id);
-    const productMap = getProductsByIds(productIds);
+    const productMap = await getProductsByIds(productIds);
 
     // Validate every product exists server-side
     const serverItems = items.map((item) => {
@@ -141,10 +177,9 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       };
     });
 
-    // Create Supabase clients
+    // Create user-facing Supabase client (needed for auth.getUser)
     const supabase = await createClient();
-    const admin = createAdminClient();
-    
+
     // Get current user (optional)
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -154,7 +189,7 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       const { error: profileError } = await admin.from('profiles').upsert({
         id: user.id,
         email: user.email || customerEmail,
-        full_name: customerName || user.user_metadata?.full_name || user.user_metadata?.name || null,
+        full_name: user.user_metadata?.full_name || user.user_metadata?.name || null,
       }, { onConflict: 'id' });
 
       if (profileError) {
@@ -190,18 +225,30 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       }
     }
 
-    const totalAmount = Math.max(subtotal - discountAmount, 0);
+    // Server-side totals: subtotal → discount → tax → total
+    const postDiscount = Math.max(subtotal - discountAmount, 0);
+    const taxAmount = Math.round(postDiscount * 0.18 * 100) / 100; // 18% Turkish VAT
+    const totalAmount = Math.round((postDiscount + taxAmount) * 100) / 100;
 
     // Create order using admin client to bypass RLS
+    // Column names must match the ACTUAL orders table in the database:
+    //   customer_email, customer_name, customer_phone, shipping_address
+    //   subtotal, tax, total_amount (not "total")
+    // NOTE: The table pre-dates migration 001 so column names differ from the DDL.
     const { data: order, error: orderError } = await admin
       .from('orders')
       .insert({
         user_id: validUserId,
+        customer_email: customerEmail,
+        customer_name: customerName,
+        customer_phone: customerPhone || '',
+        shipping_address: customerAddress || '',
         status: 'pending',
+        subtotal,
+        tax: taxAmount,
         total_amount: totalAmount,
         discount_amount: discountAmount,
         promo_code_id: appliedPromoId,
-        shipping_address: customerAddress || '',
         ...(idempotencyKey ? { idempotency_key: idempotencyKey } : {}),
       })
       .select()
@@ -213,7 +260,9 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     }
 
     // Create order items from SERVER-verified data
-    const orderItems = serverItems.map((item: { id: string; name: string; price: number; quantity: number }) => ({
+    // Actual order_items columns: order_id, product_id, product_name, quantity, unit_price
+    // NOTE: product_image, total_price do NOT exist in the actual table.
+    const orderItems = serverItems.map((item: { id: string; name: string; price: number; quantity: number; image: string }) => ({
       order_id: order.id,
       product_id: item.id,
       product_name: item.name,
@@ -227,6 +276,9 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
 
     if (itemsError) {
       log.error('checkout.order_items_failed', { code: E_DB_ORDER_ITEMS_FAILED, error: itemsError.message });
+      // Cancel the order — can't proceed without line items
+      await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id);
+      throw new ApiError(E_DB_ORDER_ITEMS_FAILED, 'Failed to create order items', 500);
     }
 
     // ── Atomic stock reservation ──────────────────────────────
@@ -261,7 +313,11 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
         'stripe.createCheckoutSession',
       );
     } catch (stripeErr) {
-      // Stripe failed → release the stock we just locked
+      // Stripe failed → cancel pending order and release the stock we just locked
+      await admin.from('orders').update({ status: 'cancelled' }).eq('id', order.id).then(
+        () => log.info('checkout.order_cancelled_after_stripe_failure', { orderId: order.id }),
+        (cancelErr) => log.error('checkout.order_cancel_failed', { orderId: order.id, error: String(cancelErr) }),
+      );
       await releaseReservations(order.id).catch((releaseErr) => {
         log.error('checkout.reservation_release_failed', {
           orderId: order.id,
@@ -277,10 +333,19 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     }
 
     // Update order with Stripe session ID (dual-write: both v1 and v2 columns)
-    await admin
+    // Fall back to v1-only if migration 014 (stripe_session_v2) hasn't been applied.
+    const { error: sessionUpdateError } = await admin
       .from('orders')
       .update(dualWriteStripeSession(session.id))
       .eq('id', order.id);
+
+    if (sessionUpdateError) {
+      log.warn('checkout.dual_write_failed_fallback_v1', { error: sessionUpdateError.message });
+      await admin
+        .from('orders')
+        .update({ stripe_session_id: session.id })
+        .eq('id', order.id);
+    }
 
     log.info('checkout.success', { orderId: order.id, totalAmount, items: items.length });
     log.metric('checkout_duration_ms', elapsed());

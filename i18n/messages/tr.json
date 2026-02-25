@@ -55,10 +55,23 @@
     "chocolateDreamDesc": "Premium malzemelerle zengin çikolata kaplamalı",
     "berryBliss": "Meyve Mutluluğu",
     "berryBlissDesc": "Gizli tarifimizle hazırlanan taze meyveler",
-    "alsoTry": "Bunları da deneyin"
+    "alsoTry": "Bunları da deneyin",
+    "caramelCrunch": "Karamel Crunch",
+    "mangoSunset": "Mango Sunset",
+    "new": "Yeni",
+    "handcraftedDaily": "her gün el yapımı",
+    "signatureDrink": "İmza İçecek",
+    "madeWithLove": "sevgiyle yapıldı",
+    "handcrafted": "el yapımı",
+    "dailyFresh": "her gün taze",
+    "plainDonut": "Sade donut",
+    "decoratedDonut": "Süslü donut",
+    "oven": "FIRIN"
   },
   "products": {
     "title": "Ürünlerimiz",
+    "subtitle": "El yapımı donutlarımızın lezzetli seçkisini keşfedin",
+    "tryDifferentSearch": "Farklı bir arama deneyin!",
     "categories": {
       "all": "Tümü",
       "glazed": "Sırlanmış",
@@ -96,7 +109,9 @@
     "total": "Toplam",
     "checkout": "Ödemeye Geç",
     "remove": "Kaldır",
-    "quantity": "Adet"
+    "quantity": "Adet",
+    "emptyDescription": "Başlamak için sepetinize lezzetli donutlar ekleyin!",
+    "clearCart": "Sepeti Temizle"
   },
   "checkout": {
     "title": "Ödeme",
@@ -113,16 +128,34 @@
     "promoApply": "Uygula",
     "promoDiscount": "İndirim",
     "promoInvalid": "Geçersiz promosyon kodu",
-    "promoError": "Kod doğrulanamadı. Tekrar deneyin."
+    "promoError": "Kod doğrulanamadı. Tekrar deneyin.",
+    "invalidPromo": "Geçersiz promosyon kodu",
+    "failedSession": "Ödeme oturumu oluşturulamadı",
+    "cartExpiredStale": "Bazı ürünler artık mevcut değil. Sepetiniz temizlendi — lütfen tekrar ürün ekleyin.",
+    "paymentFailed": "Ödeme başarısız oldu. Lütfen tekrar deneyin.",
+    "namePlaceholder": "Adınız Soyadınız",
+    "addressPlaceholder": "Teslimat adresi",
+    "stateValidating": "Doğrulanıyor...",
+    "stateProcessing": "İşleniyor...",
+    "stateRedirecting": "Yönlendiriliyor...",
+    "requestTimeout": "İstek Zaman Aşımına Uğradı",
+    "checkoutFailed": "Ödeme Başarısız",
+    "retryIn": "{seconds}s sonra tekrar dene",
+    "tryAgain": "Tekrar Dene",
+    "maxRetries": "Maksimum deneme sayısına ulaşıldı. Lütfen sayfayı yenileyin.",
+    "termsLabel": "Siparişimi onaylayarak <terms>Satış Sözleşmesi</terms>, <privacy>Gizlilik Politikası</privacy> ve <returns>İade Koşulları</returns>'nı okuduğumu ve kabul ettiğimi onaylıyorum.",
+    "securePayment": "🔒 <strong>Güvenli Ödeme:</strong> Ödeme bilgileriniz şifrelenmiş ve güvenlidir. Stripe aracılığıyla tüm büyük kredi kartlarını kabul ediyoruz."
   },
   "orders": {
     "title": "Sipariş Takibi",
+    "statusLabel": "Durum",
     "status": {
       "pending": "Beklemede",
       "paid": "Ödendi",
       "preparing": "Hazırlanıyor",
       "shipped": "Kargoda",
-      "delivered": "Teslim Edildi"
+      "delivered": "Teslim Edildi",
+      "cancelled": "İptal Edildi"
     },
     "orderNumber": "Sipariş No",
     "date": "Tarih",
@@ -162,9 +195,17 @@
     },
     "orders": {
       "title": "Sipariş Yönetimi",
+      "subtitle": "Müşteri siparişlerini takip edin ve yönetin",
       "updateStatus": "Durumu Güncelle",
       "customer": "Müşteri",
-      "total": "Toplam"
+      "total": "Toplam",
+      "totalOrders": "Toplam Sipariş",
+      "inProgress": "Devam Eden",
+      "revenue": "Gelir",
+      "searchPlaceholder": "E-posta veya sipariş ID ile ara...",
+      "noOrders": "Sipariş bulunamadı",
+      "customerDetails": "Müşteri Bilgileri",
+      "orderItems": "Sipariş Ürünleri"
     }
   },
   "auth": {
@@ -190,6 +231,28 @@
     "back": "Geri",
     "next": "İleri",
     "backToProducts": "Ürünlere Geri Dön",
-    "productNotFound": "Ürün bulunamadı"
+    "productNotFound": "Ürün bulunamadı"  },
+  "footer": {
+    "tagline": "Her gün sevgiyle yapılan taze donutlar. \ud83c\udf69",
+    "quickLinks": "Hızlı Bağlantılar",
+    "home": "Ana Sayfa",
+    "products": "Ürünler",
+    "cart": "Sepet",
+    "contact": "İletişim",
+    "phone": "Telefon",
+    "address": "Adres",
+    "rights": "Tüm hakları saklıdır."
+  },
+  "promo": {
+    "freeDelivery": "🍩 100₺ Üzeri Siparişlerde Ücretsiz Teslimat!",
+    "newFlavors": "🎉 Her Hafta Yeni Tatlar!",
+    "firstOrder": "💖 FIRSTDONUT Koduyla %20 İndirim",
+    "fastDelivery": "⚡ 15 Dakikada Yıldırım Teslimat",
+    "newDonut": "🔥 Yeni Karamel Crunch Donut'u Deneyin!"
+  },
+  "notFound": {
+    "title": "Sayfa Bulunamadı",
+    "description": "Bu donut kaybolmuş görünüyor! Sizi geri yönlendirelim.",
+    "backHome": "Ana Sayfaya Dön"
   }
 }

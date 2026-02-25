@@ -87,7 +87,7 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
           const data = await res.json();
           // If server returned the existing order, treat as success (replay-safe)
           if (data.orderId) {
-            return { url: '', orderId: data.orderId };
+            return { url: data.url || '', orderId: data.orderId };
           }
           throw new Error(data.error || 'Duplicate checkout request');
         }

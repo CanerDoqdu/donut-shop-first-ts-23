@@ -1,7 +1,12 @@
+'use client';
+
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
+import { useTranslations } from 'next-intl';
 
 export function Footer() {
+  const t = useTranslations('footer');
+
   return (
     <footer className="mt-auto border-t bg-linear-to-br from-[#FFF8E7] to-white">
       <div className="container mx-auto px-4 py-12">
@@ -21,28 +26,28 @@ export function Footer() {
               </span>
             </div>
             <p className="text-sm text-gray-600">
-              Fresh donuts made daily with love. 🍩
+              {t('tagline')}
             </p>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-fredoka text-lg font-semibold mb-4">Quick Links</h3>
+            <h3 className="font-fredoka text-lg font-semibold mb-4">{t('quickLinks')}</h3>
             <nav aria-label="Footer navigation">
             <ul className="space-y-2 text-sm">
               <li>
                 <Link href="/" className="text-gray-600 hover:text-[#FF6BBF]">
-                  Home
+                  {t('home')}
                 </Link>
               </li>
               <li>
                 <Link href="/products" className="text-gray-600 hover:text-[#FF6BBF]">
-                  Products
+                  {t('products')}
                 </Link>
               </li>
               <li>
                 <Link href="/cart" className="text-gray-600 hover:text-[#FF6BBF]">
-                  Cart
+                  {t('cart')}
                 </Link>
               </li>
             </ul>
@@ -51,17 +56,17 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="font-fredoka text-lg font-semibold mb-4">Contact</h3>
+            <h3 className="font-fredoka text-lg font-semibold mb-4">{t('contact')}</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>Email: hello@donutshop.com</li>
-              <li>Phone: +90 555 123 4567</li>
-              <li>Address: Istanbul, Turkey</li>
+              <li>{t('phone')}: +90 555 123 4567</li>
+              <li>{t('address')}: Istanbul, Turkey</li>
             </ul>
           </div>
         </div>
 
         <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600">
-          <p>© {new Date().getFullYear()} Glazed & Sipped. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Glazed & Sipped. {t('rights')}</p>
         </div>
       </div>
     </footer>

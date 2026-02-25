@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { ShoppingCart, Menu, X, Crown, Gift, Package, Users, ChevronDown, User, LogOut, LogIn, UserPlus } from 'lucide-react';
-import { useState, useEffect, startTransition } from 'react';
+import { useState, useEffect, useRef, startTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
@@ -34,7 +34,7 @@ export function Header() {
   const t = useTranslations();
   const router = useRouter();
   const totalItems = useCartStore((state) => state.getTotalItems());
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -59,19 +59,43 @@ export function Header() {
     
     // Fetch initial auth state
     async function getAuthState() {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
-      setUser(currentUser);
-      
-      if (currentUser) {
-        const [profileRes, loyaltyRes] = await Promise.all([
-          supabase.from('profiles').select('full_name').eq('id', currentUser.id).maybeSingle(),
-          supabase.from('loyalty_points').select('total_points, tier').eq('user_id', currentUser.id).maybeSingle(),
-        ]);
-        
-        if (profileRes.data) setProfile(profileRes.data);
-        if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
+
+        if (currentUser) {
+          setUser(currentUser);
+          const [profileRes, loyaltyRes] = await Promise.all([
+            supabase.from('profiles').select('full_name').eq('id', currentUser.id).maybeSingle(),
+            supabase.from('loyalty_points').select('total_points, tier').eq('user_id', currentUser.id).maybeSingle(),
+          ]);
+
+          if (profileRes.data) setProfile(profileRes.data);
+          if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
+          return;
+        }
+
+        const response = await fetch('/api/auth/me', {
+          method: 'GET',
+          credentials: 'include',
+          cache: 'no-store',
+        });
+
+        if (response.ok) {
+          const serverAuth = await response.json() as {
+            user: SupabaseUser | null;
+            profile: Profile | null;
+            loyalty: LoyaltyInfo | null;
+          };
+
+          if (serverAuth.user) {
+            setUser(serverAuth.user);
+            if (serverAuth.profile) setProfile(serverAuth.profile);
+            if (serverAuth.loyalty) setLoyalty(serverAuth.loyalty);
+          }
+        }
+      } finally {
+        setAuthLoading(false);
       }
-      setAuthLoading(false);
     }
     
     getAuthState();

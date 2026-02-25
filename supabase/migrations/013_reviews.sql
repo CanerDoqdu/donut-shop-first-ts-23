@@ -1,28 +1,56 @@
 -- ============================================================
 -- Migration 013: Product reviews with moderation state machine
 -- ============================================================
--- States: pending → approved | rejected | flagged
--- Only approved reviews are visible to customers.
+-- Adds status column + moderation columns to existing reviews table (from 002).
+-- The reviews table from 002 uses is_approved (boolean).
+-- This migration upgrades it with a proper state machine:
+--   pending → approved | rejected | flagged
 
-CREATE TABLE IF NOT EXISTS reviews (
-  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id  TEXT NOT NULL,
-  user_id     UUID NOT NULL,
-  rating      SMALLINT NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  title       TEXT,
-  body        TEXT,
-  status      TEXT NOT NULL DEFAULT 'pending'
-    CHECK (status IN ('pending', 'approved', 'rejected', 'flagged')),
-  flag_reason TEXT,              -- reason when flagged
-  moderated_by UUID,             -- admin who moderated
-  moderated_at TIMESTAMPTZ,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT now(),
-  updated_at  TIMESTAMPTZ NOT NULL DEFAULT now()
-);
+-- ─── Add moderation columns if missing ───────────────────
 
--- One review per user per product
-CREATE UNIQUE INDEX IF NOT EXISTS idx_reviews_user_product
-  ON reviews (user_id, product_id);
+DO $$
+BEGIN
+  -- Add status column (text state machine) if it doesn't exist
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'reviews' AND column_name = 'status'
+  ) THEN
+    ALTER TABLE reviews ADD COLUMN status TEXT NOT NULL DEFAULT 'pending'
+      CHECK (status IN ('pending', 'approved', 'rejected', 'flagged'));
+    -- Backfill: approved reviews stay approved, rest default to pending
+    UPDATE reviews SET status = 'approved' WHERE is_approved = true;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'reviews' AND column_name = 'body'
+  ) THEN
+    ALTER TABLE reviews ADD COLUMN body TEXT;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'reviews' AND column_name = 'flag_reason'
+  ) THEN
+    ALTER TABLE reviews ADD COLUMN flag_reason TEXT;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'reviews' AND column_name = 'moderated_by'
+  ) THEN
+    ALTER TABLE reviews ADD COLUMN moderated_by UUID;
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'reviews' AND column_name = 'moderated_at'
+  ) THEN
+    ALTER TABLE reviews ADD COLUMN moderated_at TIMESTAMPTZ;
+  END IF;
+END $$;
+
+-- ─── Indexes ─────────────────────────────────────────────
 
 -- Fast lookup for product page (only approved)
 CREATE INDEX IF NOT EXISTS idx_reviews_product_approved
@@ -38,21 +66,25 @@ CREATE INDEX IF NOT EXISTS idx_reviews_pending
 ALTER TABLE reviews ENABLE ROW LEVEL SECURITY;
 
 -- Anyone can read approved reviews
+DROP POLICY IF EXISTS "public_read_approved_reviews" ON reviews;
 CREATE POLICY "public_read_approved_reviews" ON reviews
   FOR SELECT
   USING (status = 'approved');
 
 -- Users can insert their own reviews
+DROP POLICY IF EXISTS "users_insert_own_review" ON reviews;
 CREATE POLICY "users_insert_own_review" ON reviews
   FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
 -- Users can update their own pending reviews
+DROP POLICY IF EXISTS "users_update_own_pending" ON reviews;
 CREATE POLICY "users_update_own_pending" ON reviews
   FOR UPDATE
   USING (auth.uid() = user_id AND status = 'pending');
 
 -- Admins can read and update all reviews
+DROP POLICY IF EXISTS "admin_manage_reviews" ON reviews;
 CREATE POLICY "admin_manage_reviews" ON reviews
   FOR ALL
   USING (
@@ -64,9 +96,6 @@ CREATE POLICY "admin_manage_reviews" ON reviews
   );
 
 -- ── Auto-flag trigger ────────────────────────────────────
--- Flags reviews that are suspicious:
--- 1. 1-star with no body text
--- 2. Body contains profanity (simple word list)
 
 CREATE OR REPLACE FUNCTION auto_flag_review()
 RETURNS TRIGGER AS $$
@@ -96,6 +125,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS trg_auto_flag_review ON reviews;
 CREATE TRIGGER trg_auto_flag_review
   BEFORE INSERT ON reviews
   FOR EACH ROW

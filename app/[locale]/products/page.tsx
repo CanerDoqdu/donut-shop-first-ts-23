@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
@@ -13,6 +13,7 @@ import { SectionSuspense } from '@/components/ui/section-suspense';
 
 export default function ProductsPage() {
   const t = useTranslations();
+  const locale = useLocale();
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -34,7 +35,7 @@ export default function ProductsPage() {
           {t('products.title')}
         </h1>
         <p className="text-gray-600 text-lg">
-          Discover our delicious selection of handcrafted donuts
+          {t('products.subtitle')}
         </p>
       </div>
 
@@ -72,6 +73,7 @@ export default function ProductsPage() {
           <ProductCard
             key={product.id}
             product={product}
+            locale={locale}
             categoryLabel={t(`products.categories.${product.category}`)}
             addToCartLabel={t('products.addToCart')}
             outOfStockLabel={t('products.outOfStock')}
@@ -81,7 +83,7 @@ export default function ProductsPage() {
 
       {filteredProducts.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-gray-500 text-lg">No products found. Try a different search!</p>
+          <p className="text-gray-500 text-lg">{t('products.noProducts')} {t('products.tryDifferentSearch')}</p>
         </div>
       )}
       </SectionSuspense>

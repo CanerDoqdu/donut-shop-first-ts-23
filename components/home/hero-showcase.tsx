@@ -134,8 +134,8 @@ export function HeroShowcase() {
                 <div className="relative w-6 h-6 sm:w-7 sm:h-7 md:w-10 md:h-10 shrink-0">
                   <Image src="/donut 5.png" alt="" fill sizes="(min-width: 768px) 40px, 28px" className="object-contain" draggable={false} />
                 </div>
-                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">Caramel Crunch</span>
-                <span className="text-[7px] sm:text-[8px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded-full shrink-0 font-bold uppercase" style={{ background: 'rgba(255,140,66,0.2)', color: '#FF8C42' }}>New</span>
+                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{t('caramelCrunch')}</span>
+                <span className="text-[7px] sm:text-[8px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded-full shrink-0 font-bold uppercase" style={{ background: 'rgba(255,140,66,0.2)', color: '#FF8C42' }}>{t('new')}</span>
               </div>
               <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">₺48</span>
             </div>
@@ -145,7 +145,7 @@ export function HeroShowcase() {
                 <div className="relative w-6 h-6 sm:w-7 sm:h-7 md:w-10 md:h-10 shrink-0 overflow-hidden">
                   <Image src="/beverage 1.png" alt="" fill sizes="(min-width: 768px) 40px, 28px" className="object-contain" draggable={false} />
                 </div>
-                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">Mango Sunset</span>
+                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{t('mangoSunset')}</span>
               </div>
               <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">₺38</span>
             </div>
@@ -154,7 +154,7 @@ export function HeroShowcase() {
           {/* Bottom decorative */}
           <div className="flex items-center justify-center gap-3 mt-4 sm:mt-5 md:mt-6">
             <div className="h-px flex-1 max-w-16 md:max-w-24" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2))' }} />
-            <span className="text-white/25 text-[9px] sm:text-[10px] md:text-xs tracking-[0.2em] uppercase font-fredoka">handcrafted daily</span>
+            <span className="text-white/25 text-[9px] sm:text-[10px] md:text-xs tracking-[0.2em] uppercase font-fredoka">{t('handcraftedDaily')}</span>
             <div className="h-px flex-1 max-w-16 md:max-w-24" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.2), transparent)' }} />
           </div>
         </div>
@@ -193,11 +193,11 @@ export function HeroShowcase() {
           {/* ── Label ── */}
           <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ left: '10%', bottom: '-100px', zIndex: 10 }}>
             <p className="font-fredoka text-base sm:text-lg md:text-xl font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
-              Berry Bliss
+              {t('berryBliss')}
             </p>
-            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">Signature Drink</p>
+            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">{t('signatureDrink')}</p>
             <p className="mt-1 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] select-none">
-              made with love
+              {t('madeWithLove')}
             </p>
           </div>
 
@@ -265,9 +265,9 @@ export function HeroShowcase() {
           {/* ── Label ── */}
           <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ right: '10%', bottom: '-100px', zIndex: 4 }}>
             <p className="font-fredoka text-base sm:text-lg md:text-xl font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
-              Chocolate Dream
+              {t('chocolateDream')}
             </p>
-            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">Best Seller</p>
+            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">{t('bestSeller')}</p>
             <p className="mt-1 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] select-none">
               glazed &amp; sipped
             </p>
@@ -285,7 +285,7 @@ export function HeroShowcase() {
               zIndex: 0,
             }}
           >
-            SWEET
+          SWEET
           </span>
         </div>
 
@@ -294,11 +294,11 @@ export function HeroShowcase() {
             ══════════════════════════════════════════════ */}
 
         <span className="absolute -top-5 sm:-top-7 left-2 sm:left-0 font-fredoka text-[10px] sm:text-sm italic text-white/40 tracking-[0.25em] pointer-events-none select-none -rotate-12 hidden sm:block">
-          handcrafted
+          {t('handcrafted')}
         </span>
 
         <span className="absolute -top-5 sm:-top-7 right-2 sm:right-0 font-fredoka text-[10px] sm:text-sm italic text-white/40 tracking-[0.25em] pointer-events-none select-none rotate-12 hidden sm:block">
-          daily fresh
+          {t('dailyFresh')}
         </span>
 
       </div>

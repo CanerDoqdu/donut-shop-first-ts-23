@@ -17,6 +17,13 @@ export default function GlobalError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
+  // Detect locale from URL path — global-error has no access to next-intl
+  const isTr = typeof window !== 'undefined' && window.location.pathname.startsWith('/tr');
+  const lang = isTr ? 'tr' : 'en';
+  const title = isTr ? 'Bir hata oluştu' : 'Something went wrong';
+  const desc = isTr ? 'Bilgilendirildik ve sorunu inceliyoruz.' : "We've been notified and are looking into it.";
+  const btnText = isTr ? 'Tekrar dene' : 'Try again';
+
   useEffect(() => {
     Sentry.captureException(error, {
       tags: { boundary: 'global-error' },
@@ -25,7 +32,7 @@ export default function GlobalError({
   }, [error]);
 
   return (
-    <html lang="en">
+    <html lang={lang}>
       <body>
         <div style={{
           display: 'flex',
@@ -38,10 +45,10 @@ export default function GlobalError({
           textAlign: 'center',
         }}>
           <h1 style={{ fontSize: '2rem', marginBottom: '1rem' }}>
-            Something went wrong
+            {title}
           </h1>
           <p style={{ color: '#666', marginBottom: '2rem' }}>
-            We&apos;ve been notified and are looking into it.
+            {desc}
           </p>
           <button
             onClick={reset}
@@ -55,7 +62,7 @@ export default function GlobalError({
               fontSize: '1rem',
             }}
           >
-            Try again
+            {btnText}
           </button>
         </div>
       </body>

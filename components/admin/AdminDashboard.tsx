@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, startTransition } from 'react';
+import { useState, useEffect, useCallback, startTransition, useRef } from 'react';
 import { 
   TrendingUp, Users, Package, DollarSign, 
   ShoppingCart, Clock, ArrowUp, ArrowDown, Eye
@@ -42,7 +42,7 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<'today' | 'week' | 'month'>('week');
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
   const t = {
     tr: {
@@ -210,7 +210,7 @@ export default function AdminDashboard({ locale }: AdminDashboardProps) {
     return labels[status] || status;
   };
 
-  const formatCurrency = (amount: number) => `₺${amount.toLocaleString('tr-TR', { minimumFractionDigits: 2 })}`;
+  const formatCurrency = (amount: number) => `₺${amount.toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', { minimumFractionDigits: 2 })}`;
 
   if (loading) {
     return (

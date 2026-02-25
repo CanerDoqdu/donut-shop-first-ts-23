@@ -154,6 +154,17 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
   }
 });
 
+// HTML-escape user-supplied values to prevent injection / XSS in email bodies
+function escapeHtml(value: unknown): string {
+  const str = String(value ?? '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 // Helper function - will be used when Resend is configured
 function generateEmailHtml(type: string, data: Record<string, unknown>, locale: string) {
   const baseTemplate = `
@@ -175,18 +186,18 @@ function generateEmailHtml(type: string, data: Record<string, unknown>, locale: 
   switch (type) {
     case 'order_confirmation':
       content = locale === 'tr'
-        ? `<h2>Siparişiniz Alındı!</h2><p>Sipariş numaranız: <strong>${data.orderId}</strong></p><p>Toplam: <strong>₺${data.total}</strong></p>`
-        : `<h2>Order Confirmed!</h2><p>Your order number: <strong>${data.orderId}</strong></p><p>Total: <strong>₺${data.total}</strong></p>`;
+        ? `<h2>Siparişiniz Alındı!</h2><p>Sipariş numaranız: <strong>${escapeHtml(data.orderId)}</strong></p><p>Toplam: <strong>₺${escapeHtml(data.total)}</strong></p>`
+        : `<h2>Order Confirmed!</h2><p>Your order number: <strong>${escapeHtml(data.orderId)}</strong></p><p>Total: <strong>₺${escapeHtml(data.total)}</strong></p>`;
       break;
     case 'order_shipped':
       content = locale === 'tr'
-        ? `<h2>Siparişiniz Yola Çıktı!</h2><p>Sipariş numarası: <strong>${data.orderId}</strong></p>`
-        : `<h2>Your Order is on the Way!</h2><p>Order number: <strong>${data.orderId}</strong></p>`;
+        ? `<h2>Siparişiniz Yola Çıktı!</h2><p>Sipariş numarası: <strong>${escapeHtml(data.orderId)}</strong></p>`
+        : `<h2>Your Order is on the Way!</h2><p>Order number: <strong>${escapeHtml(data.orderId)}</strong></p>`;
       break;
     case 'loyalty_points_earned':
       content = locale === 'tr'
-        ? `<h2>Tebrikler!</h2><p><strong>${data.points}</strong> puan kazandınız.</p><p>Toplam puanınız: <strong>${data.totalPoints}</strong></p>`
-        : `<h2>Congratulations!</h2><p>You earned <strong>${data.points}</strong> points.</p><p>Total points: <strong>${data.totalPoints}</strong></p>`;
+        ? `<h2>Tebrikler!</h2><p><strong>${escapeHtml(data.points)}</strong> puan kazandınız.</p><p>Toplam puanınız: <strong>${escapeHtml(data.totalPoints)}</strong></p>`
+        : `<h2>Congratulations!</h2><p>You earned <strong>${escapeHtml(data.points)}</strong> points.</p><p>Total points: <strong>${escapeHtml(data.totalPoints)}</strong></p>`;
       break;
     default:
       content = '<p>Thank you for using Donut Shop!</p>';

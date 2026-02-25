@@ -1,7 +1,7 @@
 'use client';
 
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+import { useTranslations, useLocale } from 'next-intl';
+import { useState, useEffect, useRef } from 'react';
 import { formatPrice } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,87 +15,30 @@ import {
   ChevronDown,
   Eye,
   X,
+  Loader2,
 } from 'lucide-react';
+import { createClient } from '@/lib/supabase/client';
 
-type OrderStatus = 'pending' | 'paid' | 'preparing' | 'shipped' | 'delivered';
+type OrderStatus = 'pending' | 'paid' | 'preparing' | 'shipped' | 'delivered' | 'cancelled';
+
+interface OrderItem {
+  id: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+}
 
 interface Order {
   id: string;
-  customer: string;
-  email: string;
+  user_id: string;
   status: OrderStatus;
-  items: { name: string; quantity: number; price: number; image: string }[];
-  total: number;
+  total_amount: number;
+  shipping_address: string | null;
+  customer_email: string | null;
+  customer_phone: string | null;
   created_at: string;
-  address: string;
+  order_items: OrderItem[];
 }
-
-// Sample orders data
-const sampleOrders: Order[] = [
-  {
-    id: 'ORD-2024-001',
-    customer: 'Caner Doğdu',
-    email: 'caner@example.com',
-    status: 'preparing',
-    items: [
-      { name: 'Strawberry Glazed', quantity: 2, price: 35, image: '🍓' },
-      { name: 'Chocolate Dream', quantity: 1, price: 40, image: '🍫' },
-    ],
-    total: 110,
-    created_at: '2024-01-15T10:30:00Z',
-    address: 'Bağdat Caddesi No:123, Kadıköy, İstanbul',
-  },
-  {
-    id: 'ORD-2024-002',
-    customer: 'Ayşe Yılmaz',
-    email: 'ayse@example.com',
-    status: 'paid',
-    items: [
-      { name: 'Classic Sugar', quantity: 6, price: 25, image: '🍩' },
-      { name: 'Vanilla Cream', quantity: 2, price: 38, image: '🍦' },
-    ],
-    total: 226,
-    created_at: '2024-01-15T11:45:00Z',
-    address: 'İstiklal Caddesi No:45, Beyoğlu, İstanbul',
-  },
-  {
-    id: 'ORD-2024-003',
-    customer: 'Mehmet Kaya',
-    email: 'mehmet@example.com',
-    status: 'delivered',
-    items: [
-      { name: 'Maple Bacon', quantity: 3, price: 45, image: '🥓' },
-    ],
-    total: 135,
-    created_at: '2024-01-14T09:00:00Z',
-    address: 'Atatürk Bulvarı No:78, Çankaya, Ankara',
-  },
-  {
-    id: 'ORD-2024-004',
-    customer: 'Elif Demir',
-    email: 'elif@example.com',
-    status: 'pending',
-    items: [
-      { name: 'Rainbow Sprinkles', quantity: 4, price: 35, image: '🌈' },
-      { name: 'Caramel Delight', quantity: 2, price: 42, image: '🍮' },
-    ],
-    total: 224,
-    created_at: '2024-01-15T14:20:00Z',
-    address: 'Kordon Boyu No:12, Alsancak, İzmir',
-  },
-  {
-    id: 'ORD-2024-005',
-    customer: 'Ali Öztürk',
-    email: 'ali@example.com',
-    status: 'shipped',
-    items: [
-      { name: 'Pumpkin Spice', quantity: 2, price: 40, image: '🎃' },
-    ],
-    total: 80,
-    created_at: '2024-01-15T08:15:00Z',
-    address: 'Kızılay Meydanı No:5, Ankara',
-  },
-];
 
 const statusColors: Record<OrderStatus, string> = {
   pending: 'bg-gray-100 text-gray-700',
@@ -103,28 +46,79 @@ const statusColors: Record<OrderStatus, string> = {
   preparing: 'bg-yellow-100 text-yellow-700',
   shipped: 'bg-purple-100 text-purple-700',
   delivered: 'bg-green-100 text-green-700',
+  cancelled: 'bg-red-100 text-red-700',
 };
 
-const allStatuses: OrderStatus[] = ['pending', 'paid', 'preparing', 'shipped', 'delivered'];
+const allStatuses: OrderStatus[] = ['pending', 'paid', 'preparing', 'shipped', 'delivered', 'cancelled'];
 
 export default function AdminOrdersPage() {
   const t = useTranslations();
-  const [orders, setOrders] = useState<Order[]>(sampleOrders);
+  const locale = useLocale();
+  const supabaseRef = useRef(createClient());
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<OrderStatus | 'all'>('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [savingStatus, setSavingStatus] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchOrders() {
+      const supabase = supabaseRef.current;
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          id,
+          user_id,
+          status,
+          total_amount,
+          shipping_address,
+          customer_email,
+          customer_phone,
+          created_at,
+          order_items (
+            id,
+            product_name,
+            quantity,
+            unit_price
+          )
+        `)
+        .is('deleted_at', null)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Failed to fetch orders:', error);
+      } else {
+        setOrders((data as Order[]) || []);
+      }
+      setLoading(false);
+    }
+    fetchOrders();
+  }, []);
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
-      order.customer.toLowerCase().includes(search.toLowerCase()) ||
+      (order.customer_email || '').toLowerCase().includes(search.toLowerCase()) ||
       order.id.toLowerCase().includes(search.toLowerCase());
     const matchesStatus = filterStatus === 'all' || order.status === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
-  const handleStatusUpdate = (orderId: string, newStatus: OrderStatus) => {
-    setOrders(orders.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+  const handleStatusUpdate = async (orderId: string, newStatus: OrderStatus) => {
+    setSavingStatus(orderId);
+    const supabase = supabaseRef.current;
+    const { error } = await supabase
+      .from('orders')
+      .update({ status: newStatus })
+      .eq('id', orderId);
+
+    if (error) {
+      console.error('Failed to update order status:', error);
+    } else {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+    }
+    setSavingStatus(null);
     setUpdatingId(null);
   };
 
@@ -133,8 +127,8 @@ export default function AdminOrdersPage() {
     pending: orders.filter((o) => o.status === 'pending').length,
     inProgress: orders.filter((o) => ['paid', 'preparing', 'shipped'].includes(o.status)).length,
     revenue: orders
-      .filter((o) => o.status !== 'pending')
-      .reduce((sum, o) => sum + o.total, 0),
+      .filter((o) => o.status !== 'pending' && o.status !== 'cancelled')
+      .reduce((sum, o) => sum + o.total_amount, 0),
   };
 
   return (
@@ -145,7 +139,7 @@ export default function AdminOrdersPage() {
           <h1 className="text-3xl font-fredoka font-bold text-gray-900">
             {t('admin.orders.title')}
           </h1>
-          <p className="text-gray-500 mt-1">Track and manage customer orders</p>
+          <p className="text-gray-500 mt-1">{t('admin.orders.subtitle')}</p>
         </div>
 
         {/* Stats */}
@@ -158,7 +152,7 @@ export default function AdminOrdersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-fredoka font-bold">{stats.total}</p>
-                  <p className="text-xs text-gray-500">Total Orders</p>
+                  <p className="text-xs text-gray-500">{t('admin.orders.totalOrders')}</p>
                 </div>
               </div>
             </CardContent>
@@ -171,7 +165,7 @@ export default function AdminOrdersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-fredoka font-bold">{stats.pending}</p>
-                  <p className="text-xs text-gray-500">Pending</p>
+                  <p className="text-xs text-gray-500">{t('orders.status.pending')}</p>
                 </div>
               </div>
             </CardContent>
@@ -184,7 +178,7 @@ export default function AdminOrdersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-fredoka font-bold">{stats.inProgress}</p>
-                  <p className="text-xs text-gray-500">In Progress</p>
+                  <p className="text-xs text-gray-500">{t('admin.orders.inProgress')}</p>
                 </div>
               </div>
             </CardContent>
@@ -197,7 +191,7 @@ export default function AdminOrdersPage() {
                 </div>
                 <div>
                   <p className="text-2xl font-fredoka font-bold">{formatPrice(stats.revenue)}</p>
-                  <p className="text-xs text-gray-500">Revenue</p>
+                  <p className="text-xs text-gray-500">{t('admin.orders.revenue')}</p>
                 </div>
               </div>
             </CardContent>
@@ -210,7 +204,7 @@ export default function AdminOrdersPage() {
             <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
             <Input
               className="pl-12"
-              placeholder="Search by customer or order ID..."
+              placeholder={t('admin.orders.searchPlaceholder')}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
             />
@@ -224,7 +218,7 @@ export default function AdminOrdersPage() {
                   : 'bg-white text-gray-600 hover:bg-gray-100'
               }`}
             >
-              All
+              {t('products.categories.all')}
             </button>
             {allStatuses.map((status) => (
               <button
@@ -243,6 +237,11 @@ export default function AdminOrdersPage() {
         </div>
 
         {/* Orders List */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-pink-500" />
+          </div>
+        ) : (
         <div className="space-y-4">
           {filteredOrders.map((order) => (
             <Card key={order.id} className="hover:shadow-md transition-shadow">
@@ -251,18 +250,18 @@ export default function AdminOrdersPage() {
                   {/* Order Info */}
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-xl bg-linear-to-br from-pink-100 to-orange-100 flex items-center justify-center">
-                      <span className="text-xl">{order.items[0]?.image || '🍩'}</span>
+                      <span className="text-xl">🍩</span>
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <p className="font-fredoka font-bold text-gray-900">{order.id}</p>
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[order.status]}`}>
+                        <p className="font-fredoka font-bold text-gray-900">{order.id.slice(0, 8)}</p>
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-medium ${statusColors[order.status] || 'bg-gray-100 text-gray-700'}`}>
                           {t(`orders.status.${order.status}`)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600">{order.customer}</p>
+                      <p className="text-sm text-gray-600">{order.customer_email || order.user_id.slice(0, 8)}</p>
                       <p className="text-xs text-gray-400">
-                        {new Date(order.created_at).toLocaleString('tr-TR', {
+                        {new Date(order.created_at).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', {
                           dateStyle: 'short',
                           timeStyle: 'short',
                         })}
@@ -272,20 +271,15 @@ export default function AdminOrdersPage() {
 
                   {/* Items Preview */}
                   <div className="flex items-center gap-1">
-                    {order.items.map((item, i) => (
-                      <span key={i} className="text-lg" title={`${item.name} x${item.quantity}`}>
-                        {item.image}
-                      </span>
-                    ))}
-                    <span className="text-xs text-gray-500 ml-1">
-                      ({order.items.reduce((sum, i) => sum + i.quantity, 0)} items)
+                    <span className="text-xs text-gray-500">
+                      {order.order_items.length} {order.order_items.length === 1 ? 'item' : 'items'}
                     </span>
                   </div>
 
                   {/* Total & Actions */}
                   <div className="flex items-center gap-4">
                     <span className="font-fredoka font-bold text-lg text-gray-900">
-                      {formatPrice(order.total)}
+                      {formatPrice(order.total_amount)}
                     </span>
 
                     {/* Status Update Dropdown */}
@@ -303,13 +297,15 @@ export default function AdminOrdersPage() {
                           {allStatuses.map((status) => (
                             <button
                               key={status}
+                              disabled={savingStatus === order.id}
                               onClick={() => handleStatusUpdate(order.id, status)}
                               className={`w-full text-left px-3 py-1.5 rounded-lg text-sm transition-colors ${
                                 order.status === status
                                   ? 'bg-pink-50 text-pink-600 font-medium'
                                   : 'hover:bg-gray-50 text-gray-700'
-                              }`}
+                              } ${savingStatus === order.id ? 'opacity-50 cursor-not-allowed' : ''}`}
                             >
+                              {savingStatus === order.id && <Loader2 className="w-3 h-3 animate-spin inline mr-1" />}
                               {t(`orders.status.${status}`)}
                             </button>
                           ))}
@@ -328,6 +324,7 @@ export default function AdminOrdersPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      aria-label={t('admin.orders.customerDetails')}
                       onClick={() => setSelectedOrder(selectedOrder?.id === order.id ? null : order)}
                     >
                       <Eye className="w-4 h-4" />
@@ -340,22 +337,21 @@ export default function AdminOrdersPage() {
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-2">Customer Details</h4>
-                        <p className="text-sm text-gray-900">{order.customer}</p>
-                        <p className="text-sm text-gray-600">{order.email}</p>
-                        <p className="text-sm text-gray-600 mt-1">{order.address}</p>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">{t('admin.orders.customerDetails')}</h4>
+                        <p className="text-sm text-gray-900">{order.customer_email || '-'}</p>
+                        {order.customer_phone && <p className="text-sm text-gray-600">{order.customer_phone}</p>}
+                        <p className="text-sm text-gray-600 mt-1">{order.shipping_address || '-'}</p>
                       </div>
                       <div>
-                        <h4 className="text-sm font-medium text-gray-500 mb-2">Order Items</h4>
+                        <h4 className="text-sm font-medium text-gray-500 mb-2">{t('admin.orders.orderItems')}</h4>
                         <div className="space-y-2">
-                          {order.items.map((item, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm">
+                          {order.order_items.map((item) => (
+                            <div key={item.id} className="flex items-center justify-between text-sm">
                               <div className="flex items-center gap-2">
-                                <span>{item.image}</span>
-                                <span className="text-gray-900">{item.name}</span>
+                                <span className="text-gray-900">{item.product_name}</span>
                                 <span className="text-gray-400">x{item.quantity}</span>
                               </div>
-                              <span className="font-medium">{formatPrice(item.price * item.quantity)}</span>
+                              <span className="font-medium">{formatPrice(item.unit_price * item.quantity)}</span>
                             </div>
                           ))}
                         </div>
@@ -367,11 +363,12 @@ export default function AdminOrdersPage() {
             </Card>
           ))}
         </div>
+        )}
 
-        {filteredOrders.length === 0 && (
+        {!loading && filteredOrders.length === 0 && (
           <div className="text-center py-12">
             <div className="text-5xl mb-3">📭</div>
-            <p className="text-gray-500">No orders found</p>
+            <p className="text-gray-500">{t('admin.orders.noOrders')}</p>
           </div>
         )}
       </div>

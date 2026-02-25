@@ -38,6 +38,7 @@ function checkAuthRateLimit(action: string, ip: string): AuthResult | null {
 export interface AuthResult {
   success: boolean;
   error?: string;
+  needsEmailConfirmation?: boolean;
 }
 
 export async function signIn(formData: FormData): Promise<AuthResult> {
@@ -98,7 +99,12 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    // Map Supabase error messages to user-friendly ones
+    const friendlyErrors: Record<string, string> = {
+      'email rate limit exceeded': 'Too many sign-up attempts. Please wait a few minutes and try again.',
+      'User already registered': 'An account with this email already exists. Try signing in instead.',
+    };
+    return { success: false, error: friendlyErrors[error.message] ?? error.message };
   }
 
   // Create profile in profiles table
@@ -126,8 +132,24 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
     });
   }
 
+  // If Supabase returned a session, the user is auto-logged-in
+  // (email confirmation disabled or auto-confirmed).
+  // Otherwise, email confirmation is required.
+  const hasSession = !!data.session;
+
+  // Signal the client-side toast via a short-lived cookie.
+  // This avoids query-params that the App Router strips during hydration.
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  cookieStore.set('auth-toast', hasSession ? 'confirmed' : 'needs-confirmation', {
+    path: '/',
+    maxAge: 60,          // 1 minute — plenty of time to read it
+    httpOnly: false,     // must be readable from JS
+    sameSite: 'lax',
+  });
+
   revalidatePath('/', 'layout');
-  redirect(`/${locale}?registered=true`);
+  redirect(`/${locale}`);
 }
 
 export async function signOut(): Promise<void> {

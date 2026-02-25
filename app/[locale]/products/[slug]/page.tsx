@@ -17,6 +17,7 @@ export default function ProductDetailPage() {
   const t = useTranslations();
   const params = useParams();
   const slug = params.slug as string;
+  const locale = (params.locale as string) || 'en';
   const addItem = useCartStore((s) => s.addItem);
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
@@ -28,12 +29,12 @@ export default function ProductDetailPage() {
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="text-8xl mb-4">🍩</div>
-          <h1 className="text-2xl font-fredoka font-bold mb-2">Product Not Found</h1>
-          <p className="text-gray-600 mb-6">The donut you&apos;re looking for doesn&apos;t exist.</p>
+          <h1 className="text-2xl font-fredoka font-bold mb-2">{t('products.notFound') || 'Product Not Found'}</h1>
+          <p className="text-gray-600 mb-6">{t('products.notFoundDescription') || 'The donut you\'re looking for doesn\'t exist.'}</p>
           <Button asChild>
             <Link href="/products">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Products
+              {t('products.backToProducts') || 'Back to Products'}
             </Link>
           </Button>
         </div>
@@ -46,9 +47,7 @@ export default function ProductDetailPage() {
     .slice(0, 4);
 
   const handleAddToCart = () => {
-    for (let i = 0; i < quantity; i++) {
-      addItem(product);
-    }
+    addItem(product, quantity);
     setAdded(true);
     setTimeout(() => setAdded(false), 2000);
   };
@@ -66,7 +65,7 @@ export default function ProductDetailPage() {
             {t('nav.products')}
           </Link>
           <span>/</span>
-          <span className="text-gray-900 font-medium">{product.name_en}</span>
+          <span className="text-gray-900 font-medium">{locale === 'tr' ? product.name_tr : product.name_en}</span>
         </nav>
 
         {/* Product Detail */}
@@ -77,7 +76,7 @@ export default function ProductDetailPage() {
               <div className="w-80 h-80 rounded-full bg-linear-to-br from-pink-100 to-orange-100 flex items-center justify-center shadow-2xl overflow-hidden">
                 <Image
                   src={product.image_url}
-                  alt={product.name_en}
+                  alt={locale === 'tr' ? product.name_tr : product.name_en}
                   width={280}
                   height={280}
                   className="object-contain drop-shadow-xl"
@@ -101,11 +100,11 @@ export default function ProductDetailPage() {
             </Badge>
 
             <h1 className="text-4xl font-fredoka font-bold text-gray-900 mb-3">
-              {product.name_en}
+              {locale === 'tr' ? product.name_tr : product.name_en}
             </h1>
 
             <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-              {product.description_en}
+              {locale === 'tr' ? product.description_tr : product.description_en}
             </p>
 
             <div className="text-4xl font-fredoka font-bold text-transparent bg-clip-text bg-linear-to-r from-pink-500 to-orange-500 mb-6">
@@ -202,14 +201,14 @@ export default function ProductDetailPage() {
                       <div className="w-full aspect-square relative mb-2 group-hover:scale-110 transition-transform">
                         <Image
                           src={rp.image_url}
-                          alt={rp.name_en}
+                          alt={locale === 'tr' ? rp.name_tr : rp.name_en}
                           fill
                           sizes="(min-width: 768px) 25vw, 50vw"
                           className="object-contain"
                         />
                       </div>
                       <h3 className="text-sm font-semibold text-center mb-1 truncate">
-                        {rp.name_en}
+                        {locale === 'tr' ? rp.name_tr : rp.name_en}
                       </h3>
                       <p className="text-center font-fredoka font-bold text-pink-500">
                         {formatPrice(rp.price)}
