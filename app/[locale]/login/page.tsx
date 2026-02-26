@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
@@ -14,18 +14,17 @@ export default function LoginPage() {
   const params = useParams();
   const router = useRouter();
   const locale = (params.locale as string) || 'en';
+  const searchParams = useSearchParams();
+  const isReset = searchParams.get('reset') === 'true';
+  const callbackError = searchParams.get('error');
+
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState(callbackError ?? '');
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { fieldErrors, validateField } = useFormValidation(signInSchema);
-  const supabase = useRef(createClient()).current;
-
-  // Check for messages from URL (SSR-safe)
-  const searchParams = useSearchParams();
-  const isReset = searchParams.get('reset') === 'true';
-  const callbackError = searchParams.get('error');
+  const supabase = useMemo(() => createClient(), []);
 
   // Redirect if already logged in
   useEffect(() => {
@@ -37,13 +36,6 @@ export default function LoginPage() {
     };
     checkAuth();
   }, [locale, router, supabase]);
-
-  // Show callback error
-  useEffect(() => {
-    if (callbackError) {
-      setError(callbackError);
-    }
-  }, [callbackError]);
 
   const t = {
     tr: {

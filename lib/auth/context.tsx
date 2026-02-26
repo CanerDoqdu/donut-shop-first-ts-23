@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, useRef, startTransition, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useMemo, startTransition, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useCartStore } from '@/store/cart-store';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
   const [loading, setLoading] = useState(true);
   
-  const supabase = useRef(createClient()).current;
+  const supabase = useMemo(() => createClient(), []);
 
   // NOTE: Dev-mode auth clearing removed — it was wiping Supabase session
   // cookies/localStorage and breaking login.  If you need a fresh state,
