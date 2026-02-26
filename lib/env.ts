@@ -76,10 +76,24 @@ export const env = {
 
   // ─── App URLs ────────────────────────────────────────────
   get NEXT_PUBLIC_APP_URL() {
-    return process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+    return (
+      process.env.NEXT_PUBLIC_APP_URL ??
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : null) ??
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+      'http://localhost:3000'
+    );
   },
   get NEXT_PUBLIC_SITE_URL() {
-    return process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
+    return (
+      process.env.NEXT_PUBLIC_SITE_URL ??
+      (process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : null) ??
+      (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null) ??
+      'http://localhost:3000'
+    );
   },
 
   // ─── App metadata ────────────────────────────────────────
