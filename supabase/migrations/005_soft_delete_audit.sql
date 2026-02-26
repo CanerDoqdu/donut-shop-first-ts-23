@@ -41,7 +41,7 @@ $$;
 -- ─── 2. Audit log table ────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS audit_log (
-  id          UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   actor_id    UUID REFERENCES profiles(id) ON DELETE SET NULL,
   action      TEXT NOT NULL,
   entity_type TEXT NOT NULL,

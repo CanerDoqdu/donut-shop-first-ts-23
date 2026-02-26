@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, startTransition } from 'react';
+import { useState, useEffect, useCallback, useRef, startTransition } from 'react';
 import { Package, Calendar, Pause, Play, Settings, Truck } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
@@ -22,7 +22,8 @@ export default function SubscriptionManager({ userId, locale }: SubscriptionMana
   const [deliveries, setDeliveries] = useState<SubscriptionDelivery[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   const t = {
     tr: {
@@ -84,24 +85,26 @@ export default function SubscriptionManager({ userId, locale }: SubscriptionMana
   }[locale];
 
   const fetchSubscription = useCallback(async () => {
-    const [{ data: subData }, { data: delData }] = await Promise.all([
-      supabase
-        .from('subscriptions')
-        .select('*')
-        .eq('user_id', userId)
-        .single(),
-      supabase
+    // First get the subscription for the user
+    const { data: subData } = await supabase
+      .from('subscriptions')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (subData) {
+      setSubscription(subData);
+      // Then get deliveries for THAT subscription, not the userId
+      const { data: delData } = await supabase
         .from('subscription_deliveries')
         .select('*')
-        .eq('subscription_id', userId)
+        .eq('subscription_id', subData.id)
         .order('scheduled_date', { ascending: true })
-        .limit(5),
-    ]);
-
-    if (subData) setSubscription(subData);
-    if (delData) setDeliveries(delData);
+        .limit(5);
+      if (delData) setDeliveries(delData);
+    }
     setLoading(false);
-  }, [supabase, userId]);
+  }, [userId]);
 
   useEffect(() => {
     startTransition(() => {

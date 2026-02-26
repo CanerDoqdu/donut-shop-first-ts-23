@@ -42,9 +42,9 @@ CREATE INDEX IF NOT EXISTS idx_order_items_product_qty
   ON order_items (product_name, quantity, unit_price);
 
 -- ─── 7. Stripe events: idempotency lookup ───────────────────
--- Covers: webhook handler → WHERE stripe_event_id = ?
+-- Covers: webhook handler → WHERE event_id = ?
 CREATE INDEX IF NOT EXISTS idx_stripe_events_event_id
-  ON stripe_events (stripe_event_id);
+  ON stripe_events (event_id);
 
 -- ─── 8. Analytics: time-range queries ───────────────────────
 -- Covers: dashboard analytics by type + date range

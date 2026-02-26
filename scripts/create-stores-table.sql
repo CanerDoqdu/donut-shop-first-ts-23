@@ -28,9 +28,15 @@ ALTER TABLE public.stores ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read active stores" ON public.stores
   FOR SELECT USING (is_active = true);
 
--- Allow authenticated users to manage stores (for admin)
+-- Allow admin users to manage stores
 CREATE POLICY "Admins can manage stores" ON public.stores
-  FOR ALL USING (auth.role() = 'authenticated');
+  FOR ALL USING (
+    auth.role() = 'authenticated'
+    AND EXISTS (
+      SELECT 1 FROM public.admin_users
+      WHERE admin_users.user_id = auth.uid()
+    )
+  );
 
 -- Insert sample stores data
 INSERT INTO public.stores (name, slug, address, city, district, phone, email, latitude, longitude, opening_hours, is_active)

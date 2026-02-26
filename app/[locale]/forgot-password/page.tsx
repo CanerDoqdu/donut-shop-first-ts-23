@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-amber-50 via-white to-pink-50 flex items-center justify-center py-12 px-4">
+    <section className="min-h-screen bg-linear-to-br from-amber-50 via-white to-pink-50 flex items-center justify-center py-12 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -131,6 +131,7 @@ export default function ForgotPasswordPage() {
                       type="email"
                       name="email"
                       required
+                      autoComplete="email"
                       className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
                       placeholder="you@example.com"
                     />
@@ -171,6 +172,6 @@ export default function ForgotPasswordPage() {
           )}
         </div>
       </motion.div>
-    </main>
+    </section>
   );
 }

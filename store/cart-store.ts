@@ -19,6 +19,15 @@ interface CartStore {
 
 const STORAGE_KEY = 'donut-cart-storage';
 
+// Dev-only: Helper to clear cart cache for fresh testing
+export function clearCartCache() {
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(STORAGE_KEY);
+    // Force React state update
+    useCartStore.setState({ items: [], cartTimestamp: 0, generation: 0 });
+  }
+}
+
 export const useCartStore = create<CartStore>()(
   persist(
     (set, get) => ({
@@ -30,9 +39,8 @@ export const useCartStore = create<CartStore>()(
       addItem: (product, quantity = 1) => {
         const items = get().items;
         const existingItem = items.find(item => item.product.id === product.id);
-        // Update timestamp on add
         const gen = get().generation + 1;
-        set({ cartTimestamp: Date.now(), generation: gen });
+        const now = Date.now();
         if (existingItem) {
           set({
             items: items.map(item =>
@@ -40,9 +48,15 @@ export const useCartStore = create<CartStore>()(
                 ? { ...item, quantity: item.quantity + quantity }
                 : item
             ),
+            cartTimestamp: now,
+            generation: gen,
           });
         } else {
-          set({ items: [...items, { product, quantity }] });
+          set({
+            items: [...items, { product, quantity }],
+            cartTimestamp: now,
+            generation: gen,
+          });
         }
       },
 
@@ -103,18 +117,28 @@ export const useCartStore = create<CartStore>()(
     {
       name: STORAGE_KEY,
       storage: createJSONStorage(() => localStorage),
-      // Custom hydration to clear cart if expired
-      onRehydrateStorage: (state) => {
-        if (!state) return;
-        const now = Date.now();
-        const cartTimestamp = state.cartTimestamp || 0;
-        // 2 days in ms
-        const expireMs = 2 * 24 * 60 * 60 * 1000;
-        if (now - cartTimestamp > expireMs) {
-          // Clear cart if expired
-          state.items = [];
-          state.cartTimestamp = now;
+      // v1→v2: product IDs changed from numeric strings to UUIDs
+      // v2→v3: checkout schema no longer requires UUIDs, but clear old v2 data
+      //         that may have been populated before migration 015 was applied
+      version: 3,
+      migrate: (persisted, version) => {
+        if (version < 3) {
+          // Clear any stale cart data — let users re-add from fresh Supabase products
+          return { items: [], cartTimestamp: Date.now(), generation: 0 };
         }
+        return persisted as CartStore;
+      },
+      // Clear expired carts after hydration
+      onRehydrateStorage: () => {
+        return (state) => {
+          if (!state) return;
+          const now = Date.now();
+          const cartTimestamp = state.cartTimestamp || 0;
+          const expireMs = 2 * 24 * 60 * 60 * 1000; // 2 days
+          if (now - cartTimestamp > expireMs) {
+            state.clearCart();
+          }
+        };
       },
     }
   )

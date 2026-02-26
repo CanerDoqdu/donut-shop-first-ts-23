@@ -2,6 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, startTransition, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { useCartStore } from '@/store/cart-store';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
 
 interface Profile {
@@ -46,6 +47,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   
   const supabase = createClient();
+
+  // Clear auth on dev mode startup (fresh state each npm run dev)
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
+      // Only clear once per session using a flag
+      if (!sessionStorage.getItem('__dev_auth_cleared')) {
+        const authKeys = Object.keys(localStorage).filter(k => 
+          k.startsWith('sb-') || k.includes('auth') || k.includes('supabase')
+        );
+        authKeys.forEach(k => {
+          console.log(`[AuthProvider] Dev: clearing ${k}`);
+          localStorage.removeItem(k);
+        });
+        
+        // Clear checkout session
+        sessionStorage.removeItem('donut-checkout-machine');
+        
+        // Mark as cleared so we don't do it again on re-mounts
+        sessionStorage.setItem('__dev_auth_cleared', 'true');
+        
+        console.log('[AuthProvider] ✅ Dev mode: cleared all auth tokens on startup');
+        console.log('[AuthProvider] Reload browser to see fresh login page');
+      }
+    }
+  }, []);
 
   const refreshProfile = useCallback(async () => {
     if (!user) {
@@ -92,13 +118,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Get initial session
     const initializeAuth = async () => {
-      const { data: { session: initialSession } } = await supabase.auth.getSession();
-      
-      if (initialSession) {
-        setSession(initialSession);
-        setUser(initialSession.user);
+      try {
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        
+        if (initialSession) {
+          setSession(initialSession);
+          setUser(initialSession.user);
+        }
+      } catch (err) {
+        console.warn('[AuthProvider] Failed to get initial session:', err);
+        setSession(null);
+        setUser(null);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initializeAuth();
@@ -110,27 +143,44 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(currentSession?.user ?? null);
         
         if (event === 'SIGNED_IN' && currentSession?.user) {
+          const authUser = currentSession.user;
+          const authName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || null;
+
           // Fetch profile and loyalty on sign in
           const [profileResult, loyaltyResult] = await Promise.all([
             supabase
               .from('profiles')
               .select('*')
-              .eq('id', currentSession.user.id)
+              .eq('id', authUser.id)
               .maybeSingle(),
             supabase
               .from('loyalty_points')
               .select('total_points, tier, lifetime_points')
-              .eq('user_id', currentSession.user.id)
+              .eq('user_id', authUser.id)
               .maybeSingle(),
           ]);
 
-          if (profileResult.data) setProfile(profileResult.data);
+          if (profileResult.data) {
+            // Sync profile name from Google OAuth if it changed
+            if (authName && profileResult.data.full_name !== authName) {
+              await supabase
+                .from('profiles')
+                .update({ full_name: authName })
+                .eq('id', authUser.id);
+              setProfile({ ...profileResult.data, full_name: authName });
+            } else {
+              setProfile(profileResult.data);
+            }
+          }
           if (loyaltyResult.data) setLoyalty(loyaltyResult.data as LoyaltyInfo);
         }
 
         if (event === 'SIGNED_OUT') {
           setProfile(null);
           setLoyalty(null);
+          // Clear cart and checkout state on logout
+          useCartStore.getState().clearCart();
+          try { sessionStorage.removeItem('donut-checkout-machine'); } catch { /* SSR/private browsing */ }
         }
       }
     );

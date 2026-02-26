@@ -8,17 +8,15 @@
    ────────────────────────────────────────────────────── */
 
 import { GlazeDrip } from '@/components/ui/glaze-drip';
+import { useTranslations } from 'next-intl';
 
-const PROMOS = [
-  '🍩 Free Delivery on Orders Over 100₺!',
-  '🎉 New Flavors Added Weekly!',
-  '💖 Use Code FIRSTDONUT for 20% Off',
-  '⚡ Lightning-Fast 15-Min Delivery',
-  '🔥 Try Our New Caramel Crunch Donut!',
-];
+const PROMO_KEYS = ['freeDelivery', 'newFlavors', 'firstOrder', 'fastDelivery', 'newDonut'] as const;
 
 export function PromoBanner() {
-  const marqueeText = [...PROMOS, ...PROMOS]
+  const t = useTranslations('promo');
+  const promos = PROMO_KEYS.map((key) => t(key));
+
+  const marqueeText = [...promos, ...promos]
     .map((p) => `${p}   •   `)
     .join('');
 
@@ -42,10 +40,10 @@ export function PromoBanner() {
       >
         {/* ── Desktop: static row ── */}
         <div className="hidden md:flex items-center justify-center h-full gap-6 px-4">
-          {PROMOS.map((promo, i) => (
+          {promos.map((promo, i) => (
             <span key={i} className="flex items-center gap-6">
               <span className="text-white text-sm font-semibold whitespace-nowrap">{promo}</span>
-              {i < PROMOS.length - 1 && (
+              {i < promos.length - 1 && (
                 <span className="text-white/40 text-xs">•</span>
               )}
             </span>

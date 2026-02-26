@@ -13,6 +13,17 @@ CREATE TABLE IF NOT EXISTS stripe_events (
   processed_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- Ensure event_type column exists (for idempotency)
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns
+    WHERE table_name = 'stripe_events' AND column_name = 'event_type'
+  ) THEN
+    ALTER TABLE stripe_events ADD COLUMN event_type TEXT NOT NULL DEFAULT 'unknown';
+  END IF;
+END $$;
+
 CREATE INDEX IF NOT EXISTS idx_stripe_events_type ON stripe_events(event_type);
 
 -- RLS: only service_role can access (webhooks use admin client)

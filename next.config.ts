@@ -83,18 +83,9 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // ── Static asset caching ──────────────────────────────
+      // ── Static asset caching (excludes _next which Next.js caches itself) ──
       {
         source: '/:all*(svg|jpg|jpeg|png|gif|ico|webp|avif)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/:all*(js|css)',
         headers: [
           {
             key: 'Cache-Control',

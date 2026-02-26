@@ -1,10 +1,21 @@
 import type { Product } from '@/lib/types';
 
-export function getProductById(id: string): Product | undefined {
+// ── Stable UUIDs for seed data ──────────────────────────────
+// These match the UUIDs in supabase/migrations/015_seed_products.sql
+// so the same IDs work whether fetched from DB or from this fallback.
+//
+// Server-side DB-backed lookups live in lib/data.server.ts
+// (server-only — safe to import from API routes & server components).
+
+/**
+ * Synchronous lookup — searches the hardcoded sample data only.
+ * Safe to use from client components.
+ */
+export function getProductByIdSync(id: string): Product | undefined {
   return sampleProducts.find(p => p.id === id);
 }
 
-export function getProductsByIds(ids: string[]): Map<string, Product> {
+export function getProductsByIdsSync(ids: string[]): Map<string, Product> {
   const map = new Map<string, Product>();
   for (const p of sampleProducts) {
     if (ids.includes(p.id)) map.set(p.id, p);
@@ -14,7 +25,7 @@ export function getProductsByIds(ids: string[]): Map<string, Product> {
 
 export const sampleProducts: Product[] = [
   {
-    id: '1',
+    id: 'a1b2c3d4-0001-4000-8000-000000000001',
     slug: 'strawberry-glazed',
     name_tr: 'Çilekli Glazürlü',
     name_en: 'Strawberry Glazed',
@@ -28,7 +39,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '2',
+    id: 'a1b2c3d4-0002-4000-8000-000000000002',
     slug: 'chocolate-dream',
     name_tr: 'Çikolata Rüyası',
     name_en: 'Chocolate Dream',
@@ -42,7 +53,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '3',
+    id: 'a1b2c3d4-0003-4000-8000-000000000003',
     slug: 'classic-sugar',
     name_tr: 'Klasik Şekerli',
     name_en: 'Classic Sugar',
@@ -56,7 +67,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '4',
+    id: 'a1b2c3d4-0004-4000-8000-000000000004',
     slug: 'caramel-delight',
     name_tr: 'Karamelli Şahane',
     name_en: 'Caramel Delight',
@@ -70,7 +81,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '5',
+    id: 'a1b2c3d4-0005-4000-8000-000000000005',
     slug: 'rainbow-sprinkles',
     name_tr: 'Renkli Boncuklu',
     name_en: 'Rainbow Sprinkles',
@@ -84,7 +95,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '6',
+    id: 'a1b2c3d4-0006-4000-8000-000000000006',
     slug: 'vanilla-cream',
     name_tr: 'Vanilyalı Kremalı',
     name_en: 'Vanilla Cream',
@@ -98,7 +109,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '7',
+    id: 'a1b2c3d4-0007-4000-8000-000000000007',
     slug: 'maple-bacon',
     name_tr: 'Akçaağaç & Bacon',
     name_en: 'Maple Bacon',
@@ -112,7 +123,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '8',
+    id: 'a1b2c3d4-0008-4000-8000-000000000008',
     slug: 'pumpkin-spice',
     name_tr: 'Balkabağı Baharat',
     name_en: 'Pumpkin Spice',
@@ -127,7 +138,7 @@ export const sampleProducts: Product[] = [
   },
   // Beverages
   {
-    id: '9',
+    id: 'a1b2c3d4-0009-4000-8000-000000000009',
     slug: 'berry-bliss-smoothie',
     name_tr: 'Berry Bliss Smoothie',
     name_en: 'Berry Bliss Smoothie',
@@ -141,7 +152,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '10',
+    id: 'a1b2c3d4-0010-4000-8000-000000000010',
     slug: 'chocolate-milkshake',
     name_tr: 'Çikolatalı Milkshake',
     name_en: 'Chocolate Milkshake',
@@ -155,7 +166,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '11',
+    id: 'a1b2c3d4-0011-4000-8000-000000000011',
     slug: 'caramel-frappe',
     name_tr: 'Karamelli Frappe',
     name_en: 'Caramel Frappe',
@@ -169,7 +180,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '12',
+    id: 'a1b2c3d4-0012-4000-8000-000000000012',
     slug: 'strawberry-lemonade',
     name_tr: 'Çilekli Limonata',
     name_en: 'Strawberry Lemonade',
@@ -183,7 +194,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '13',
+    id: 'a1b2c3d4-0013-4000-8000-000000000013',
     slug: 'vanilla-iced-latte',
     name_tr: 'Vanilyalı Buzlu Latte',
     name_en: 'Vanilla Iced Latte',
@@ -197,7 +208,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '14',
+    id: 'a1b2c3d4-0014-4000-8000-000000000014',
     slug: 'mango-passion-smoothie',
     name_tr: 'Mango Passion Smoothie',
     name_en: 'Mango Passion Smoothie',
@@ -211,7 +222,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '15',
+    id: 'a1b2c3d4-0015-4000-8000-000000000015',
     slug: 'iced-mocha',
     name_tr: 'Buzlu Mocha',
     name_en: 'Iced Mocha',
@@ -225,7 +236,7 @@ export const sampleProducts: Product[] = [
     created_at: new Date().toISOString(),
   },
   {
-    id: '16',
+    id: 'a1b2c3d4-0016-4000-8000-000000000016',
     slug: 'pink-cloud-shake',
     name_tr: 'Pembe Bulut Shake',
     name_en: 'Pink Cloud Shake',

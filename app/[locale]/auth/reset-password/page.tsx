@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useTranslations } from 'next-intl';
+import { getPasswordBreachWarning } from '@/lib/password-check';
 
 export default function ResetPasswordPage() {
   const t = useTranslations('auth');
@@ -49,6 +50,14 @@ export default function ResetPasswordPage() {
     }
 
     startTransition(async () => {
+      // Check if password has been found in data breaches
+      const locale = (params.locale as string) || 'en';
+      const breachWarning = await getPasswordBreachWarning(password, locale);
+      if (breachWarning) {
+        setMessage({ type: 'error', text: breachWarning });
+        return;
+      }
+
       const supabase = createClient();
       
       const { error } = await supabase.auth.updateUser({

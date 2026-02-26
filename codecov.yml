@@ -1,0 +1,19 @@
+coverage:
+  status:
+    project:
+      default:
+        target: auto
+        threshold: 2%
+    patch:
+      default:
+        target: 8%
+        threshold: 2%
+
+comment:
+  layout: "reach,diff,flags,tree"
+  behavior: default
+
+ignore:
+  - "coverage/**"
+  - "scripts/**"
+  - "push-migration-020.cjs"

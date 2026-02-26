@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect, useRef } from 'react';
 import { useTranslations } from 'next-intl';
 import { useParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
@@ -7,6 +8,7 @@ import { formatPrice } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useOrderRealtime } from '@/hooks/use-order-realtime';
+import { createClient } from '@/lib/supabase/client';
 import {
   ArrowLeft,
   Package,
@@ -19,22 +21,30 @@ import {
   Radio,
 } from 'lucide-react';
 
-// Sample order data (will be fetched from Supabase in production)
-const sampleOrder = {
-  id: 'ORD-2024-001',
-  status: 'preparing' as const,
-  created_at: '2024-01-15T10:30:00Z',
-  estimated_delivery: '2024-01-15T14:00:00Z',
-  address: 'Bağdat Caddesi No:123, Kadıköy, İstanbul',
-  customer_name: 'Caner',
-  customer_email: 'caner@example.com',
-  items: [
-    { id: '1', name: 'Strawberry Glazed', price: 35, quantity: 2, image: '🍓' },
-    { id: '2', name: 'Chocolate Dream', price: 40, quantity: 1, image: '🍫' },
-    { id: '3', name: 'Classic Sugar', price: 25, quantity: 3, image: '🍩' },
-  ],
-  total_amount: 185,
+// Fallback sample order for when DB is unavailable
+const fallbackOrder = {
+  id: 'ORD-0000',
+  status: 'pending' as const,
+  created_at: new Date().toISOString(),
+  estimated_delivery: new Date(Date.now() + 3600_000).toISOString(),
+  address: '',
+  customer_name: '',
+  customer_email: '',
+  items: [] as { id: string; name: string; price: number; quantity: number; image: string }[],
+  total_amount: 0,
 };
+
+interface OrderData {
+  id: string;
+  status: 'pending' | 'paid' | 'preparing' | 'shipped' | 'delivered';
+  created_at: string;
+  estimated_delivery: string;
+  address: string;
+  customer_name: string;
+  customer_email: string;
+  items: { id: string; name: string; price: number; quantity: number; image: string }[];
+  total_amount: number;
+}
 
 const orderStatuses = ['pending', 'paid', 'preparing', 'shipped', 'delivered'] as const;
 
@@ -50,12 +60,66 @@ export default function OrderTrackingPage() {
   const t = useTranslations();
   const params = useParams();
   const orderId = params.id as string;
+  const locale = (params.locale as string) || 'en';
+  const supabaseRef = useRef(createClient());
 
-  const order = sampleOrder; // In production: fetch from Supabase by orderId
+  const [order, setOrder] = useState<OrderData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchOrder() {
+      const supabase = supabaseRef.current;
+      const { data: orderData } = await supabase
+        .from('orders')
+        .select('id, status, created_at, shipping_address, total_amount')
+        .eq('id', orderId)
+        .single();
+
+      if (orderData) {
+        const { data: itemsData } = await supabase
+          .from('order_items')
+          .select('id, product_name, unit_price, quantity')
+          .eq('order_id', orderId);
+
+        setOrder({
+          id: orderData.id,
+          status: orderData.status || 'pending',
+          created_at: orderData.created_at,
+          estimated_delivery: new Date(
+            new Date(orderData.created_at).getTime() + 30 * 60_000
+          ).toISOString(),
+          address: orderData.shipping_address || '',
+          customer_name: '',
+          customer_email: '',
+          items: (itemsData || []).map((item: { id: string; product_name: string; unit_price: number; quantity: number }) => ({
+            id: item.id,
+            name: item.product_name,
+            price: item.unit_price,
+            quantity: item.quantity,
+            image: '🍩',
+          })),
+          total_amount: orderData.total_amount,
+        });
+      }
+      setLoading(false);
+    }
+    void fetchOrder();
+  }, [orderId]);
 
   // Subscribe to real-time order status updates via Supabase Realtime
-  const { status: liveStatus, isLive } = useOrderRealtime(orderId, order.status);
+  const { status: liveStatus, isLive } = useOrderRealtime(orderId, order?.status ?? 'pending');
   const currentStatusIndex = orderStatuses.indexOf(liveStatus);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4 animate-bounce">🍩</div>
+          <p className="text-gray-500">{t('common.loading') || 'Loading...'}</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!order) {
     return (
@@ -79,7 +143,7 @@ export default function OrderTrackingPage() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Header */}
         <div className="flex items-center gap-4 mb-8">
-          <Button asChild variant="ghost" size="icon" className="rounded-full">
+          <Button asChild variant="ghost" size="icon" className="rounded-full" aria-label={t('common.back')}>
             <Link href="/">
               <ArrowLeft className="w-5 h-5" />
             </Link>
@@ -177,7 +241,7 @@ export default function OrderTrackingPage() {
                 <h3 className="font-fredoka font-bold">{t('orders.estimatedDelivery')}</h3>
               </div>
               <p className="text-gray-600 text-sm">
-                {new Date(order.estimated_delivery).toLocaleString('tr-TR', {
+                {new Date(order.estimated_delivery).toLocaleString(locale === 'tr' ? 'tr-TR' : 'en-US', {
                   dateStyle: 'long',
                   timeStyle: 'short',
                 })}

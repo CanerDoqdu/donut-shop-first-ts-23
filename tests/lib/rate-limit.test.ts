@@ -105,3 +105,49 @@ describe('getClientIP', () => {
     expect(getClientIP(req)).toBe('1.1.1.1');
   });
 });
+
+// ─── stopRateLimitCleanup ─────────────────────────────────────
+
+import { stopRateLimitCleanup } from '@/lib/rate-limit';
+
+describe('stopRateLimitCleanup', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('can be called before ensureCleanup starts the timer', () => {
+    // Should not throw even if cleanup hasn't started
+    expect(() => stopRateLimitCleanup()).not.toThrow();
+  });
+
+  it('stops the cleanup timer after it has been started', () => {
+    // Trigger cleanup timer by making a rateLimit call
+    const id = `cleanup-test-${Date.now()}`;
+    rateLimit(id, { maxRequests: 10, windowSizeSeconds: 60 });
+
+    // Should not throw when stopping
+    expect(() => stopRateLimitCleanup()).not.toThrow();
+
+    // Calling again is safe (idempotent)
+    expect(() => stopRateLimitCleanup()).not.toThrow();
+  });
+
+  it('cleanup timer deletes stale entries after 10 minutes', () => {
+    const staleId = `stale-${Date.now()}`;
+    rateLimit(staleId, { maxRequests: 3, windowSizeSeconds: 60 });
+
+    // Advance time past 10 minutes (entry becomes stale after 600_000 ms)
+    vi.advanceTimersByTime(700_000);
+
+    // Now if rate limit is called again for this ID, it should be a fresh entry
+    const result = rateLimit(staleId, { maxRequests: 3, windowSizeSeconds: 60 });
+    expect(result.success).toBe(true);
+    expect(result.remaining).toBe(2); // fresh bucket: 3-1=2
+
+    stopRateLimitCleanup();
+  });
+});

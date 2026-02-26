@@ -177,7 +177,7 @@ export default function GiftCardPurchase({ locale, onPurchase }: GiftCardPurchas
 
           <button
             onClick={() => setStep('details')}
-            disabled={!finalAmount || finalAmount < 10}
+            disabled={!finalAmount || finalAmount < 10 || finalAmount > 5000}
             className="w-full py-4 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {t.continue}
@@ -260,7 +260,7 @@ export default function GiftCardPurchase({ locale, onPurchase }: GiftCardPurchas
             </button>
             <button
               onClick={() => setStep('preview')}
-              disabled={!senderName || !senderEmail || !recipientName || !recipientEmail}
+              disabled={!senderName || !senderEmail || !recipientName || !recipientEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(senderEmail) || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(recipientEmail)}
               className="flex-1 py-4 bg-amber-500 text-white rounded-xl font-semibold hover:bg-amber-600 transition-colors disabled:opacity-50"
             >
               {t.continue}
@@ -286,7 +286,7 @@ export default function GiftCardPurchase({ locale, onPurchase }: GiftCardPurchas
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-6">
                 <Gift className="w-8 h-8" />
-                <span className="text-xl font-bold">Donut Shop Gift Card</span>
+                <span className="text-xl font-bold">{locale === 'tr' ? 'Donut Shop Hediye Kartı' : 'Donut Shop Gift Card'}</span>
               </div>
 
               <p className="text-4xl font-bold mb-6">₺{finalAmount}</p>

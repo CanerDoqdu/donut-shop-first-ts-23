@@ -39,6 +39,7 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
 
 interface ProductCardProps {
   product: Product;
+  locale: string;
   categoryLabel: string;
   addToCartLabel: string;
   outOfStockLabel: string;
@@ -51,20 +52,24 @@ interface ProductCardProps {
  */
 export const ProductCard = memo(function ProductCard({
   product,
+  locale,
   categoryLabel,
   addToCartLabel,
   outOfStockLabel,
 }: ProductCardProps) {
+  const name = locale === 'tr' ? product.name_tr : product.name_en;
+  const description = locale === 'tr' ? product.description_tr : product.description_en;
+
   return (
     <Card className="group hover:scale-105 transition-transform">
       <Link href={{ pathname: '/products/[slug]', params: { slug: product.slug } }}>
         <CardContent className="pt-6 cursor-pointer">
-          <ProductImage src={product.image_url} alt={product.name_en} />
+          <ProductImage src={product.image_url} alt={name} />
           <CardTitle className="text-center mb-2 text-lg">
-            {product.name_en}
+            {name}
           </CardTitle>
           <p className="text-center text-sm text-gray-600 mb-3 line-clamp-2">
-            {product.description_en}
+            {description}
           </p>
           <div className="flex items-center justify-between mb-3">
             <Badge variant="secondary">{categoryLabel}</Badge>

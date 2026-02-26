@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import NextLink from 'next/link';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, AlertCircle, Check, Loader2 } from 'lucide-react';
@@ -11,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 import { useFormValidation } from '@/hooks';
 import { signUpSchema } from '@/lib/validations';
 import { FieldError } from '@/components/ui/field-error';
+import { getPasswordBreachWarning } from '@/lib/password-check';
 
 export default function RegisterPage() {
   const params = useParams();
@@ -92,6 +92,7 @@ export default function RegisterPage() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const formElement = e.currentTarget;
     setError('');
 
     if (!isPasswordValid) {
@@ -101,7 +102,15 @@ export default function RegisterPage() {
 
     setLoading(true);
 
-    const formData = new FormData(e.currentTarget);
+    // Check if password has been found in data breaches (HaveIBeenPwned)
+    const breachWarning = await getPasswordBreachWarning(password, locale);
+    if (breachWarning) {
+      setError(breachWarning);
+      setLoading(false);
+      return;
+    }
+
+    const formData = new FormData(formElement);
     formData.append('locale', locale);
 
     try {
@@ -109,15 +118,16 @@ export default function RegisterPage() {
       if (!result.success && result.error) {
         setError(result.error);
       }
-    } catch {
-      // Redirect happens on success
+    } catch (err) {
+      const message = err instanceof Error ? err.message : '';
+      setError(message || (locale === 'tr' ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'Something went wrong. Please try again.'));
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-amber-50 via-white to-pink-50 flex items-center justify-center py-12 px-4">
+    <section className="min-h-screen bg-linear-to-br from-amber-50 via-white to-pink-50 flex items-center justify-center py-12 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -162,6 +172,7 @@ export default function RegisterPage() {
                   type="text"
                   name="fullName"
                   required
+                  autoComplete="name"
                   onBlur={(e) => validateField('fullName', e.target.value)}
                   className={`w-full pl-12 pr-4 py-3 border ${fieldErrors.fullName ? 'border-red-300' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                   placeholder={locale === 'tr' ? 'Adınız Soyadınız' : 'John Doe'}
@@ -181,6 +192,7 @@ export default function RegisterPage() {
                   type="email"
                   name="email"
                   required
+                  autoComplete="email"
                   onBlur={(e) => validateField('email', e.target.value)}
                   className={`w-full pl-12 pr-4 py-3 border ${fieldErrors.email ? 'border-red-300' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                   placeholder="you@example.com"
@@ -200,6 +212,7 @@ export default function RegisterPage() {
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   required
+                  autoComplete="new-password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="w-full pl-12 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all"
@@ -243,13 +256,13 @@ export default function RegisterPage() {
             {/* Terms */}
             <p className="text-xs text-gray-500 text-center">
               {t.byRegistering}{' '}
-              <NextLink href="/terms" className="text-amber-600 hover:underline">
+              <Link href="/terms" className="text-amber-600 hover:underline">
                 {t.termsOfService}
-              </NextLink>{' '}
+              </Link>{' '}
               {t.and}{' '}
-              <NextLink href="/privacy" className="text-amber-600 hover:underline">
+              <Link href="/privacy" className="text-amber-600 hover:underline">
                 {t.privacyPolicy}
-              </NextLink>
+              </Link>
               {t.agreeText}
             </p>
 
@@ -348,6 +361,6 @@ export default function RegisterPage() {
           </p>
         </div>
       </motion.div>
-    </main>
+    </section>
   );
 }

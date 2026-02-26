@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import '@/lib/dev-utils'; // Load dev utilities for browser console
 
 export const viewport: Viewport = {
   themeColor: "#FF6BBF",
@@ -33,14 +34,17 @@ export const metadata: Metadata = {
   },
 };
 
+/**
+ * Root layout — intentionally a passthrough.
+ *
+ * <html> and <body> live in app/[locale]/layout.tsx so the `lang`
+ * attribute can be set dynamically per locale, and font class names
+ * are applied in one place, avoiding React hydration mismatches.
+ */
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  return (
-    <html lang="en">
-      <body>{children}</body>
-    </html>
-  );
+  return children;
 }

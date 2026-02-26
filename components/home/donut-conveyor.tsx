@@ -11,6 +11,7 @@
 
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import { useTranslations } from 'next-intl';
 
 const DECORATED_DONUTS = [
   '/donut 4.png',
@@ -40,6 +41,7 @@ const SEG_GAP = 16;      // gap between segments
 const SEG_UNIT = SEG_W + SEG_GAP; // one repeating unit
 
 export function DonutConveyor() {
+  const t = useTranslations('home');
   const [donuts, setDonuts] = useState<BeltDonut[]>([]);
   const [machineState, setMachineState] = useState<'idle' | 'processing' | 'done'>('idle');
   const idRef = useRef(0);
@@ -299,7 +301,7 @@ export function DonutConveyor() {
         >
           <Image
             src={d.image}
-            alt={d.type === 'empty' ? 'Plain donut' : 'Decorated donut'}
+            alt={d.type === 'empty' ? t('plainDonut') : t('decoratedDonut')}
             fill
             sizes="48px"
             className="object-contain"
@@ -413,7 +415,7 @@ export function DonutConveyor() {
             className="absolute left-1/2 -translate-x-1/2 font-fredoka text-[7px] font-bold tracking-[0.2em] uppercase"
             style={{ top: '9px', color: 'rgba(255,200,140,0.45)', textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
           >
-            OVEN
+            {t('oven')}
           </div>
         </div>
       </div>

@@ -21,7 +21,7 @@ export default function SubscriptionsPage() {
   const [loading, setLoading] = useState(true);
   const supabase = createClient();
 
-  const t = {
+  const translations = {
     tr: {
       title: 'Abonelik Paketleri',
       subtitle: 'Düzenli teslimatlarla her zaman taze donut keyfini yaşayın',
@@ -62,7 +62,8 @@ export default function SubscriptionsPage() {
       feature4: 'Choose your delivery day',
       choosePlan: 'Choose Plan',
     },
-  }[locale as 'tr' | 'en'];
+  };
+  const t = translations[locale as keyof typeof translations] ?? translations.en;
 
   useEffect(() => {
     async function checkUser() {
@@ -77,7 +78,7 @@ export default function SubscriptionsPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12">
+      <section className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-4xl mx-auto px-4">
           <div className="animate-pulse space-y-4">
             <div className="h-10 bg-gray-200 rounded w-1/3 mx-auto" />
@@ -88,24 +89,24 @@ export default function SubscriptionsPage() {
             </div>
           </div>
         </div>
-      </main>
+      </section>
     );
   }
 
   // If user has subscription, show manager
   if (userId) {
     return (
-      <main className="min-h-screen bg-gray-50 py-12">
+      <section className="min-h-screen bg-gray-50 py-12">
         <div className="max-w-2xl mx-auto px-4">
           <SubscriptionManager userId={userId} locale={locale as 'tr' | 'en'} />
         </div>
-      </main>
+      </section>
     );
   }
 
   // Show plans for non-logged users
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
+    <section className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
@@ -196,6 +197,6 @@ export default function SubscriptionsPage() {
           </Link>
         </div>
       </div>
-    </main>
+    </section>
   );
 }

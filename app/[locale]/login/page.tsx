@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
@@ -22,12 +22,10 @@ export default function LoginPage() {
   const [success, setSuccess] = useState(false);
   const { fieldErrors, validateField } = useFormValidation(signInSchema);
 
-  // Check for messages from URL
-  const searchParams = typeof window !== 'undefined' 
-    ? new URLSearchParams(window.location.search) 
-    : null;
-  const isReset = searchParams?.get('reset') === 'true';
-  const callbackError = searchParams?.get('error');
+  // Check for messages from URL (SSR-safe)
+  const searchParams = useSearchParams();
+  const isReset = searchParams.get('reset') === 'true';
+  const callbackError = searchParams.get('error');
 
   // Redirect if already logged in
   useEffect(() => {
@@ -77,7 +75,20 @@ export default function LoginPage() {
       resetSuccess: 'Password successfully changed!',
       loggingIn: 'Signing in...',
     },
-  }[locale as 'tr' | 'en'];
+  }[locale as 'tr' | 'en'] ?? {
+    title: 'Login',
+    subtitle: 'Sign in to your account',
+    email: 'Email',
+    password: 'Password',
+    forgotPassword: 'Forgot Password',
+    login: 'Sign In',
+    noAccount: "Don't have an account?",
+    register: 'Register',
+    or: 'or',
+    continueWithGoogle: 'Continue with Google',
+    resetSuccess: 'Password successfully changed!',
+    loggingIn: 'Signing in...',
+  };
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -94,15 +105,20 @@ export default function LoginPage() {
       } else {
         setSuccess(true);
       }
-    } catch {
-      // Redirect happens on success
+    } catch (err) {
+      // Only swallow redirect errors — surface real failures
+      if (err instanceof Error && err.message?.includes('NEXT_REDIRECT')) {
+        // Redirect happens on success — expected
+      } else {
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      }
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-amber-50 via-white to-pink-50 flex items-center justify-center py-12 px-4">
+    <section className="min-h-screen bg-linear-to-br from-amber-50 via-white to-pink-50 flex items-center justify-center py-12 px-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -159,6 +175,7 @@ export default function LoginPage() {
                   type="email"
                   name="email"
                   required
+                  autoComplete="email"
                   onBlur={(e) => validateField('email', e.target.value)}
                   className={`w-full pl-12 pr-4 py-3 border ${fieldErrors.email ? 'border-red-300' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                   placeholder="you@example.com"
@@ -178,6 +195,7 @@ export default function LoginPage() {
                   type={showPassword ? 'text' : 'password'}
                   name="password"
                   required
+                  autoComplete="current-password"
                   onBlur={(e) => validateField('password', e.target.value)}
                   className={`w-full pl-12 pr-12 py-3 border ${fieldErrors.password ? 'border-red-300' : 'border-gray-200'} rounded-xl focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all`}
                   placeholder="••••••••"
@@ -299,6 +317,6 @@ export default function LoginPage() {
           </p>
         </div>
       </motion.div>
-    </main>
+    </section>
   );
 }

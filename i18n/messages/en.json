@@ -55,10 +55,23 @@
     "chocolateDreamDesc": "Rich chocolate glaze with premium toppings",
     "berryBliss": "Berry Bliss",
     "berryBlissDesc": "Fresh berries blended with our secret recipe",
-    "alsoTry": "Also try"
+    "alsoTry": "Also try",
+    "caramelCrunch": "Caramel Crunch",
+    "mangoSunset": "Mango Sunset",
+    "new": "New",
+    "handcraftedDaily": "handcrafted daily",
+    "signatureDrink": "Signature Drink",
+    "madeWithLove": "made with love",
+    "handcrafted": "handcrafted",
+    "dailyFresh": "daily fresh",
+    "plainDonut": "Plain donut",
+    "decoratedDonut": "Decorated donut",
+    "oven": "OVEN"
   },
   "products": {
     "title": "Our Products",
+    "subtitle": "Discover our delicious selection of handcrafted donuts",
+    "tryDifferentSearch": "Try a different search!",
     "categories": {
       "all": "All",
       "glazed": "Glazed",
@@ -96,7 +109,9 @@
     "total": "Total",
     "checkout": "Checkout",
     "remove": "Remove",
-    "quantity": "Quantity"
+    "quantity": "Quantity",
+    "emptyDescription": "Add some delicious donuts to get started!",
+    "clearCart": "Clear Cart"
   },
   "checkout": {
     "title": "Checkout",
@@ -113,16 +128,34 @@
     "promoApply": "Apply",
     "promoDiscount": "Discount",
     "promoInvalid": "Invalid promo code",
-    "promoError": "Could not validate code. Try again."
+    "promoError": "Could not validate code. Try again.",
+    "invalidPromo": "Invalid promo code",
+    "failedSession": "Failed to create checkout session",
+    "cartExpiredStale": "Some products are no longer available. Your cart has been cleared — please add items again.",
+    "paymentFailed": "Payment failed. Please try again.",
+    "namePlaceholder": "John Doe",
+    "addressPlaceholder": "Full delivery address",
+    "stateValidating": "Validating...",
+    "stateProcessing": "Processing...",
+    "stateRedirecting": "Redirecting...",
+    "requestTimeout": "Request Timed Out",
+    "checkoutFailed": "Checkout Failed",
+    "retryIn": "Retry in {seconds}s",
+    "tryAgain": "Try Again",
+    "maxRetries": "Max retries reached. Please refresh the page.",
+    "termsLabel": "By confirming my order, I acknowledge that I have read and accept the <terms>Terms of Sale</terms>, <privacy>Privacy Policy</privacy>, and <returns>Return Policy</returns>.",
+    "securePayment": "🔒 <strong>Secure Payment:</strong> Your payment information is encrypted and secure. We accept all major credit cards via Stripe."
   },
   "orders": {
     "title": "Order Tracking",
+    "statusLabel": "Status",
     "status": {
       "pending": "Pending",
       "paid": "Paid",
       "preparing": "Preparing",
       "shipped": "Shipped",
-      "delivered": "Delivered"
+      "delivered": "Delivered",
+      "cancelled": "Cancelled"
     },
     "orderNumber": "Order #",
     "date": "Date",
@@ -162,9 +195,17 @@
     },
     "orders": {
       "title": "Order Management",
+      "subtitle": "Track and manage customer orders",
       "updateStatus": "Update Status",
       "customer": "Customer",
-      "total": "Total"
+      "total": "Total",
+      "totalOrders": "Total Orders",
+      "inProgress": "In Progress",
+      "revenue": "Revenue",
+      "searchPlaceholder": "Search by email or order ID...",
+      "noOrders": "No orders found",
+      "customerDetails": "Customer Details",
+      "orderItems": "Order Items"
     }
   },
   "auth": {
@@ -191,5 +232,28 @@
     "next": "Next",
     "backToProducts": "Back to Products",
     "productNotFound": "Product not found"
+  },
+  "footer": {
+    "tagline": "Fresh donuts made daily with love. \ud83c\udf69",
+    "quickLinks": "Quick Links",
+    "home": "Home",
+    "products": "Products",
+    "cart": "Cart",
+    "contact": "Contact",
+    "phone": "Phone",
+    "address": "Address",
+    "rights": "All rights reserved."
+  },
+  "promo": {
+    "freeDelivery": "\ud83c\udf69 Free Delivery on Orders Over 100\u20ba!",
+    "newFlavors": "\ud83c\udf89 New Flavors Added Weekly!",
+    "firstOrder": "\ud83d\udc96 Use Code FIRSTDONUT for 20% Off",
+    "fastDelivery": "\u26a1 Lightning-Fast 15-Min Delivery",
+    "newDonut": "\ud83d\udd25 Try Our New Caramel Crunch Donut!"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "This donut seems to have disappeared! Let's get you back on track.",
+    "backHome": "Back to Home"
   }
 }

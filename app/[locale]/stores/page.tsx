@@ -8,11 +8,11 @@ export default async function StoresPage({ params }: Props) {
   const { locale } = await params;
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
+    <section className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-6xl mx-auto px-4 md:px-8">
         <StoreFinder locale={locale as 'tr' | 'en'} />
       </div>
-    </main>
+    </section>
   );
 }
 

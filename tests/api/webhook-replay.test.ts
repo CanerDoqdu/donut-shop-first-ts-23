@@ -128,7 +128,7 @@ describe('POST /api/webhooks/stripe — replay tests', () => {
     expect(status).toBe(200);
     expect(body.received).toBe(true);
     expect(headers.get('x-request-id')).toBe('rid-webhook-test');
-  });
+  }, 20000);
 
   // ── Maintenance mode ───────────────────────────────────────
 

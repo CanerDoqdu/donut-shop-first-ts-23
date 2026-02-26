@@ -82,6 +82,14 @@ export const routing = defineRouting({
       tr: '/siparislerim',
       en: '/orders',
     },
+    '/terms': {
+      tr: '/kullanim-sartlari',
+      en: '/terms',
+    },
+    '/privacy': {
+      tr: '/gizlilik',
+      en: '/privacy',
+    },
   },
 });
 

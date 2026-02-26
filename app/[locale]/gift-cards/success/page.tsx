@@ -71,7 +71,7 @@ export default function GiftCardSuccessPage() {
   };
 
   return (
-    <main className="min-h-screen bg-gray-50 py-12">
+    <section className="min-h-screen bg-gray-50 py-12">
       <div className="max-w-md mx-auto px-4">
         <div className="bg-white rounded-2xl shadow-xl p-8 text-center">
           {/* Success Icon */}
@@ -131,6 +131,6 @@ export default function GiftCardSuccessPage() {
           </div>
         </div>
       </div>
-    </main>
+    </section>
   );
 }

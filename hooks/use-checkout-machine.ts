@@ -51,6 +51,12 @@ function hydrateState(): MachineContext | null {
     const raw = sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw) as MachineContext;
+    // Non-resumable states should not survive across page loads.
+    // In particular, 'redirecting' can get stuck when user navigates back from Stripe.
+    const nonResumableStates: CheckoutState[] = ['failed', 'timeout', 'redirecting'];
+    if (nonResumableStates.includes(parsed.state)) {
+      return null;
+    }
     // Stale check: if state was set >5 min ago on a transient state, reset
     const STALE_MS = 5 * 60 * 1000;
     const transientStates: CheckoutState[] = ['validating', 'reserving', 'redirecting'];
@@ -79,8 +85,8 @@ const TRANSITIONS: Record<CheckoutState, Partial<Record<CheckoutEvent['type'], C
   reserving:   { RESERVATION_OK: 'redirecting', RESERVATION_FAIL: 'failed', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed', RESET: 'idle' },
   redirecting: { REDIRECT_OK: 'success', TIMEOUT: 'timeout', CART_SYNC_FAILED: 'failed', CART_CLEARED_EXTERNAL: 'failed', RESET: 'idle' },
   success:     { RESET: 'idle' },
-  failed:      { RETRY: 'idle', RESET: 'idle' },
-  timeout:     { RETRY: 'idle', RESET: 'idle' },
+  failed:      { START_CHECKOUT: 'validating', VALIDATION_FAIL: 'failed', RETRY: 'idle', RESET: 'idle' },
+  timeout:     { START_CHECKOUT: 'validating', RETRY: 'idle', RESET: 'idle' },
 };
 
 // ─── Max retries ────────────────────────────────────────────────

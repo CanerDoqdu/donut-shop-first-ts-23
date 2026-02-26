@@ -49,6 +49,7 @@ interface OrderRowProps {
   orderNumberLabel: string;
   totalLabel: string;
   trackLabel: string;
+  locale?: string;
 }
 
 /**
@@ -59,10 +60,11 @@ export const OrderRow = memo(function OrderRow({
   orderNumberLabel,
   totalLabel,
   trackLabel,
+  locale = 'tr',
 }: OrderRowProps) {
   const status = statusConfig[order.status] || statusConfig.pending;
   const date = new Date(order.created_at);
-  const formattedDate = date.toLocaleDateString('tr-TR', {
+  const formattedDate = date.toLocaleDateString(locale === 'tr' ? 'tr-TR' : 'en-US', {
     day: 'numeric',
     month: 'long',
     year: 'numeric',

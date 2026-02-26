@@ -4,12 +4,13 @@
 -- Depends on: 001_core_schema
 -- Idempotent: safe to re-run at any time
 -- =============================================
+
 BEGIN;
 
 -- ─── Tables ─────────────────────────────────────────────────
 
 CREATE TABLE IF NOT EXISTS stores (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   slug TEXT UNIQUE NOT NULL,
   name TEXT NOT NULL,
   address TEXT NOT NULL,
@@ -28,7 +29,7 @@ CREATE TABLE IF NOT EXISTS stores (
 );
 
 CREATE TABLE IF NOT EXISTS store_inventory (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   store_id UUID REFERENCES stores(id) ON DELETE CASCADE NOT NULL,
   product_id UUID REFERENCES products(id) ON DELETE CASCADE NOT NULL,
   stock INTEGER DEFAULT 0,
@@ -40,7 +41,7 @@ CREATE TABLE IF NOT EXISTS store_inventory (
 );
 
 CREATE TABLE IF NOT EXISTS loyalty_points (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   total_points INTEGER DEFAULT 0,
   lifetime_points INTEGER DEFAULT 0,
@@ -51,7 +52,7 @@ CREATE TABLE IF NOT EXISTS loyalty_points (
 );
 
 CREATE TABLE IF NOT EXISTS points_transactions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
   type TEXT CHECK (type IN ('earned', 'redeemed', 'expired', 'bonus', 'referral')) NOT NULL,
@@ -61,7 +62,7 @@ CREATE TABLE IF NOT EXISTS points_transactions (
 );
 
 CREATE TABLE IF NOT EXISTS gift_cards (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   code TEXT UNIQUE NOT NULL,
   initial_balance DECIMAL(10, 2) NOT NULL,
   current_balance DECIMAL(10, 2) NOT NULL,
@@ -77,7 +78,7 @@ CREATE TABLE IF NOT EXISTS gift_cards (
 );
 
 CREATE TABLE IF NOT EXISTS gift_card_transactions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   gift_card_id UUID REFERENCES gift_cards(id) ON DELETE CASCADE NOT NULL,
   order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
   amount DECIMAL(10, 2) NOT NULL,
@@ -86,7 +87,7 @@ CREATE TABLE IF NOT EXISTS gift_card_transactions (
 );
 
 CREATE TABLE IF NOT EXISTS subscriptions (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   plan TEXT CHECK (plan IN ('starter', 'classic', 'premium', 'family')) NOT NULL,
   status TEXT CHECK (status IN ('active', 'paused', 'cancelled', 'expired')) DEFAULT 'active',
@@ -104,7 +105,7 @@ CREATE TABLE IF NOT EXISTS subscriptions (
 );
 
 CREATE TABLE IF NOT EXISTS subscription_deliveries (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   subscription_id UUID REFERENCES subscriptions(id) ON DELETE CASCADE NOT NULL,
   order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
   scheduled_date DATE NOT NULL,
@@ -115,7 +116,7 @@ CREATE TABLE IF NOT EXISTS subscription_deliveries (
 );
 
 CREATE TABLE IF NOT EXISTS reviews (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   product_id UUID REFERENCES products(id) ON DELETE CASCADE NOT NULL,
   order_id UUID REFERENCES orders(id) ON DELETE SET NULL,
@@ -132,7 +133,7 @@ CREATE TABLE IF NOT EXISTS reviews (
 );
 
 CREATE TABLE IF NOT EXISTS review_helpful_votes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   review_id UUID REFERENCES reviews(id) ON DELETE CASCADE NOT NULL,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -140,7 +141,7 @@ CREATE TABLE IF NOT EXISTS review_helpful_votes (
 );
 
 CREATE TABLE IF NOT EXISTS referrals (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   referrer_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   referred_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   referral_code TEXT NOT NULL,
@@ -153,7 +154,7 @@ CREATE TABLE IF NOT EXISTS referrals (
 );
 
 CREATE TABLE IF NOT EXISTS referral_codes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   code TEXT UNIQUE NOT NULL,
   uses_count INTEGER DEFAULT 0,
@@ -165,7 +166,7 @@ CREATE TABLE IF NOT EXISTS referral_codes (
 );
 
 CREATE TABLE IF NOT EXISTS notifications (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   type TEXT CHECK (type IN ('order_confirmation','order_shipped','order_delivered','points_earned','subscription_reminder','gift_card_received','review_request','promotional')) NOT NULL,
   channel TEXT CHECK (channel IN ('email', 'sms', 'push')) NOT NULL,
@@ -179,7 +180,7 @@ CREATE TABLE IF NOT EXISTS notifications (
 );
 
 CREATE TABLE IF NOT EXISTS admin_users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE NOT NULL,
   role TEXT CHECK (role IN ('super_admin', 'admin', 'manager', 'staff')) NOT NULL,
   permissions JSONB DEFAULT '{"orders":true,"products":true,"inventory":true,"analytics":true,"users":false}',
@@ -190,7 +191,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
 );
 
 CREATE TABLE IF NOT EXISTS analytics_events (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   event_type TEXT NOT NULL,
   user_id UUID REFERENCES profiles(id) ON DELETE SET NULL,
   session_id TEXT,

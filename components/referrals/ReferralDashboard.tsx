@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, startTransition } from 'react';
+import { useState, useEffect, useCallback, startTransition, useRef } from 'react';
 import { Users, Gift, Copy, Check, Share2, Trophy } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { createClient } from '@/lib/supabase/client';
@@ -16,7 +16,7 @@ export default function ReferralDashboard({ userId, locale }: ReferralDashboardP
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
   const t = {
     tr: {
@@ -70,22 +70,30 @@ export default function ReferralDashboard({ userId, locale }: ReferralDashboardP
   }[locale];
 
   const fetchReferralData = useCallback(async () => {
-    const [{ data: codeData }, { data: refsData }] = await Promise.all([
-      supabase
-        .from('referral_codes')
-        .select('*')
-        .eq('user_id', userId)
-        .single(),
-      supabase
-        .from('referrals')
-        .select('*')
-        .eq('referrer_id', userId)
-        .order('created_at', { ascending: false }),
-    ]);
+    try {
+      const [{ data: codeData, error: codeError }, { data: refsData }] = await Promise.all([
+        supabase
+          .from('referral_codes')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle(),
+        supabase
+          .from('referrals')
+          .select('*')
+          .eq('referrer_id', userId)
+          .order('created_at', { ascending: false }),
+      ]);
 
-    if (codeData) setReferralCode(codeData);
-    if (refsData) setReferrals(refsData);
-    setLoading(false);
+      if (codeError) {
+        console.warn('[ReferralDashboard] Failed to fetch referral code:', codeError.message);
+      }
+      if (codeData) setReferralCode(codeData);
+      if (refsData) setReferrals(refsData);
+    } catch (err) {
+      console.warn('[ReferralDashboard] Unexpected error:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase, userId]);
 
   useEffect(() => {
@@ -96,27 +104,36 @@ export default function ReferralDashboard({ userId, locale }: ReferralDashboardP
 
   async function copyCode() {
     if (!referralCode) return;
-    await navigator.clipboard.writeText(referralCode.code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(referralCode.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API may fail (permission denied, insecure context)
+      console.warn('[ReferralDashboard] Clipboard write failed');
+    }
   }
 
   async function shareLink() {
     if (!referralCode) return;
     const shareUrl = `${window.location.origin}?ref=${referralCode.code}`;
     
-    if (navigator.share) {
-      await navigator.share({
-        title: locale === 'tr' ? 'Donut Shop Davetiye' : 'Donut Shop Referral',
-        text: locale === 'tr' 
-          ? `Bu kodu kullanarak ilk siparişinde %10 indirim kazan: ${referralCode.code}`
-          : `Use this code to get 10% off your first order: ${referralCode.code}`,
-        url: shareUrl,
-      });
-    } else {
-      await navigator.clipboard.writeText(shareUrl);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: locale === 'tr' ? 'Donut Shop Davetiye' : 'Donut Shop Referral',
+          text: locale === 'tr' 
+            ? `Bu kodu kullanarak ilk siparişinde %10 indirim kazan: ${referralCode.code}`
+            : `Use this code to get 10% off your first order: ${referralCode.code}`,
+          url: shareUrl,
+        });
+      } else {
+        await navigator.clipboard.writeText(shareUrl);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+      }
+    } catch {
+      // User cancelled share dialog or clipboard write failed
     }
   }
 

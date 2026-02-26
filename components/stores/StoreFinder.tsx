@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo, startTransition } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef, startTransition } from 'react';
 import dynamic from 'next/dynamic';
 import { MapPin, Navigation, Phone, Clock, Search, List, Map } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -35,7 +35,9 @@ export default function StoreFinder({ locale, onSelectStore }: StoreFinderProps)
   const [selectedStore, setSelectedStore] = useState<Store | null>(null);
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'map'>('list');
-  const supabase = createClient();
+  // Stable Supabase reference to prevent infinite re-fetch loops
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number): number {
     const R = 6371; // km
@@ -322,7 +324,7 @@ export default function StoreFinder({ locale, onSelectStore }: StoreFinderProps)
       });
     }
     setLoading(false);
-  }, [supabase, demoStores]);
+  }, [demoStores]);
 
   const filterStores = useCallback(() => {
     let filtered = stores;
@@ -398,6 +400,10 @@ export default function StoreFinder({ locale, onSelectStore }: StoreFinderProps)
     const openTime = openHour * 60 + openMin;
     const closeTime = closeHour * 60 + closeMin;
 
+    // Handle overnight hours (e.g. open 18:00, close 02:00)
+    if (closeTime <= openTime) {
+      return currentTime >= openTime || currentTime <= closeTime;
+    }
     return currentTime >= openTime && currentTime <= closeTime;
   }
 

@@ -14,6 +14,17 @@ function getResendClient(): Resend {
   return new Resend(env.RESEND_API_KEY);
 }
 
+// HTML-escape user-supplied values to prevent injection in email bodies
+function escapeHtml(value: unknown): string {
+  const str = String(value ?? '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 export const POST = withHandler(async (request: NextRequest, { requestId }) => {
   const log = logger.withContext({ requestId, path: '/api/email/gift-card' });
   const elapsed = startTimer();
@@ -62,13 +73,13 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
             
             <div style="padding: 40px; background: #f9fafb;">
               <h2 style="color: #1f2937; margin: 0 0 16px;">
-                ${locale === 'tr' ? `Merhaba ${giftCard.recipient_name}!` : `Hello ${giftCard.recipient_name}!`}
+                ${locale === 'tr' ? `Merhaba ${escapeHtml(giftCard.recipient_name)}!` : `Hello ${escapeHtml(giftCard.recipient_name)}!`}
               </h2>
               
               <p style="color: #4b5563;">
                 ${locale === 'tr'
-                  ? `${giftCard.sender_name} size bir hediye kartı gönderdi!`
-                  : `${giftCard.sender_name} sent you a gift card!`
+                  ? `${escapeHtml(giftCard.sender_name)} size bir hediye kartı gönderdi!`
+                  : `${escapeHtml(giftCard.sender_name)} sent you a gift card!`
                 }
               </p>
               
@@ -87,10 +98,10 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
               ${giftCard.message ? `
                 <div style="background: #fef3c7; border-radius: 12px; padding: 16px; margin: 24px 0;">
                   <p style="color: #92400e; font-style: italic; margin: 0;">
-                    "${giftCard.message}"
+                    "${escapeHtml(giftCard.message)}"
                   </p>
                   <p style="color: #b45309; margin: 8px 0 0; font-size: 14px;">
-                    - ${giftCard.sender_name}
+                    - ${escapeHtml(giftCard.sender_name)}
                   </p>
                 </div>
               ` : ''}
