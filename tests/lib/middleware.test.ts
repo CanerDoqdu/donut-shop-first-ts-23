@@ -14,6 +14,14 @@ describe('middleware helpers', () => {
     expect(isProtectedPath(makeRequest('/en/public'))).toBe(false);
   });
 
+  it('allows /orders/success as public exception', () => {
+    expect(isProtectedPath(makeRequest('/en/orders/success'))).toBe(false);
+    expect(isProtectedPath(makeRequest('/tr/siparislerim/success'))).toBe(false);
+    // Other order pages remain protected
+    expect(isProtectedPath(makeRequest('/en/orders'))).toBe(true);
+    expect(isProtectedPath(makeRequest('/en/orders/123'))).toBe(true);
+  });
+
   it('detects admin paths across locales', () => {
     expect(isAdminPath(makeRequest('/en/admin'))).toBe(true);
     expect(isAdminPath(makeRequest('/tr/yonetim/settings'))).toBe(true);

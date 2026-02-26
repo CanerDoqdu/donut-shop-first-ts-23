@@ -71,27 +71,6 @@ export function Header() {
 
           if (profileRes.data) setProfile(profileRes.data);
           if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
-          return;
-        }
-
-        const response = await fetch('/api/auth/me', {
-          method: 'GET',
-          credentials: 'include',
-          cache: 'no-store',
-        });
-
-        if (response.ok) {
-          const serverAuth = await response.json() as {
-            user: SupabaseUser | null;
-            profile: Profile | null;
-            loyalty: LoyaltyInfo | null;
-          };
-
-          if (serverAuth.user) {
-            setUser(serverAuth.user);
-            if (serverAuth.profile) setProfile(serverAuth.profile);
-            if (serverAuth.loyalty) setLoyalty(serverAuth.loyalty);
-          }
         }
       } finally {
         setAuthLoading(false);

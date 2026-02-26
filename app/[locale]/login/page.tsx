@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, LogIn, AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { signIn } from '@/lib/auth/actions';
 import { createClient } from '@/lib/supabase/client';
 import { useFormValidation } from '@/hooks';
 import { signInSchema } from '@/lib/validations';
@@ -21,6 +20,7 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const { fieldErrors, validateField } = useFormValidation(signInSchema);
+  const supabase = useRef(createClient()).current;
 
   // Check for messages from URL (SSR-safe)
   const searchParams = useSearchParams();
@@ -30,14 +30,13 @@ export default function LoginPage() {
   // Redirect if already logged in
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClient();
       const { data } = await supabase.auth.getUser();
       if (data.user) {
         router.replace(`/${locale}`);
       }
     };
     checkAuth();
-  }, [locale, router]);
+  }, [locale, router, supabase]);
 
   // Show callback error
   useEffect(() => {
@@ -96,25 +95,22 @@ export default function LoginPage() {
     setLoading(true);
 
     const formData = new FormData(e.currentTarget);
-    formData.append('locale', locale);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
 
-    try {
-      const result = await signIn(formData);
-      if (!result.success && result.error) {
-        setError(result.error);
-      } else {
-        setSuccess(true);
-      }
-    } catch (err) {
-      // Only swallow redirect errors — surface real failures
-      if (err instanceof Error && err.message?.includes('NEXT_REDIRECT')) {
-        // Redirect happens on success — expected
-      } else {
-        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
-      }
-    } finally {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+
+    if (error) {
+      setError(error.message);
       setLoading(false);
+      return;
     }
+
+    // Browser client now owns the session — onAuthStateChange fires
+    // in the header/AuthProvider automatically.
+    setSuccess(true);
+    router.push(`/${locale}`);
+    router.refresh();
   }
 
   return (
@@ -260,7 +256,6 @@ export default function LoginPage() {
                 setGoogleLoading(true);
                 setError('');
                 try {
-                  const supabase = createClient();
                   const { error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {

@@ -130,9 +130,14 @@ export async function safeFetch<T = unknown>(
 
       // Non-OK response
       lastStatus = response.status;
+      // API returns { message } or { error } depending on the handler — try both
       lastError =
-        (data && typeof data === 'object' && 'error' in data
-          ? String((data as Record<string, unknown>).error)
+        (data && typeof data === 'object'
+          ? String(
+              (data as Record<string, unknown>).message ??
+              (data as Record<string, unknown>).error ??
+              ''
+            ) || null
           : null) ?? response.statusText;
 
       // Don't retry client errors (4xx) — they won't change

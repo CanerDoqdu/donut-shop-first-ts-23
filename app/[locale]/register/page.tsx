@@ -1,11 +1,10 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { Link } from '@/i18n/routing';
 import { motion } from 'framer-motion';
 import { Mail, Lock, Eye, EyeOff, User, UserPlus, AlertCircle, Check, Loader2 } from 'lucide-react';
-import { signUp } from '@/lib/auth/actions';
 import { createClient } from '@/lib/supabase/client';
 import { useFormValidation } from '@/hooks';
 import { signUpSchema } from '@/lib/validations';
@@ -22,18 +21,18 @@ export default function RegisterPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [password, setPassword] = useState('');
   const { fieldErrors, validateField } = useFormValidation(signUpSchema);
+  const supabase = useRef(createClient()).current;
 
   // Redirect if already logged in
   useEffect(() => {
     const checkAuth = async () => {
-      const supabase = createClient();
       const { data } = await supabase.auth.getUser();
       if (data.user) {
         router.replace(`/${locale}`);
       }
     };
     checkAuth();
-  }, [locale, router]);
+  }, [locale, router, supabase]);
 
   const t = {
     tr: {
@@ -103,27 +102,88 @@ export default function RegisterPage() {
     setLoading(true);
 
     // Check if password has been found in data breaches (HaveIBeenPwned)
-    const breachWarning = await getPasswordBreachWarning(password, locale);
-    if (breachWarning) {
-      setError(breachWarning);
+    if (process.env.NODE_ENV === 'production') {
+      const breachWarning = await getPasswordBreachWarning(password, locale);
+      if (breachWarning) {
+        setError(breachWarning);
+        setLoading(false);
+        return;
+      }
+    }
+
+    const formData = new FormData(formElement);
+    const email = formData.get('email') as string;
+    const pwd = formData.get('password') as string;
+    const fullName = formData.get('fullName') as string;
+
+    // Sign up via browser Supabase client — session stays in browser cookies
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: pwd,
+      options: {
+        data: { full_name: fullName },
+        emailRedirectTo: `${window.location.origin}/api/auth/callback?locale=${locale}`,
+      },
+    });
+
+    if (error) {
+      setError(error.message);
       setLoading(false);
       return;
     }
 
-    const formData = new FormData(formElement);
-    formData.append('locale', locale);
-
-    try {
-      const result = await signUp(formData);
-      if (!result.success && result.error) {
-        setError(result.error);
-      }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : '';
-      setError(message || (locale === 'tr' ? 'Bir hata oluştu. Lütfen tekrar deneyin.' : 'Something went wrong. Please try again.'));
-    } finally {
-      setLoading(false);
+    // Create profile + loyalty + referral if user was created
+    if (data.user) {
+      await Promise.all([
+        supabase.from('profiles').upsert({
+          id: data.user.id,
+          email: data.user.email,
+          full_name: fullName,
+        }),
+        supabase.from('loyalty_points').insert({
+          user_id: data.user.id,
+          total_points: 0,
+          lifetime_points: 0,
+          tier: 'bronze',
+        }),
+        supabase.from('referral_codes').insert({
+          user_id: data.user.id,
+          code: `REF-${data.user.id.substring(0, 8).toUpperCase()}`,
+          reward_points: 100,
+        }),
+      ]);
     }
+
+    // If session exists, user is auto-confirmed → navigate home
+    if (data.session) {
+      window.location.replace(`/${locale}`);
+      return; // keep spinner while navigating
+    }
+
+    // No session → email confirmation required.
+    // In development, auto-login the user anyway so we can test without email infra.
+    if (process.env.NODE_ENV !== 'production' && data.user) {
+      const { error: signInErr } = await supabase.auth.signInWithPassword({
+        email,
+        password: pwd,
+      });
+      if (!signInErr) {
+        window.location.replace(`/${locale}`);
+        return;
+      }
+    }
+
+    // Production: show confirmation message and redirect to login
+    setLoading(false);
+    setError(
+      locale === 'tr'
+        ? 'Kayıt başarılı! Lütfen e-postanızı kontrol edip hesabınızı onaylayın.'
+        : 'Registration successful! Please check your email to confirm your account.'
+    );
+    // Redirect to login after a short delay
+    setTimeout(() => {
+      router.push(`/${locale}/login`);
+    }, 3000);
   }
 
   return (
@@ -305,7 +365,6 @@ export default function RegisterPage() {
                 setGoogleLoading(true);
                 setError('');
                 try {
-                  const supabase = createClient();
                   const { error } = await supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {

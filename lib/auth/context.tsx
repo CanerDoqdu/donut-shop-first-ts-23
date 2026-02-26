@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect, useState, useCallback, startTransition, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, startTransition, type ReactNode } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useCartStore } from '@/store/cart-store';
 import type { User, Session, AuthChangeEvent } from '@supabase/supabase-js';
@@ -46,32 +46,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
   const [loading, setLoading] = useState(true);
   
-  const supabase = createClient();
+  const supabase = useRef(createClient()).current;
 
-  // Clear auth on dev mode startup (fresh state each npm run dev)
-  useEffect(() => {
-    if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      // Only clear once per session using a flag
-      if (!sessionStorage.getItem('__dev_auth_cleared')) {
-        const authKeys = Object.keys(localStorage).filter(k => 
-          k.startsWith('sb-') || k.includes('auth') || k.includes('supabase')
-        );
-        authKeys.forEach(k => {
-          console.log(`[AuthProvider] Dev: clearing ${k}`);
-          localStorage.removeItem(k);
-        });
-        
-        // Clear checkout session
-        sessionStorage.removeItem('donut-checkout-machine');
-        
-        // Mark as cleared so we don't do it again on re-mounts
-        sessionStorage.setItem('__dev_auth_cleared', 'true');
-        
-        console.log('[AuthProvider] ✅ Dev mode: cleared all auth tokens on startup');
-        console.log('[AuthProvider] Reload browser to see fresh login page');
-      }
-    }
-  }, []);
+  // NOTE: Dev-mode auth clearing removed — it was wiping Supabase session
+  // cookies/localStorage and breaking login.  If you need a fresh state,
+  // clear cookies manually via browser DevTools → Application → Cookies.
 
   const refreshProfile = useCallback(async () => {
     if (!user) {
@@ -116,21 +95,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [supabase]);
 
   useEffect(() => {
+    let cancelled = false;
+
     // Get initial session
     const initializeAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         
-        if (initialSession) {
+        if (!cancelled && initialSession) {
           setSession(initialSession);
           setUser(initialSession.user);
         }
       } catch (err) {
+        // AbortError from Supabase Web Locks is harmless — suppress it
+        if (err instanceof DOMException && err.name === 'AbortError') return;
         console.warn('[AuthProvider] Failed to get initial session:', err);
-        setSession(null);
-        setUser(null);
+        if (!cancelled) {
+          setSession(null);
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
 
@@ -139,6 +124,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
+        if (cancelled) return;
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
         
@@ -146,33 +132,40 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const authUser = currentSession.user;
           const authName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || null;
 
-          // Fetch profile and loyalty on sign in
-          const [profileResult, loyaltyResult] = await Promise.all([
-            supabase
-              .from('profiles')
-              .select('*')
-              .eq('id', authUser.id)
-              .maybeSingle(),
-            supabase
-              .from('loyalty_points')
-              .select('total_points, tier, lifetime_points')
-              .eq('user_id', authUser.id)
-              .maybeSingle(),
-          ]);
-
-          if (profileResult.data) {
-            // Sync profile name from Google OAuth if it changed
-            if (authName && profileResult.data.full_name !== authName) {
-              await supabase
+          try {
+            // Fetch profile and loyalty on sign in
+            const [profileResult, loyaltyResult] = await Promise.all([
+              supabase
                 .from('profiles')
-                .update({ full_name: authName })
-                .eq('id', authUser.id);
-              setProfile({ ...profileResult.data, full_name: authName });
-            } else {
-              setProfile(profileResult.data);
+                .select('*')
+                .eq('id', authUser.id)
+                .maybeSingle(),
+              supabase
+                .from('loyalty_points')
+                .select('total_points, tier, lifetime_points')
+                .eq('user_id', authUser.id)
+                .maybeSingle(),
+            ]);
+
+            if (cancelled) return;
+
+            if (profileResult.data) {
+              // Sync profile name from Google OAuth if it changed
+              if (authName && profileResult.data.full_name !== authName) {
+                await supabase
+                  .from('profiles')
+                  .update({ full_name: authName })
+                  .eq('id', authUser.id);
+                setProfile({ ...profileResult.data, full_name: authName });
+              } else {
+                setProfile(profileResult.data);
+              }
             }
+            if (loyaltyResult.data) setLoyalty(loyaltyResult.data as LoyaltyInfo);
+          } catch (err) {
+            if (err instanceof DOMException && err.name === 'AbortError') return;
+            console.warn('[AuthProvider] Failed to fetch profile on sign-in:', err);
           }
-          if (loyaltyResult.data) setLoyalty(loyaltyResult.data as LoyaltyInfo);
         }
 
         if (event === 'SIGNED_OUT') {
@@ -186,6 +179,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     );
 
     return () => {
+      cancelled = true;
       subscription.unsubscribe();
     };
   }, [supabase]);
