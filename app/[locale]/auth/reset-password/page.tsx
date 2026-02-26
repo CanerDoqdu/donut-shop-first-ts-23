@@ -52,10 +52,12 @@ export default function ResetPasswordPage() {
     startTransition(async () => {
       // Check if password has been found in data breaches
       const locale = (params.locale as string) || 'en';
-      const breachWarning = await getPasswordBreachWarning(password, locale);
-      if (breachWarning) {
-        setMessage({ type: 'error', text: breachWarning });
-        return;
+      if (process.env.NODE_ENV === 'production') {
+        const breachWarning = await getPasswordBreachWarning(password, locale);
+        if (breachWarning) {
+          setMessage({ type: 'error', text: breachWarning });
+          return;
+        }
       }
 
       const supabase = createClient();

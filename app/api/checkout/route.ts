@@ -127,10 +127,11 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
               error: stripeErr instanceof Error ? stripeErr.message : String(stripeErr),
             });
           }
-          // Session expired — cancel the stale order and proceed with fresh checkout
+          // Session expired — cancel the stale order and proceed with fresh checkout.
+          // Also null out idempotency_key so the unique index doesn't block the new INSERT.
           await admin
             .from('orders')
-            .update({ status: 'cancelled' })
+            .update({ status: 'cancelled', idempotency_key: null })
             .eq('id', existingOrder.id);
           log.info('checkout.idempotency_expired_session_cancelled', {
             orderId: existingOrder.id,
@@ -139,9 +140,10 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
         } else {
           // No Stripe session — checkout failed before reaching Stripe.
           // Cancel the stale pending order so this request can proceed cleanly.
+          // Also null out idempotency_key so the unique index doesn't block the new INSERT.
           await admin
             .from('orders')
-            .update({ status: 'cancelled' })
+            .update({ status: 'cancelled', idempotency_key: null })
             .eq('id', existingOrder.id);
           log.info('checkout.idempotency_cancelled_incomplete', { orderId: existingOrder.id });
           // Fall through — treat this as a fresh checkout.
@@ -260,14 +262,16 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     }
 
     // Create order items from SERVER-verified data
-    // Actual order_items columns: order_id, product_id, product_name, quantity, unit_price
-    // NOTE: product_image, total_price do NOT exist in the actual table.
+    // order_items columns: order_id, product_id, product_name, product_image, quantity, unit_price, total_price
+    // total_price is NOT NULL in the schema — must be provided.
     const orderItems = serverItems.map((item: { id: string; name: string; price: number; quantity: number; image: string }) => ({
       order_id: order.id,
       product_id: item.id,
       product_name: item.name,
+      product_image: item.image ?? null,
       quantity: item.quantity,
       unit_price: item.price,
+      total_price: Math.round(item.price * item.quantity * 100) / 100,
     }));
 
     const { error: itemsError } = await admin

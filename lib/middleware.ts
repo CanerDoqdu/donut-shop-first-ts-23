@@ -20,20 +20,33 @@ const ALL_PROTECTED_SEGMENTS = [
   ...Object.values(PROTECTED_SEGMENTS),
 ];
 
+/**
+ * Public sub-paths within otherwise-protected segments.
+ * These pages don't require authentication (e.g. post-payment confirmation).
+ */
+const PUBLIC_EXCEPTIONS = [
+  '/orders/success',
+  '/siparislerim/success',
+];
+
 /** Admin path segments in both locales */
 const ADMIN_SEGMENTS = ['/admin', '/yonetim'];
 
 /**
  * Returns true when the request targets a protected path.
  * Checks both English and Turkish locale path segments.
- * Uses segment-boundary matching to avoid false positives
- * (e.g. `/orders/success` won't match because we strip the locale
- *  prefix and test the start of the remaining path).
+ * Excludes public exceptions like /orders/success (post-payment landing).
  */
 export function isProtectedPath(request: NextRequest): boolean {
   const pathname = request.nextUrl.pathname;
   // Strip /<locale>/ prefix to get the functional path
   const strippedPath = pathname.replace(/^\/(tr|en)/, '') || '/';
+
+  // Allow public exceptions through without auth
+  if (PUBLIC_EXCEPTIONS.some((ex) => strippedPath === ex || strippedPath.startsWith(ex + '/'))) {
+    return false;
+  }
+
   return ALL_PROTECTED_SEGMENTS.some(
     (seg) => strippedPath === seg || strippedPath.startsWith(seg + '/'),
   );

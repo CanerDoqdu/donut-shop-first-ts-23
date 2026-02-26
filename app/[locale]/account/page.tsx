@@ -131,21 +131,15 @@ export default function AccountPage() {
 
     async function fetchAccountData(userId: string) {
       try {
-        // Add timeout to prevent infinite loading state
-        const timeoutPromise = new Promise<never>((_, reject) => 
-          setTimeout(() => reject(new Error('Account data fetch timeout')), 10000)
-        );
-        
-        const dataPromise = Promise.all([
+        const [profileRes, loyaltyRes, ordersRes] = await Promise.all([
           supabase.from('profiles').select('*').eq('id', userId).maybeSingle(),
           supabase.from('loyalty_points').select('*').eq('user_id', userId).maybeSingle(),
           supabase.from('orders').select('id, total_amount, status, created_at').eq('user_id', userId).order('created_at', { ascending: false }).limit(5),
         ]);
 
-        const [profileRes, loyaltyRes, ordersRes] = await Promise.race([
-          dataPromise,
-          timeoutPromise
-        ]);
+        if (profileRes.error) console.warn('[AccountPage] profiles error:', profileRes.error.message);
+        if (loyaltyRes.error) console.warn('[AccountPage] loyalty error:', loyaltyRes.error.message);
+        if (ordersRes.error) console.warn('[AccountPage] orders error:', ordersRes.error.message);
 
         if (profileRes.data) setProfile(profileRes.data);
         if (loyaltyRes.data) setLoyalty(loyaltyRes.data);

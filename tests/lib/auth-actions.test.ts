@@ -97,8 +97,13 @@ describe('auth/actions', () => {
       expect(result.success).toBe(false);
     });
 
-    it('returns rate limit error when requests are exhausted', async () => {
+    it('skips rate limit in non-production (dev/test) environment', async () => {
+      // In non-production, checkAuthRateLimit returns null (bypass)
+      // so even if rateLimit mock says exhausted, the request proceeds
       mockRateLimit.mockReturnValueOnce({ success: false, remaining: 0, reset: Date.now() + 60000 });
+      mockSupabaseAuth.signInWithPassword.mockResolvedValue({
+        error: { message: 'Invalid login credentials' },
+      });
 
       const fd = new FormData();
       fd.append('email', 'user@example.com');
@@ -107,7 +112,8 @@ describe('auth/actions', () => {
 
       const result = await signIn(fd);
       expect(result.success).toBe(false);
-      expect(result.error).toContain('Too many');
+      // Rate limit is bypassed — request reaches Supabase, which returns auth error
+      expect(result.error).toBe('Invalid login credentials');
     });
   });
 

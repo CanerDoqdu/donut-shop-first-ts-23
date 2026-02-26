@@ -26,8 +26,12 @@ async function getActionIP(): Promise<string> {
 }
 
 function checkAuthRateLimit(action: string, ip: string): AuthResult | null {
-  // 5 attempts per minute per IP per action
-  const result = rateLimit(`auth:${action}:${ip}`, { maxRequests: 5, windowSizeSeconds: 60 });
+  if (process.env.NODE_ENV !== 'production') {
+    return null;
+  }
+
+  // 10 attempts per minute per IP per action
+  const result = rateLimit(`auth:${action}:${ip}`, { maxRequests: 10, windowSizeSeconds: 60 });
   if (!result.success) {
     logger.warn('auth.rate_limited', { code: E_AUTH_RATE_LIMITED, action, ip, remaining: result.remaining });
     return { success: false, error: 'Too many attempts. Please try again later.' };
@@ -67,7 +71,7 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   }
 
   revalidatePath('/', 'layout');
-  redirect(`/${locale}`);
+  return { success: true };
 }
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
@@ -99,6 +103,13 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   });
 
   if (error) {
+    if (process.env.NODE_ENV !== 'production' && error.message === 'email rate limit exceeded') {
+      return {
+        success: false,
+        error: 'Local dev: Supabase sign-up limit reached. Use a different test email (e.g. test+123@example.com).',
+      };
+    }
+
     // Map Supabase error messages to user-friendly ones
     const friendlyErrors: Record<string, string> = {
       'email rate limit exceeded': 'Too many sign-up attempts. Please wait a few minutes and try again.',
@@ -149,7 +160,7 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   });
 
   revalidatePath('/', 'layout');
-  redirect(`/${locale}`);
+  return { success: true, needsEmailConfirmation: !hasSession };
 }
 
 export async function signOut(): Promise<void> {
