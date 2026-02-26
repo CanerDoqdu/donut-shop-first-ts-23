@@ -6,9 +6,17 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 
-// Hoisted so the mock factory can reference the same fn instance
-const mockGetUser = vi.hoisted(() =>
-  vi.fn().mockResolvedValue({ data: { user: null } })
+// Hoisted mock values so the factory can reference them
+const mockUseAuth = vi.hoisted(() =>
+  vi.fn().mockReturnValue({
+    user: null,
+    profile: null,
+    loyalty: null,
+    loading: false,
+    signOut: vi.fn(),
+    refreshProfile: vi.fn(),
+    refreshLoyalty: vi.fn(),
+  })
 );
 
 vi.mock('next/image', () => ({
@@ -36,19 +44,8 @@ vi.mock('@/store/cart-store', () => ({
     selector({ getTotalItems: () => 0 }),
 }));
 
-vi.mock('@/lib/supabase/client', () => ({
-  createClient: () => ({
-    auth: {
-      getUser: mockGetUser,
-      onAuthStateChange: () => ({ data: { subscription: { unsubscribe: vi.fn() } } }),
-      signOut: vi.fn().mockResolvedValue({}),
-    },
-    from: vi.fn(() => ({
-      select: vi.fn(() => ({
-        eq: vi.fn(() => ({ maybeSingle: vi.fn().mockResolvedValue({ data: null }) })),
-      })),
-    })),
-  }),
+vi.mock('@/lib/auth/context', () => ({
+  useAuth: mockUseAuth,
 }));
 
 // Also mock ui components that may not be fully available in jsdom
@@ -64,8 +61,15 @@ import { Header } from '@/components/layout/header';
 
 describe('Header', () => {
   beforeEach(() => {
-    mockGetUser.mockResolvedValue({ data: { user: null } });
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
+    mockUseAuth.mockReturnValue({
+      user: null,
+      profile: null,
+      loyalty: null,
+      loading: false,
+      signOut: vi.fn(),
+      refreshProfile: vi.fn(),
+      refreshLoyalty: vi.fn(),
+    });
   });
 
   afterEach(() => {
@@ -84,14 +88,18 @@ describe('Header', () => {
   });
 
   it('renders user menu button when signed in', async () => {
-    mockGetUser.mockResolvedValueOnce({
-      data: {
-        user: {
-          id: 'user-1',
-          email: 'donut@example.com',
-          user_metadata: {},
-        },
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: 'user-1',
+        email: 'donut@example.com',
+        user_metadata: {},
       },
+      profile: null,
+      loyalty: null,
+      loading: false,
+      signOut: vi.fn(),
+      refreshProfile: vi.fn(),
+      refreshLoyalty: vi.fn(),
     });
 
     render(<Header />);
@@ -102,14 +110,18 @@ describe('Header', () => {
   });
 
   it('shows username derived from email when no profile name', async () => {
-    mockGetUser.mockResolvedValueOnce({
-      data: {
-        user: {
-          id: 'user-2',
-          email: 'glazed@example.com',
-          user_metadata: {},
-        },
+    mockUseAuth.mockReturnValue({
+      user: {
+        id: 'user-2',
+        email: 'glazed@example.com',
+        user_metadata: {},
       },
+      profile: null,
+      loyalty: null,
+      loading: false,
+      signOut: vi.fn(),
+      refreshProfile: vi.fn(),
+      refreshLoyalty: vi.fn(),
     });
 
     render(<Header />);
