@@ -11,12 +11,24 @@ import { logger } from '@/lib/logger';
 function getAllowedOrigins(): Set<string> {
   const origins = new Set<string>();
 
+  // Configured app/site URLs
   for (const raw of [env.NEXT_PUBLIC_APP_URL, env.NEXT_PUBLIC_SITE_URL]) {
     try {
       const { origin } = new URL(raw);
       origins.add(origin);
     } catch {
       // Skip malformed URLs
+    }
+  }
+
+  // Vercel auto-injected URLs (available server-side at runtime)
+  for (const vercelVar of [
+    process.env.VERCEL_PROJECT_PRODUCTION_URL,
+    process.env.VERCEL_URL,
+    process.env.VERCEL_BRANCH_URL,
+  ]) {
+    if (vercelVar) {
+      origins.add(`https://${vercelVar}`);
     }
   }
 
