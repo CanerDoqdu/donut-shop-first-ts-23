@@ -74,4 +74,45 @@ describe('password-check', () => {
     expect(message).toBeNull();
     expect(warnSpy).toHaveBeenCalled();
   });
+
+  it('returns short English warning when count is low (<=100)', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      text: async () => `${suffix}:5`,
+    });
+
+    const message = await getPasswordBreachWarning('password', 'en');
+    expect(message).toBe('This password has been found in known data breaches. Please choose a different password.');
+  });
+
+  it('returns Turkish warning for count > 100', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      text: async () => `${suffix}:500`,
+    });
+
+    const message = await getPasswordBreachWarning('password', 'tr');
+    expect(message).toContain('500');
+    expect(message).toContain('veri ihlali');
+  });
+
+  it('returns short Turkish warning when count is low (<=100)', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      text: async () => `${suffix}:3`,
+    });
+
+    const message = await getPasswordBreachWarning('password', 'tr');
+    expect(message).toBe('Bu şifre bilinen veri ihlallerinde bulunmuştur. Lütfen farklı bir şifre seçin.');
+  });
+
+  it('returns null when password is safe (count = 0)', async () => {
+    (fetch as unknown as ReturnType<typeof vi.fn>).mockResolvedValue({
+      ok: true,
+      text: async () => 'ZZZZZZ:1',
+    });
+
+    const message = await getPasswordBreachWarning('password', 'en');
+    expect(message).toBeNull();
+  });
 });
