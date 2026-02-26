@@ -13,7 +13,6 @@ vi.mock('@/lib/logger', () => ({
 import { validateOrigin } from '@/lib/security';
 
 const ENV_KEYS = [
-  'NODE_ENV',
   'NEXT_PUBLIC_APP_URL',
   'NEXT_PUBLIC_SITE_URL',
   'VERCEL_PROJECT_PRODUCTION_URL',
@@ -32,12 +31,13 @@ describe('validateOrigin with Vercel runtime origins', () => {
       delete process.env[key];
     }
 
-    process.env.NODE_ENV = 'production';
+    vi.stubEnv('NODE_ENV', 'production');
     process.env.NEXT_PUBLIC_APP_URL = 'https://donut-shop-one.vercel.app';
     process.env.NEXT_PUBLIC_SITE_URL = 'https://donut-shop-one.vercel.app';
   });
 
   afterEach(() => {
+    vi.unstubAllEnvs();
     for (const key of ENV_KEYS) {
       const value = originalEnv[key];
       if (value === undefined) {
