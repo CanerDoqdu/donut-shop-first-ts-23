@@ -87,6 +87,19 @@ describe('auth/actions', () => {
   });
 
   describe('signIn', () => {
+    it('returns success on successful sign-in', async () => {
+      mockSupabaseAuth.signInWithPassword.mockResolvedValue({ error: null });
+
+      const fd = new FormData();
+      fd.append('email', 'user@example.com');
+      fd.append('password', 'validpassword123');
+      fd.append('locale', 'en');
+
+      const result = await signIn(fd);
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+
     it('returns error on Supabase sign-in failure', async () => {
       mockSupabaseAuth.signInWithPassword.mockResolvedValue({
         error: { message: 'Invalid login credentials' },
@@ -172,6 +185,74 @@ describe('auth/actions', () => {
 
       const result = await signUp(fd);
       expect(result.success).toBe(false);
+    });
+
+    it('returns success with session when Supabase auto-confirms user', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: { access_token: 'tok' }, user: { id: 'u1' } },
+        error: null,
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'new@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'New User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(true);
+      expect(result.needsEmailConfirmation).toBe(false);
+    });
+
+    it('returns needsEmailConfirmation when Supabase requires email confirmation', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: null, user: { id: 'u2' } },
+        error: null,
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'confirm@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'Confirm User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(true);
+      expect(result.needsEmailConfirmation).toBe(true);
+    });
+
+    it('returns friendly error for known Supabase error on sign-up', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: null, user: null },
+        error: { message: 'User already registered' },
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'existing@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'Existing User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('An account with this email already exists. Try signing in instead.');
+    });
+
+    it('returns generic error for unknown Supabase error on sign-up', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: null, user: null },
+        error: { message: 'Some unexpected Supabase error' },
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'user@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'Test User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Sign up failed. Please try again.');
     });
   });
 });

@@ -171,6 +171,26 @@ describe('Header', () => {
     Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
   });
 
+  it('hides auth section while loading is true', async () => {
+    mockUseAuth.mockReturnValue({
+      user: { id: 'user-1', email: 'donut@example.com', user_metadata: {} },
+      profile: null,
+      loyalty: null,
+      loading: true,
+      signOut: vi.fn(),
+      refreshProfile: vi.fn(),
+      refreshLoyalty: vi.fn(),
+    });
+
+    render(<Header />);
+
+    // Even with a logged-in user, auth UI must be hidden while loading
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: /user menu/i })).not.toBeInTheDocument();
+      expect(screen.queryByText('nav.login')).not.toBeInTheDocument();
+    });
+  });
+
   it('switches locale via mobile menu button', async () => {
     const originalLocation = window.location;
     const locationMock = { ...originalLocation, pathname: '/en', search: '', href: '' };

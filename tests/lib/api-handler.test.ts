@@ -4,6 +4,10 @@ import { withHandler } from '@/lib/api-handler';
 import { ApiError } from '@/lib/api-error';
 import { metrics } from '@/lib/metrics';
 
+// Mock security so we can control validateOrigin per test
+const mockValidateOrigin = vi.hoisted(() => vi.fn().mockReturnValue(null));
+vi.mock('@/lib/security', () => ({ validateOrigin: mockValidateOrigin }));
+
 // Mock Sentry
 vi.mock('@sentry/nextjs', () => ({
   withScope: vi.fn((cb: (scope: unknown) => void) => {
@@ -25,6 +29,8 @@ function makeRequest(path: string, method = 'POST'): NextRequest {
 describe('withHandler — metrics integration', () => {
   beforeEach(() => {
     metrics.reset();
+    mockValidateOrigin.mockClear();
+    mockValidateOrigin.mockReturnValue(null);
   });
 
   it('records latency on successful response', async () => {
@@ -140,5 +146,40 @@ describe('withHandler — metrics integration', () => {
 
     const res = await handler(makeRequest('/api/products'));
     expect(res.status).toBe(500);
+  });
+
+  it('returns 403 when CSRF validation rejects the request', async () => {
+    mockValidateOrigin.mockReturnValueOnce(
+      NextResponse.json({ error: 'Forbidden: origin not allowed' }, { status: 403 }),
+    );
+
+    const handler = withHandler(async () => NextResponse.json({ ok: true }));
+    const res = await handler(makeRequest('/api/products', 'POST'));
+
+    expect(res.status).toBe(403);
+  });
+
+  it('skips CSRF validation when skipCsrf option is true', async () => {
+    // Even if validateOrigin would reject, skipCsrf=true bypasses the check
+    mockValidateOrigin.mockReturnValueOnce(
+      NextResponse.json({ error: 'Forbidden' }, { status: 403 }),
+    );
+
+    const handler = withHandler(
+      async () => NextResponse.json({ ok: true }),
+      'api',
+      { skipCsrf: true },
+    );
+    const res = await handler(makeRequest('/api/products', 'POST'));
+
+    expect(res.status).toBe(200);
+  });
+
+  it('skips CSRF validation for GET requests', async () => {
+    const handler = withHandler(async () => NextResponse.json({ ok: true }));
+    const res = await handler(makeRequest('/api/products', 'GET'));
+
+    expect(res.status).toBe(200);
+    expect(mockValidateOrigin).not.toHaveBeenCalled();
   });
 });
