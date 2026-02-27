@@ -97,46 +97,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    // Get initial session with timeout so UI never blocks indefinitely
-    const initializeAuth = async () => {
-      try {
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('Auth init timeout')), 5000)
-        );
-
-        const { data: { session: initialSession } } = await Promise.race([
-          sessionPromise,
-          timeoutPromise,
-        ]);
-        
-        if (!cancelled && initialSession) {
-          setSession(initialSession);
-          setUser(initialSession.user);
-        }
-      } catch (err) {
-        // AbortError from Supabase Web Locks is harmless — suppress it
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-        console.warn('[AuthProvider] Failed to get initial session:', err);
-        if (!cancelled) {
-          setSession(null);
-          setUser(null);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    initializeAuth();
-
-    // Listen for auth changes
+    // Use onAuthStateChange with INITIAL_SESSION event (Supabase JS v2.39+).
+    // This avoids calling getSession() which can hang due to Web Lock
+    // contention and cause the "Auth init timeout" error on Vercel.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, currentSession: Session | null) => {
         if (cancelled) return;
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
+
+        // INITIAL_SESSION is the first event fired — marks auth as ready
+        if (event === 'INITIAL_SESSION') {
+          setLoading(false);
+        }
         
-        if (event === 'SIGNED_IN' && currentSession?.user) {
+        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && currentSession?.user) {
           const authUser = currentSession.user;
           const authName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || null;
 
@@ -186,8 +161,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
+    // Safety fallback: if INITIAL_SESSION never fires, stop blocking the UI
+    const timeout = setTimeout(() => {
+      if (!cancelled) setLoading(false);
+    }, 5000);
+
     return () => {
       cancelled = true;
+      clearTimeout(timeout);
       subscription.unsubscribe();
     };
   }, [supabase]);
