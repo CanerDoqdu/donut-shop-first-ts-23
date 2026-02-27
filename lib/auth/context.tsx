@@ -68,7 +68,6 @@ export function AuthProvider({
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
   // If we already have the user from SSR, skip the loading state entirely.
   const [loading, setLoading] = useState(initialUser === null);
-  
   const supabase = useMemo(() => createClient(), []);
 
   // NOTE: Dev-mode auth clearing removed — it was wiping Supabase session
@@ -120,11 +119,16 @@ export function AuthProvider({
   useEffect(() => {
     let cancelled = false;
 
-    // Use onAuthStateChange with INITIAL_SESSION event (Supabase JS v2.39+).
-    // This avoids calling getSession() which can hang due to Web Lock
-    // contention and cause the "Auth init timeout" error on Vercel.
+    // IMPORTANT: onAuthStateChange callbacks run inside Supabase's exclusive
+    // Web Lock context.  Any `await` on supabase.from(...) inside this
+    // callback will deadlock because PostgREST queries internally call
+    // getSession() which tries to acquire the same lock.
+    //
+    // Therefore this callback MUST be synchronous (no await on Supabase
+    // client calls).  Async data fetching is handled by the separate
+    // useEffect below that watches the `user` state.
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: AuthChangeEvent, currentSession: Session | null) => {
+      (event: AuthChangeEvent, currentSession: Session | null) => {
         if (cancelled) return;
         setSession(currentSession);
         setUser(currentSession?.user ?? null);
@@ -132,46 +136,6 @@ export function AuthProvider({
         // INITIAL_SESSION is the first event fired — marks auth as ready
         if (event === 'INITIAL_SESSION') {
           setLoading(false);
-        }
-        
-        if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && currentSession?.user) {
-          const authUser = currentSession.user;
-          const authName = authUser.user_metadata?.full_name || authUser.user_metadata?.name || null;
-
-          try {
-            // Fetch profile and loyalty on sign in
-            const [profileResult, loyaltyResult] = await Promise.all([
-              supabase
-                .from('profiles')
-                .select('*')
-                .eq('id', authUser.id)
-                .maybeSingle(),
-              supabase
-                .from('loyalty_points')
-                .select('total_points, tier, lifetime_points')
-                .eq('user_id', authUser.id)
-                .maybeSingle(),
-            ]);
-
-            if (cancelled) return;
-
-            if (profileResult.data) {
-              // Sync profile name from Google OAuth if it changed
-              if (authName && profileResult.data.full_name !== authName) {
-                await supabase
-                  .from('profiles')
-                  .update({ full_name: authName })
-                  .eq('id', authUser.id);
-                setProfile({ ...profileResult.data, full_name: authName });
-              } else {
-                setProfile(profileResult.data);
-              }
-            }
-            if (loyaltyResult.data) setLoyalty(loyaltyResult.data as LoyaltyInfo);
-          } catch (err) {
-            if (err instanceof DOMException && err.name === 'AbortError') return;
-            console.warn('[AuthProvider] Failed to fetch profile on sign-in:', err);
-          }
         }
 
         if (event === 'SIGNED_OUT') {
