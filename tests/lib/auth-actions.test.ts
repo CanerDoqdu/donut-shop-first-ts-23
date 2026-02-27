@@ -63,7 +63,12 @@ const mockSupabaseAuth = vi.hoisted(() => ({
   signOut: vi.fn(),
   resetPasswordForEmail: vi.fn(),
   updateUser: vi.fn(),
+  signInWithOAuth: vi.fn(),
+  getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1', email: 'user@example.com' } }, error: null }),
 }));
+
+// Hoisted mock for the profiles.update().eq() chain
+const mockDbUpdate = vi.hoisted(() => vi.fn().mockResolvedValue({ error: null }));
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
@@ -71,6 +76,7 @@ vi.mock('@/lib/supabase/server', () => ({
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnValue({ eq: mockDbUpdate }),
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       upsert: vi.fn().mockResolvedValue({ error: null }),
       insert: vi.fn().mockResolvedValue({ error: null }),
@@ -78,7 +84,7 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }));
 
-import { signIn, signUp, forgotPassword } from '@/lib/auth/actions';
+import { signIn, signUp, forgotPassword, resetPassword, updateProfile, signInWithGoogle, signInWithGithub } from '@/lib/auth/actions';
 
 describe('auth/actions', () => {
   beforeEach(() => {
@@ -253,6 +259,59 @@ describe('auth/actions', () => {
       const result = await signUp(fd);
       expect(result.success).toBe(false);
       expect(result.error).toBe('Sign up failed. Please try again.');
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('returns error when password update fails', async () => {
+      mockSupabaseAuth.updateUser.mockResolvedValue({ error: { message: 'Update failed' } });
+
+      const fd = new FormData();
+      fd.append('password', 'ValidPass1');
+      fd.append('locale', 'en');
+
+      const result = await resetPassword(fd);
+      expect(result!.success).toBe(false);
+      expect(result!.error).toBe('Failed to reset password. Please try again.');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('returns error when DB update fails', async () => {
+      mockDbUpdate.mockResolvedValueOnce({ error: { message: 'DB error' } });
+
+      const fd = new FormData();
+      fd.append('fullName', 'Test User');
+      fd.append('phone', '+1234567890');
+      fd.append('address', '123 Test St');
+
+      const result = await updateProfile(fd);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Failed to update profile. Please try again.');
+    });
+  });
+
+  describe('signInWithGoogle', () => {
+    it('returns error when Google OAuth fails', async () => {
+      mockSupabaseAuth.signInWithOAuth.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'OAuth error' },
+      });
+
+      const result = await signInWithGoogle('en');
+      expect(result).toEqual({ success: false, error: 'Google sign-in failed. Please try again.' });
+    });
+  });
+
+  describe('signInWithGithub', () => {
+    it('returns error when GitHub OAuth fails', async () => {
+      mockSupabaseAuth.signInWithOAuth.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'OAuth error' },
+      });
+
+      const result = await signInWithGithub('en');
+      expect(result).toEqual({ success: false, error: 'GitHub sign-in failed. Please try again.' });
     });
   });
 });

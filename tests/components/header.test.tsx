@@ -211,4 +211,25 @@ describe('Header', () => {
 
     Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
   });
+
+  it('switches locale to EN via mobile menu button', async () => {
+    const originalLocation = window.location;
+    const locationMock = { ...originalLocation, pathname: '/tr/products', search: '', href: '' };
+    Object.defineProperty(window, 'location', { value: locationMock, writable: true });
+
+    render(<Header />);
+
+    // Open mobile menu
+    const toggleBtn = screen.getByLabelText('Toggle menu');
+    fireEvent.click(toggleBtn);
+
+    // Click the mobile EN button (last EN button in the DOM)
+    const enButtons = screen.getAllByText('EN');
+    const mobileEnBtn = enButtons[enButtons.length - 1];
+    fireEvent.click(mobileEnBtn);
+
+    expect(locationMock.href).toBe('/en/products');
+
+    Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
+  });
 });
