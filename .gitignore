@@ -54,6 +54,8 @@ toLearn.md
 
 # Playwright MCP artifacts
 .playwright-mcp/
+*.png
+!public/**/*.png
 
 # Sentry Config File
 .env.sentry-build-plugin
