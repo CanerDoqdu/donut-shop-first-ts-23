@@ -2,51 +2,31 @@
 
 import Image from 'next/image';
 import { ShoppingCart, Menu, X, Crown, Gift, Package, Users, ChevronDown, User, LogOut, LogIn, UserPlus } from 'lucide-react';
-import { useState, useEffect, useRef, startTransition } from 'react';
+import { useState, useEffect, startTransition } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cart-store';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/lib/auth/context';
 import { useRouter } from 'next/navigation';
-import type { User as SupabaseUser, AuthChangeEvent, Session } from '@supabase/supabase-js';
-
-interface Profile {
-  full_name: string | null;
-}
-
-interface LoyaltyInfo {
-  total_points: number;
-  tier: string;
-}
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
-  const [authLoading, setAuthLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const t = useTranslations();
   const router = useRouter();
   const totalItems = useCartStore((state) => state.getTotalItems());
-  const supabase = useRef(createClient()).current;
+  const { user, profile, loyalty, signOut } = useAuth();
 
   const handleSignOut = async () => {
     setSigningOut(true);
     setUserMenuOpen(false);
     setMobileMenuOpen(false);
-    // Clear state immediately so navbar updates
-    setUser(null);
-    setProfile(null);
-    setLoyalty(null);
-    // Sign out from Supabase
-    await supabase.auth.signOut();
-    // Redirect to home
+    await signOut();
     router.push('/');
     router.refresh();
     setSigningOut(false);
@@ -56,49 +36,7 @@ export function Header() {
     startTransition(() => {
       setMounted(true);
     });
-    
-    // Fetch initial auth state
-    async function getAuthState() {
-      try {
-        const { data: { user: currentUser } } = await supabase.auth.getUser();
-
-        if (currentUser) {
-          setUser(currentUser);
-          const [profileRes, loyaltyRes] = await Promise.all([
-            supabase.from('profiles').select('full_name').eq('id', currentUser.id).maybeSingle(),
-            supabase.from('loyalty_points').select('total_points, tier').eq('user_id', currentUser.id).maybeSingle(),
-          ]);
-
-          if (profileRes.data) setProfile(profileRes.data);
-          if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
-        }
-      } finally {
-        setAuthLoading(false);
-      }
-    }
-    
-    getAuthState();
-    
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event: AuthChangeEvent, session: Session | null) => {
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        const [profileRes, loyaltyRes] = await Promise.all([
-          supabase.from('profiles').select('full_name').eq('id', session.user.id).maybeSingle(),
-          supabase.from('loyalty_points').select('total_points, tier').eq('user_id', session.user.id).maybeSingle(),
-        ]);
-        
-        if (profileRes.data) setProfile(profileRes.data);
-        if (loyaltyRes.data) setLoyalty(loyaltyRes.data);
-      } else {
-        setProfile(null);
-        setLoyalty(null);
-      }
-    });
-    
-    return () => subscription.unsubscribe();
-  }, [supabase]);
+  }, []);
 
   const navLinks: Array<{ href: '/' | '/products' | '/stores'; label: string }> = [
     { href: '/', label: t('nav.home') },
@@ -199,7 +137,7 @@ export function Header() {
           </div>
 
           {/* Auth Section */}
-          {mounted && !authLoading && (
+          {mounted && (
             user ? (
               <div className="relative">
                 <button
@@ -379,7 +317,7 @@ export function Header() {
             </div>
 
             {/* Auth Section Mobile */}
-            {mounted && !authLoading && (
+            {mounted && (
               <div className="pt-4 border-t">
                 {user ? (
                   <>

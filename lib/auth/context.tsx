@@ -97,10 +97,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     let cancelled = false;
 
-    // Get initial session
+    // Get initial session with timeout so UI never blocks indefinitely
     const initializeAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('Auth init timeout')), 5000)
+        );
+
+        const { data: { session: initialSession } } = await Promise.race([
+          sessionPromise,
+          timeoutPromise,
+        ]);
         
         if (!cancelled && initialSession) {
           setSession(initialSession);
