@@ -4,7 +4,7 @@
 /* eslint-disable @next/next/no-img-element */
 import React from 'react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 
 // Hoisted mock values so the factory can reference them
 const mockUseAuth = vi.hoisted(() =>
@@ -136,5 +136,59 @@ describe('Header', () => {
     render(<Header />);
     expect(screen.getByText('nav.home')).toBeInTheDocument();
     expect(screen.getByText('nav.products')).toBeInTheDocument();
+  });
+
+  it('switches locale to TR via desktop button', async () => {
+    // Stub window.location so switchLocale can write to .href
+    const originalLocation = window.location;
+    const locationMock = { ...originalLocation, pathname: '/en/products', search: '?q=donut', href: '' };
+    Object.defineProperty(window, 'location', { value: locationMock, writable: true });
+
+    render(<Header />);
+
+    // The desktop language switcher renders two buttons: TR and EN
+    const trButtons = screen.getAllByText('TR');
+    fireEvent.click(trButtons[0]);
+
+    expect(locationMock.href).toBe('/tr/products?q=donut');
+
+    // Restore
+    Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
+  });
+
+  it('switches locale to EN via desktop button', async () => {
+    const originalLocation = window.location;
+    const locationMock = { ...originalLocation, pathname: '/tr', search: '', href: '' };
+    Object.defineProperty(window, 'location', { value: locationMock, writable: true });
+
+    render(<Header />);
+
+    const enButtons = screen.getAllByText('EN');
+    fireEvent.click(enButtons[0]);
+
+    expect(locationMock.href).toBe('/en/');
+
+    Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
+  });
+
+  it('switches locale via mobile menu button', async () => {
+    const originalLocation = window.location;
+    const locationMock = { ...originalLocation, pathname: '/en', search: '', href: '' };
+    Object.defineProperty(window, 'location', { value: locationMock, writable: true });
+
+    render(<Header />);
+
+    // Open mobile menu
+    const toggleBtn = screen.getByLabelText('Toggle menu');
+    fireEvent.click(toggleBtn);
+
+    // Mobile menu should now be visible — grab the second TR button (mobile)
+    const trButtons = screen.getAllByText('TR');
+    const mobileTrBtn = trButtons[trButtons.length - 1];
+    fireEvent.click(mobileTrBtn);
+
+    expect(locationMock.href).toBe('/tr/');
+
+    Object.defineProperty(window, 'location', { value: originalLocation, writable: true });
   });
 });

@@ -28,16 +28,31 @@ vi.mock('@/lib/env', () => ({
     NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
     SUPABASE_URL: 'http://localhost:54321',
     SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+    isProduction: false,
+    isDevelopment: true,
   },
 }));
 
-// vi.hoisted ensures mockRateLimit is available when the vi.mock factory runs
-const mockRateLimit = vi.hoisted(() =>
-  vi.fn().mockReturnValue({ success: true, remaining: 4, reset: Date.now() + 60000 })
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+// vi.hoisted ensures mockRedisRateLimit is available when the vi.mock factory runs
+const mockRedisRateLimit = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ success: true, remaining: 4, reset: Date.now() + 60000 })
 );
 
+vi.mock('@/lib/redis', () => ({
+  redisRateLimit: mockRedisRateLimit,
+  cache: { get: vi.fn().mockResolvedValue(null), set: vi.fn() },
+}));
+
 vi.mock('@/lib/rate-limit', () => ({
-  rateLimit: mockRateLimit,
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }));
 
@@ -68,7 +83,7 @@ import { signIn, signUp, forgotPassword } from '@/lib/auth/actions';
 describe('auth/actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRateLimit.mockReturnValue({ success: true, remaining: 4, reset: Date.now() + 60000 });
+    mockRedisRateLimit.mockResolvedValue({ success: true, remaining: 4, reset: Date.now() + 60000 });
   });
 
   describe('signIn', () => {
@@ -84,7 +99,7 @@ describe('auth/actions', () => {
 
       const result = await signIn(fd);
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid login credentials');
+      expect(result.error).toBe('Invalid email or password.');
     });
 
     it('returns validation error for invalid email', async () => {
@@ -97,13 +112,9 @@ describe('auth/actions', () => {
       expect(result.success).toBe(false);
     });
 
-    it('skips rate limit in non-production (dev/test) environment', async () => {
-      // In non-production, checkAuthRateLimit returns null (bypass)
-      // so even if rateLimit mock says exhausted, the request proceeds
-      mockRateLimit.mockReturnValueOnce({ success: false, remaining: 0, reset: Date.now() + 60000 });
-      mockSupabaseAuth.signInWithPassword.mockResolvedValue({
-        error: { message: 'Invalid login credentials' },
-      });
+    it('rate limits when Redis reports exhausted', async () => {
+      // Rate limiting is now always active (Redis-backed)
+      mockRedisRateLimit.mockResolvedValueOnce({ success: false, remaining: 0, reset: Date.now() + 60000 });
 
       const fd = new FormData();
       fd.append('email', 'user@example.com');
@@ -112,8 +123,7 @@ describe('auth/actions', () => {
 
       const result = await signIn(fd);
       expect(result.success).toBe(false);
-      // Rate limit is bypassed — request reaches Supabase, which returns auth error
-      expect(result.error).toBe('Invalid login credentials');
+      expect(result.error).toBe('Too many attempts. Please try again later.');
     });
   });
 
@@ -129,7 +139,7 @@ describe('auth/actions', () => {
       expect(result.success).toBe(true);
     });
 
-    it('returns error when Supabase resetPassword fails', async () => {
+    it('always returns success regardless of error (prevents email enumeration)', async () => {
       mockSupabaseAuth.resetPasswordForEmail.mockResolvedValue({
         error: { message: 'Email not found' },
       });
@@ -139,8 +149,8 @@ describe('auth/actions', () => {
       fd.append('locale', 'en');
 
       const result = await forgotPassword(fd);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Email not found');
+      // forgotPassword now always returns success to prevent email enumeration
+      expect(result.success).toBe(true);
     });
 
     it('returns validation error for missing email', async () => {

@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
+import { cache } from '@/lib/redis';
 
 export type AdminRole = 'super_admin' | 'admin' | 'manager' | 'staff';
 
@@ -13,8 +14,16 @@ interface AdminInfo {
 /**
  * Check whether the given user ID has an admin_users record.
  * Returns the role + permissions when the user is an admin, `null` otherwise.
+ * Results are cached in Redis for 5 minutes to avoid per-request DB queries.
  */
 export async function getAdminInfo(userId: string): Promise<AdminInfo | null> {
+  const cacheKey = `admin:${userId}`;
+
+  // Try Redis cache first
+  const cached = await cache.get<AdminInfo | 'not-admin'>(cacheKey);
+  if (cached === 'not-admin') return null;
+  if (cached) return cached;
+
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -28,13 +37,21 @@ export async function getAdminInfo(userId: string): Promise<AdminInfo | null> {
     return null;
   }
 
-  if (!data) return null;
+  if (!data) {
+    // Cache negative results too (5 min TTL)
+    await cache.set(cacheKey, 'not-admin', 300);
+    return null;
+  }
 
-  return {
+  const info: AdminInfo = {
     userId,
     role: data.role as AdminRole,
     permissions: (data.permissions ?? {}) as Record<string, boolean>,
   };
+
+  // Cache positive result (5 min TTL)
+  await cache.set(cacheKey, info, 300);
+  return info;
 }
 
 /**

@@ -20,7 +20,7 @@ export function Header() {
   const t = useTranslations();
   const router = useRouter();
   const totalItems = useCartStore((state) => state.getTotalItems());
-  const { user, profile, loyalty, signOut } = useAuth();
+  const { user, profile, loyalty, loading, signOut } = useAuth();
 
   // Switch locale while staying on the current page.
   // Full navigation is intentional — the server proxy refreshes auth
@@ -146,7 +146,7 @@ export function Header() {
           </div>
 
           {/* Auth Section */}
-          {mounted && (
+          {mounted && !loading && (
             user ? (
               <div className="relative">
                 <button
@@ -326,7 +326,7 @@ export function Header() {
             </div>
 
             {/* Auth Section Mobile */}
-            {mounted && (
+            {mounted && !loading && (
               <div className="pt-4 border-t">
                 {user ? (
                   <>

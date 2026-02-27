@@ -57,18 +57,20 @@ describe('data.server', () => {
     inResult = { data: [{ id: 'p1', name_en: 'Db One' }], error: null };
 
     const { getProductsByIds } = await import('@/lib/data.server');
-    const map = await getProductsByIds(['p1']);
+    const { map, dbIds } = await getProductsByIds(['p1']);
 
     expect(map.get('p1')?.id).toBe('p1');
+    expect(dbIds.has('p1')).toBe(true);
   });
 
   it('falls back to sample data map when db returns empty', async () => {
     inResult = { data: [], error: null };
 
     const { getProductsByIds } = await import('@/lib/data.server');
-    const map = await getProductsByIds(['p1', 'p2']);
+    const { map, dbIds } = await getProductsByIds(['p1', 'p2']);
 
     expect(map.get('p1')?.id).toBe('p1');
     expect(map.get('p2')?.id).toBe('p2');
+    expect(dbIds.size).toBe(0);
   });
 });

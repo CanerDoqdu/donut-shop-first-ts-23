@@ -4,6 +4,7 @@ import { logger, extractCorrelationId, startTimer } from './logger';
 import { classifyError } from './error-classification';
 import { captureWithContext, addCorrelatedBreadcrumb } from './sentry';
 import { metrics } from './metrics';
+import { validateOrigin } from './security';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -24,17 +25,26 @@ type RouteHandler = (
 /**
  * Higher-order function that wraps a Next.js route handler with:
  *
- *  1. **requestId** — extracted from `x-request-id` header or generated.
- *  2. **correlationId** — extracted from `x-correlation-id` header or generated.
- *  3. **Structured error handling** — `ApiError` → standard JSON body.
- *  4. **Error classification** — operational / programmer / infrastructure.
- *  5. **Sentry capture** — with domain, requestId, correlationId, classification.
- *  6. **x-request-id + x-correlation-id** headers attached to every response.
+ *  1. **CSRF validation** — mutation methods (POST/PUT/PATCH/DELETE) are
+ *     automatically checked unless `skipCsrf` is set.
+ *  2. **requestId** — extracted from `x-request-id` header or generated.
+ *  3. **correlationId** — extracted from `x-correlation-id` header or generated.
+ *  4. **Structured error handling** — `ApiError` → standard JSON body.
+ *  5. **Error classification** — operational / programmer / infrastructure.
+ *  6. **Sentry capture** — with domain, requestId, correlationId, classification.
+ *  7. **x-request-id + x-correlation-id** headers attached to every response.
  *
  * Usage:
  *   export const POST = withHandler(async (req, { requestId, correlationId }) => { ... });
+ *   export const GET = withHandler(handler, 'checkout', { skipCsrf: true });
  */
-export function withHandler(handler: RouteHandler, domain?: string) {
+
+interface HandlerOptions {
+  /** Skip automatic CSRF origin validation (e.g. for webhooks). */
+  skipCsrf?: boolean;
+}
+
+export function withHandler(handler: RouteHandler, domain?: string, options?: HandlerOptions) {
   return async (req: NextRequest): Promise<NextResponse> => {
     const requestId = getRequestId(req);
     const correlationId = extractCorrelationId(req);
@@ -53,6 +63,16 @@ export function withHandler(handler: RouteHandler, domain?: string) {
     });
 
     try {
+      // Auto-CSRF: validate origin on mutation methods unless opted out
+      const mutationMethods = new Set(['POST', 'PUT', 'PATCH', 'DELETE']);
+      if (!options?.skipCsrf && mutationMethods.has(req.method)) {
+        const csrfError = validateOrigin(req);
+        if (csrfError) {
+          log.warn('api.csrf_rejected', { method: req.method });
+          return csrfError;
+        }
+      }
+
       const res = await handler(req, { requestId, correlationId });
       res.headers.set('x-request-id', requestId);
       res.headers.set('x-correlation-id', correlationId);

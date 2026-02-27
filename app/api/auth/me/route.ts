@@ -1,6 +1,10 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabasePublicEnv } from '@/lib/supabase/env';
+import { validateOrigin } from '@/lib/security';
+import { redisRateLimit } from '@/lib/redis';
+import { getClientIP } from '@/lib/rate-limit';
+import { logger } from '@/lib/logger';
 
 /**
  * GET /api/auth/me
@@ -10,8 +14,30 @@ import { getSupabasePublicEnv } from '@/lib/supabase/env';
  * the httpOnly session cookies set by server actions, so the header
  * component falls back to this endpoint to retrieve user state from the
  * server where cookies are accessible.
+ *
+ * Security:
+ *  - CSRF origin validation
+ *  - Rate limiting (20/min/IP)
+ *  - Cache-Control: private, no-store
+ *  - Sensitive fields stripped from user object
+ *  - Session validated via getUser() (not getSession — avoids stale JWTs)
  */
 export async function GET(request: NextRequest) {
+  // CSRF
+  const originError = validateOrigin(request);
+  if (originError) return originError;
+
+  // Rate limit: 20 requests per minute per IP
+  const ip = getClientIP(request);
+  const rl = await redisRateLimit(`auth-me:${ip}`, { maxRequests: 20, windowSizeSeconds: 60 });
+  if (!rl.success) {
+    logger.warn('auth_me.rate_limited', { ip });
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      { status: 429, headers: { 'Retry-After': '60', 'Cache-Control': 'private, no-store' } },
+    );
+  }
+
   const { url, anonKey } = getSupabasePublicEnv();
 
   const supabase = createServerClient(url, anonKey, {
@@ -28,10 +54,12 @@ export async function GET(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const headers = { 'Cache-Control': 'private, no-store' };
+
   if (!user) {
     return NextResponse.json(
       { user: null, profile: null, loyalty: null },
-      { status: 200 },
+      { status: 200, headers },
     );
   }
 
@@ -48,9 +76,23 @@ export async function GET(request: NextRequest) {
       .maybeSingle(),
   ]);
 
-  return NextResponse.json({
-    user,
-    profile: profileResult.data ?? null,
-    loyalty: loyaltyResult.data ?? null,
-  });
+  // Strip sensitive fields — only return what the frontend needs
+  const safeUser = {
+    id: user.id,
+    email: user.email,
+    user_metadata: {
+      full_name: user.user_metadata?.full_name ?? null,
+      name: user.user_metadata?.name ?? null,
+      avatar_url: user.user_metadata?.avatar_url ?? null,
+    },
+  };
+
+  return NextResponse.json(
+    {
+      user: safeUser,
+      profile: profileResult.data ?? null,
+      loyalty: loyaltyResult.data ?? null,
+    },
+    { headers },
+  );
 }

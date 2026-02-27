@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { env } from '@/lib/env';
-import { rateLimit } from '@/lib/rate-limit';
+import { redisRateLimit } from '@/lib/redis';
 import { logger } from '@/lib/logger';
 import { E_AUTH_RATE_LIMITED } from '@/lib/error-codes';
 import {
@@ -25,13 +25,9 @@ async function getActionIP(): Promise<string> {
     ?? '127.0.0.1';
 }
 
-function checkAuthRateLimit(action: string, ip: string): AuthResult | null {
-  if (process.env.NODE_ENV !== 'production') {
-    return null;
-  }
-
-  // 10 attempts per minute per IP per action
-  const result = rateLimit(`auth:${action}:${ip}`, { maxRequests: 10, windowSizeSeconds: 60 });
+async function checkAuthRateLimit(action: string, ip: string): Promise<AuthResult | null> {
+  // Rate limiting runs in ALL environments (Redis-backed, with in-memory fallback)
+  const result = await redisRateLimit(`auth:${action}:${ip}`, { maxRequests: 10, windowSizeSeconds: 60 });
   if (!result.success) {
     logger.warn('auth.rate_limited', { code: E_AUTH_RATE_LIMITED, action, ip, remaining: result.remaining });
     return { success: false, error: 'Too many attempts. Please try again later.' };
@@ -47,7 +43,7 @@ export interface AuthResult {
 
 export async function signIn(formData: FormData): Promise<AuthResult> {
   const ip = await getActionIP();
-  const limited = checkAuthRateLimit('signIn', ip);
+  const limited = await checkAuthRateLimit('signIn', ip);
   if (limited) return limited;
 
   const parsed = parseBody(signInSchema, {
@@ -57,7 +53,7 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   });
   if (!parsed.success) return { success: false, error: parsed.error };
 
-  const { email, password, locale } = parsed.data;
+  const { email, password } = parsed.data;
 
   const supabase = await createClient();
 
@@ -67,7 +63,14 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    logger.warn('auth.signin_failed', { email, error: error.message });
+
+    const friendlyErrors: Record<string, string> = {
+      'Invalid login credentials': 'Invalid email or password.',
+      'Email not confirmed': 'Please verify your email before logging in.',
+      'Invalid Refresh Token: Refresh Token Not Found': 'Session expired. Please log in again.',
+    };
+    return { success: false, error: friendlyErrors[error.message] ?? 'Sign in failed. Please try again.' };
   }
 
   revalidatePath('/', 'layout');
@@ -76,7 +79,7 @@ export async function signIn(formData: FormData): Promise<AuthResult> {
 
 export async function signUp(formData: FormData): Promise<AuthResult> {
   const ip = await getActionIP();
-  const limited = checkAuthRateLimit('signUp', ip);
+  const limited = await checkAuthRateLimit('signUp', ip);
   if (limited) return limited;
 
   const parsed = parseBody(signUpSchema, {
@@ -103,45 +106,23 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
   });
 
   if (error) {
-    if (process.env.NODE_ENV !== 'production' && error.message === 'email rate limit exceeded') {
-      return {
-        success: false,
-        error: 'Local dev: Supabase sign-up limit reached. Use a different test email (e.g. test+123@example.com).',
-      };
-    }
+    // Log original error server-side for debugging
+    logger.warn('auth.signup_failed', { email, error: error.message });
 
-    // Map Supabase error messages to user-friendly ones
+    // Map ALL Supabase errors to safe user-facing messages
     const friendlyErrors: Record<string, string> = {
       'email rate limit exceeded': 'Too many sign-up attempts. Please wait a few minutes and try again.',
       'User already registered': 'An account with this email already exists. Try signing in instead.',
+      'Password should be at least 6 characters': 'Password must be at least 6 characters.',
+      'Unable to validate email address: invalid format': 'Please enter a valid email address.',
+      'Signup requires a valid password': 'Please enter a valid password.',
     };
-    return { success: false, error: friendlyErrors[error.message] ?? error.message };
+    return { success: false, error: friendlyErrors[error.message] ?? 'Sign up failed. Please try again.' };
   }
 
-  // Create profile in profiles table
-  if (data.user) {
-    await supabase.from('profiles').upsert({
-      id: data.user.id,
-      email: data.user.email,
-      full_name: fullName,
-    });
-
-    // Create initial loyalty points
-    await supabase.from('loyalty_points').insert({
-      user_id: data.user.id,
-      total_points: 0,
-      lifetime_points: 0,
-      tier: 'bronze',
-    });
-
-    // Create referral code
-    const referralCode = `REF-${data.user.id.substring(0, 8).toUpperCase()}`;
-    await supabase.from('referral_codes').insert({
-      user_id: data.user.id,
-      code: referralCode,
-      reward_points: 100,
-    });
-  }
+  // Profile, loyalty_points, and referral_codes are now created automatically
+  // by the handle_new_user() DB trigger (SECURITY DEFINER, idempotent).
+  // No manual inserts needed here.
 
   // If Supabase returned a session, the user is auto-logged-in
   // (email confirmation disabled or auto-confirmed).
@@ -157,6 +138,7 @@ export async function signUp(formData: FormData): Promise<AuthResult> {
     maxAge: 60,          // 1 minute — plenty of time to read it
     httpOnly: false,     // must be readable from JS
     sameSite: 'lax',
+    secure: env.isProduction,
   });
 
   revalidatePath('/', 'layout');
@@ -172,7 +154,7 @@ export async function signOut(): Promise<void> {
 
 export async function forgotPassword(formData: FormData): Promise<AuthResult> {
   const ip = await getActionIP();
-  const limited = checkAuthRateLimit('forgotPassword', ip);
+  const limited = await checkAuthRateLimit('forgotPassword', ip);
   if (limited) return limited;
 
   const parsed = parseBody(forgotPasswordSchema, {
@@ -190,7 +172,8 @@ export async function forgotPassword(formData: FormData): Promise<AuthResult> {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    logger.warn('auth.forgot_password_failed', { email, error: error.message });
+    // Don't reveal whether the email exists — always return success
   }
 
   return { success: true };
@@ -212,7 +195,8 @@ export async function resetPassword(formData: FormData): Promise<AuthResult> {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    logger.warn('auth.reset_password_failed', { error: error.message });
+    return { success: false, error: 'Failed to reset password. Please try again.' };
   }
 
   revalidatePath('/', 'layout');
@@ -247,7 +231,8 @@ export async function updateProfile(formData: FormData): Promise<AuthResult> {
     .eq('id', user.id);
 
   if (error) {
-    return { success: false, error: error.message };
+    logger.warn('auth.update_profile_failed', { userId: user.id, error: error.message });
+    return { success: false, error: 'Failed to update profile. Please try again.' };
   }
 
   revalidatePath('/', 'layout');
@@ -265,7 +250,8 @@ export async function signInWithGoogle(locale: string = 'en') {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    logger.warn('auth.google_oauth_failed', { error: error.message });
+    return { success: false, error: 'Google sign-in failed. Please try again.' };
   }
 
   if (data.url) {
@@ -284,7 +270,8 @@ export async function signInWithGithub(locale: string = 'en') {
   });
 
   if (error) {
-    return { success: false, error: error.message };
+    logger.warn('auth.github_oauth_failed', { error: error.message });
+    return { success: false, error: 'GitHub sign-in failed. Please try again.' };
   }
 
   if (data.url) {
