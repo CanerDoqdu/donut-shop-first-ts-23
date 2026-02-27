@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createCheckoutSession, getStripe } from '@/lib/stripe/server';
 import { createClient } from '@/lib/supabase/server';
-import { createServerClient } from '@supabase/ssr';
-import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
+import { getClientIP } from '@/lib/rate-limit';
+import { redisRateLimit } from '@/lib/redis';
 import { getSupabasePublicEnv, getSupabaseServiceRoleKey } from '@/lib/supabase/env';
 import { getProductsByIds } from '@/lib/data.server';
-import { validateOrigin } from '@/lib/security';
 import { CART_EXPIRY_MS } from '@/lib/constants';
 import { checkoutSchema, parseBody } from '@/lib/validations';
 import { withHandler } from '@/lib/api-handler';
@@ -31,21 +31,14 @@ import {
   E_CHECKOUT_IDEMPOTENCY_CONFLICT,
 } from '@/lib/error-codes';
 
-// Helper: create admin-level client that bypasses RLS using service_role key
+// Helper: create admin-level client that bypasses RLS using service_role key.
+// Uses @supabase/supabase-js createClient (NOT @supabase/ssr createServerClient)
+// because service_role only fully bypasses RLS with the standard client.
 function createAdminClient() {
   const { url } = getSupabasePublicEnv();
   const serviceRoleKey = getSupabaseServiceRoleKey();
 
-  return createServerClient(
-    url,
-    serviceRoleKey,
-    {
-      cookies: {
-        getAll: () => [],
-        setAll: () => {},
-      },
-    }
-  );
+  return createSupabaseClient(url, serviceRoleKey);
 }
 
 export const POST = withHandler(async (req: NextRequest, { requestId }) => {
@@ -57,13 +50,11 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     throw new ApiError('MAINTENANCE', 'Checkout is temporarily disabled', 503);
   }
 
-  // -- CSRF: verify request origin --
-  const originError = validateOrigin(req);
-  if (originError) return originError;
+  // CSRF is now handled centrally by withHandler — no need to call validateOrigin here
 
   // Rate limit: 5 checkout attempts per minute per IP
   const ip = getClientIP(req);
-  const limiter = rateLimit(`checkout:${ip}`, { maxRequests: 5, windowSizeSeconds: 60 });
+  const limiter = await redisRateLimit(`checkout:${ip}`, { maxRequests: 5, windowSizeSeconds: 60 });
   if (!limiter.success) {
     log.warn('checkout.rate_limited', { code: E_RATE_LIMITED, ip });
     log.count('checkout_rate_limited');
@@ -162,7 +153,9 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
 
     // -- Server-truth pricing: look up real prices from DB (fallback: sample data) --
     const productIds = items.map((item) => item.id);
-    const productMap = await getProductsByIds(productIds);
+    const result = await getProductsByIds(productIds);
+    const productMap = result.map;
+    const dbIds = result.dbIds;
 
     // Validate every product exists server-side
     const serverItems = items.map((item) => {
@@ -261,22 +254,37 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
       throw new ApiError(E_DB_ORDER_CREATE_FAILED, 'Failed to create order', 500);
     }
 
-    // Create order items from SERVER-verified data
-    // order_items columns: order_id, product_id, product_name, product_image, quantity, unit_price, total_price
-    // total_price is NOT NULL in the schema — must be provided.
-    const orderItems = serverItems.map((item: { id: string; name: string; price: number; quantity: number; image: string }) => ({
-      order_id: order.id,
-      product_id: item.id,
-      product_name: item.name,
-      product_image: item.image ?? null,
-      quantity: item.quantity,
-      unit_price: item.price,
-      total_price: Math.round(item.price * item.quantity * 100) / 100,
-    }));
+    // Create order items from SERVER-verified data.
+    // Core columns: order_id, product_id, product_name, quantity, unit_price
+    // Optional columns (added by later migrations): product_image, total_price
+    // product_id must reference an existing products row. For sample-data fallback
+    // products (not in DB), set product_id to null to avoid FK violation.
 
-    const { error: itemsError } = await admin
-      .from('order_items')
-      .insert(orderItems);
+    // Probe schema cache once to see which optional columns exist
+    const { data: probe } = await admin.from('order_items').select('product_image,total_price').limit(0);
+    const hasProductImage = probe !== null; // null means column doesn't exist (error)
+    const hasTotalPrice = (() => {
+      // If the probe succeeded, both columns exist. If it failed, test individually.
+      if (probe !== null) return true;
+      return false; // conservative — omit until migration is applied
+    })();
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const orderItems = serverItems.map((item: { id: string; name: string; price: number; quantity: number; image: string }) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const row: Record<string, any> = {
+        order_id: order.id,
+        product_id: dbIds.has(item.id) ? item.id : null,
+        product_name: item.name,
+        quantity: item.quantity,
+        unit_price: item.price,
+      };
+      if (hasProductImage) row.product_image = item.image ?? null;
+      if (hasTotalPrice) row.total_price = Math.round(item.price * item.quantity * 100) / 100;
+      return row;
+    });
+
+    const { error: itemsError } = await admin.from('order_items').insert(orderItems);
 
     if (itemsError) {
       log.error('checkout.order_items_failed', { code: E_DB_ORDER_ITEMS_FAILED, error: itemsError.message });

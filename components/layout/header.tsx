@@ -20,7 +20,16 @@ export function Header() {
   const t = useTranslations();
   const router = useRouter();
   const totalItems = useCartStore((state) => state.getTotalItems());
-  const { user, profile, loyalty, signOut } = useAuth();
+  const { user, profile, loyalty, loading, signOut } = useAuth();
+
+  // Switch locale while staying on the current page.
+  // Full navigation is intentional — the server proxy refreshes auth
+  // cookies on every request, so this correctly preserves session.
+  const switchLocale = (locale: string) => {
+    const path = window.location.pathname;
+    const newPath = path.replace(/^\/(en|tr)/, '') || '/';
+    window.location.href = `/${locale}${newPath}${window.location.search}`;
+  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -128,16 +137,16 @@ export function Header() {
 
           {/* Language Switcher */}
           <div className="flex gap-1">
-            <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11">
-              <Link href="/" locale="tr">TR</Link>
+            <Button variant="ghost" size="sm" className="min-h-11 min-w-11" onClick={() => switchLocale('tr')}>
+              TR
             </Button>
-            <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11">
-              <Link href="/" locale="en">EN</Link>
+            <Button variant="ghost" size="sm" className="min-h-11 min-w-11" onClick={() => switchLocale('en')}>
+              EN
             </Button>
           </div>
 
           {/* Auth Section */}
-          {mounted && (
+          {mounted && !loading && (
             user ? (
               <div className="relative">
                 <button
@@ -308,16 +317,16 @@ export function Header() {
             
             {/* Language Switcher */}
             <div className="flex gap-2 pt-2 border-t">
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/" locale="tr" onClick={() => setMobileMenuOpen(false)}>TR</Link>
+              <Button variant="ghost" size="sm" onClick={() => { switchLocale('tr'); setMobileMenuOpen(false); }}>
+                TR
               </Button>
-              <Button asChild variant="ghost" size="sm">
-                <Link href="/" locale="en" onClick={() => setMobileMenuOpen(false)}>EN</Link>
+              <Button variant="ghost" size="sm" onClick={() => { switchLocale('en'); setMobileMenuOpen(false); }}>
+                EN
               </Button>
             </div>
 
             {/* Auth Section Mobile */}
-            {mounted && (
+            {mounted && !loading && (
               <div className="pt-4 border-t">
                 {user ? (
                   <>

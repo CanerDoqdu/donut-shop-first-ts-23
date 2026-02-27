@@ -3,63 +3,73 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { routing } from './i18n/routing';
 import { detectLocaleFromPath, isProtectedPath, isAdminPath } from '@/lib/middleware';
-import { logger } from '@/lib/logger';
-import { getSupabasePublicEnv } from '@/lib/supabase/env';
 
 const intlMiddleware = createMiddleware(routing);
 
+/**
+ * Helper: copy all Supabase Set-Cookie headers onto another response.
+ * This keeps auth tokens in sync when we return a redirect or an intl response.
+ */
+function forwardAuthCookies(
+  source: NextResponse,
+  target: NextResponse,
+): void {
+  source.cookies.getAll().forEach((cookie) => {
+    target.cookies.set(cookie.name, cookie.value, cookie);
+  });
+}
+
 export async function proxy(request: NextRequest) {
-  // ── Generate / forward x-request-id ──
-  const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
+  const requestId =
+    request.headers.get('x-request-id') ?? crypto.randomUUID();
 
-  // Create a response object to modify
-  const response = intlMiddleware(request);
+  // -- 1. Refresh Supabase auth session --
+  // Following the official Supabase SSR pattern: create a mutable response
+  // that gets recreated inside setAll so the *modified* request (with fresh
+  // tokens) is forwarded to server-side rendering.
+  let supabaseResponse = NextResponse.next({ request });
 
-  // Attach request-id to every response
-  response.headers.set('x-request-id', requestId);
-
-  const { url, anonKey } = getSupabasePublicEnv();
-  
-  // Create Supabase client for session refresh
   const supabase = createServerClient(
-    url,
-    anonKey,
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
         getAll() {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
+          // Update the request so downstream code sees fresh values
           cookiesToSet.forEach(({ name, value }) =>
-            request.cookies.set(name, value)
+            request.cookies.set(name, value),
           );
-          // Set cookies on the existing intl response instead of replacing it
-          // Pass Supabase cookie options through unchanged (httpOnly, Secure, SameSite)
+          // Recreate response with the modified request (critical for SSR)
+          supabaseResponse = NextResponse.next({ request });
+          // Persist auth cookies on the response -> browser
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            supabaseResponse.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
-  // Refresh session and get user (single call)
-  const { data: { user } } = await supabase.auth.getUser();
+  // IMPORTANT: do NOT add code between createServerClient and getUser().
+  // A single extra await here can cause random session loss.
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  // -- 2. Auth guards (run before intl routing) --
   if (isProtectedPath(request) && !user) {
-    // Determine locale from pathname
     const locale = detectLocaleFromPath(request.nextUrl.pathname);
     const url = request.nextUrl.clone();
     url.pathname = `/${locale}/login`;
     url.searchParams.set('redirect', request.nextUrl.pathname);
-    logger.warn('Unauthenticated user redirected from protected route', {
-      path: request.nextUrl.pathname,
-      locale,
-    });
-    return NextResponse.redirect(url);
+    const redirect = NextResponse.redirect(url);
+    forwardAuthCookies(supabaseResponse, redirect);
+    return redirect;
   }
 
-  // ── Admin RBAC: server-side guard for /admin routes ──
   if (isAdminPath(request) && user) {
     const { data: adminRecord } = await supabase
       .from('admin_users')
@@ -69,25 +79,24 @@ export async function proxy(request: NextRequest) {
 
     if (!adminRecord) {
       const locale = detectLocaleFromPath(request.nextUrl.pathname);
-      logger.warn('Non-admin user blocked from admin route', {
-        userId: user.id,
-        path: request.nextUrl.pathname,
-      });
       const url = request.nextUrl.clone();
       url.pathname = `/${locale}`;
-      return NextResponse.redirect(url);
+      const redirect = NextResponse.redirect(url);
+      forwardAuthCookies(supabaseResponse, redirect);
+      return redirect;
     }
   }
 
-  // ── Request logging ──
-  logger.info('request', {
-    requestId,
-    method: request.method,
-    path: request.nextUrl.pathname,
-    userId: user?.id ?? null,
-  });
+  // -- 3. Internationalisation routing --
+  const intlResponse = intlMiddleware(request);
 
-  return response;
+  // -- 4. Merge Supabase cookies into the intl response --
+  forwardAuthCookies(supabaseResponse, intlResponse);
+
+  // Attach request-id for observability
+  intlResponse.headers.set('x-request-id', requestId);
+
+  return intlResponse;
 }
 
 export const config = {

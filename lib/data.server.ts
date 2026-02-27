@@ -27,10 +27,13 @@ export async function getProductById(id: string): Promise<Product | undefined> {
 /**
  * Fetch multiple products by IDs.
  * Tries Supabase first, falls back to sample data.
+ * Returns both the product map and the set of IDs that exist in the DB
+ * (so callers can avoid inserting FK references for sample-only products).
  * SERVER-ONLY — never import this from client components.
  */
-export async function getProductsByIds(ids: string[]): Promise<Map<string, Product>> {
+export async function getProductsByIds(ids: string[]): Promise<{ map: Map<string, Product>; dbIds: Set<string> }> {
   const map = new Map<string, Product>();
+  const dbIds = new Set<string>();
   try {
     const supabase = await createClient();
     const { data, error } = await supabase
@@ -40,14 +43,18 @@ export async function getProductsByIds(ids: string[]): Promise<Map<string, Produ
     if (!error && data && data.length > 0) {
       for (const p of data as Product[]) {
         map.set(p.id, p);
+        dbIds.add(p.id);
       }
-      return map;
     }
   } catch {
     // Fallback to sample data
   }
-  for (const p of sampleProducts) {
-    if (ids.includes(p.id)) map.set(p.id, p);
+  // Fill in any missing products from sample data
+  for (const id of ids) {
+    if (!map.has(id)) {
+      const sample = sampleProducts.find(p => p.id === id);
+      if (sample) map.set(sample.id, sample);
+    }
   }
-  return map;
+  return { map, dbIds };
 }

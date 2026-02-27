@@ -28,16 +28,31 @@ vi.mock('@/lib/env', () => ({
     NEXT_PUBLIC_SITE_URL: 'http://localhost:3000',
     SUPABASE_URL: 'http://localhost:54321',
     SUPABASE_SERVICE_ROLE_KEY: 'test-key',
+    isProduction: false,
+    isDevelopment: true,
   },
 }));
 
-// vi.hoisted ensures mockRateLimit is available when the vi.mock factory runs
-const mockRateLimit = vi.hoisted(() =>
-  vi.fn().mockReturnValue({ success: true, remaining: 4, reset: Date.now() + 60000 })
+vi.mock('@/lib/logger', () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+// vi.hoisted ensures mockRedisRateLimit is available when the vi.mock factory runs
+const mockRedisRateLimit = vi.hoisted(() =>
+  vi.fn().mockResolvedValue({ success: true, remaining: 4, reset: Date.now() + 60000 })
 );
 
+vi.mock('@/lib/redis', () => ({
+  redisRateLimit: mockRedisRateLimit,
+  cache: { get: vi.fn().mockResolvedValue(null), set: vi.fn() },
+}));
+
 vi.mock('@/lib/rate-limit', () => ({
-  rateLimit: mockRateLimit,
   getClientIP: vi.fn().mockReturnValue('127.0.0.1'),
 }));
 
@@ -48,7 +63,12 @@ const mockSupabaseAuth = vi.hoisted(() => ({
   signOut: vi.fn(),
   resetPasswordForEmail: vi.fn(),
   updateUser: vi.fn(),
+  signInWithOAuth: vi.fn(),
+  getUser: vi.fn().mockResolvedValue({ data: { user: { id: 'user-1', email: 'user@example.com' } }, error: null }),
 }));
+
+// Hoisted mock for the profiles.update().eq() chain
+const mockDbUpdate = vi.hoisted(() => vi.fn().mockResolvedValue({ error: null }));
 
 vi.mock('@/lib/supabase/server', () => ({
   createClient: vi.fn().mockResolvedValue({
@@ -56,6 +76,7 @@ vi.mock('@/lib/supabase/server', () => ({
     from: vi.fn().mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      update: vi.fn().mockReturnValue({ eq: mockDbUpdate }),
       maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
       upsert: vi.fn().mockResolvedValue({ error: null }),
       insert: vi.fn().mockResolvedValue({ error: null }),
@@ -63,15 +84,28 @@ vi.mock('@/lib/supabase/server', () => ({
   }),
 }));
 
-import { signIn, signUp, forgotPassword } from '@/lib/auth/actions';
+import { signIn, signUp, forgotPassword, resetPassword, updateProfile, signInWithGoogle, signInWithGithub } from '@/lib/auth/actions';
 
 describe('auth/actions', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRateLimit.mockReturnValue({ success: true, remaining: 4, reset: Date.now() + 60000 });
+    mockRedisRateLimit.mockResolvedValue({ success: true, remaining: 4, reset: Date.now() + 60000 });
   });
 
   describe('signIn', () => {
+    it('returns success on successful sign-in', async () => {
+      mockSupabaseAuth.signInWithPassword.mockResolvedValue({ error: null });
+
+      const fd = new FormData();
+      fd.append('email', 'user@example.com');
+      fd.append('password', 'validpassword123');
+      fd.append('locale', 'en');
+
+      const result = await signIn(fd);
+      expect(result.success).toBe(true);
+      expect(result.error).toBeUndefined();
+    });
+
     it('returns error on Supabase sign-in failure', async () => {
       mockSupabaseAuth.signInWithPassword.mockResolvedValue({
         error: { message: 'Invalid login credentials' },
@@ -84,7 +118,7 @@ describe('auth/actions', () => {
 
       const result = await signIn(fd);
       expect(result.success).toBe(false);
-      expect(result.error).toBe('Invalid login credentials');
+      expect(result.error).toBe('Invalid email or password.');
     });
 
     it('returns validation error for invalid email', async () => {
@@ -97,13 +131,9 @@ describe('auth/actions', () => {
       expect(result.success).toBe(false);
     });
 
-    it('skips rate limit in non-production (dev/test) environment', async () => {
-      // In non-production, checkAuthRateLimit returns null (bypass)
-      // so even if rateLimit mock says exhausted, the request proceeds
-      mockRateLimit.mockReturnValueOnce({ success: false, remaining: 0, reset: Date.now() + 60000 });
-      mockSupabaseAuth.signInWithPassword.mockResolvedValue({
-        error: { message: 'Invalid login credentials' },
-      });
+    it('rate limits when Redis reports exhausted', async () => {
+      // Rate limiting is now always active (Redis-backed)
+      mockRedisRateLimit.mockResolvedValueOnce({ success: false, remaining: 0, reset: Date.now() + 60000 });
 
       const fd = new FormData();
       fd.append('email', 'user@example.com');
@@ -112,8 +142,7 @@ describe('auth/actions', () => {
 
       const result = await signIn(fd);
       expect(result.success).toBe(false);
-      // Rate limit is bypassed — request reaches Supabase, which returns auth error
-      expect(result.error).toBe('Invalid login credentials');
+      expect(result.error).toBe('Too many attempts. Please try again later.');
     });
   });
 
@@ -129,7 +158,7 @@ describe('auth/actions', () => {
       expect(result.success).toBe(true);
     });
 
-    it('returns error when Supabase resetPassword fails', async () => {
+    it('always returns success regardless of error (prevents email enumeration)', async () => {
       mockSupabaseAuth.resetPasswordForEmail.mockResolvedValue({
         error: { message: 'Email not found' },
       });
@@ -139,8 +168,8 @@ describe('auth/actions', () => {
       fd.append('locale', 'en');
 
       const result = await forgotPassword(fd);
-      expect(result.success).toBe(false);
-      expect(result.error).toBe('Email not found');
+      // forgotPassword now always returns success to prevent email enumeration
+      expect(result.success).toBe(true);
     });
 
     it('returns validation error for missing email', async () => {
@@ -162,6 +191,127 @@ describe('auth/actions', () => {
 
       const result = await signUp(fd);
       expect(result.success).toBe(false);
+    });
+
+    it('returns success with session when Supabase auto-confirms user', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: { access_token: 'tok' }, user: { id: 'u1' } },
+        error: null,
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'new@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'New User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(true);
+      expect(result.needsEmailConfirmation).toBe(false);
+    });
+
+    it('returns needsEmailConfirmation when Supabase requires email confirmation', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: null, user: { id: 'u2' } },
+        error: null,
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'confirm@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'Confirm User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(true);
+      expect(result.needsEmailConfirmation).toBe(true);
+    });
+
+    it('returns friendly error for known Supabase error on sign-up', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: null, user: null },
+        error: { message: 'User already registered' },
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'existing@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'Existing User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('An account with this email already exists. Try signing in instead.');
+    });
+
+    it('returns generic error for unknown Supabase error on sign-up', async () => {
+      mockSupabaseAuth.signUp.mockResolvedValue({
+        data: { session: null, user: null },
+        error: { message: 'Some unexpected Supabase error' },
+      });
+
+      const fd = new FormData();
+      fd.append('email', 'user@example.com');
+      fd.append('password', 'ValidPass1');
+      fd.append('fullName', 'Test User');
+      fd.append('locale', 'en');
+
+      const result = await signUp(fd);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Sign up failed. Please try again.');
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('returns error when password update fails', async () => {
+      mockSupabaseAuth.updateUser.mockResolvedValue({ error: { message: 'Update failed' } });
+
+      const fd = new FormData();
+      fd.append('password', 'ValidPass1');
+      fd.append('locale', 'en');
+
+      const result = await resetPassword(fd);
+      expect(result!.success).toBe(false);
+      expect(result!.error).toBe('Failed to reset password. Please try again.');
+    });
+  });
+
+  describe('updateProfile', () => {
+    it('returns error when DB update fails', async () => {
+      mockDbUpdate.mockResolvedValueOnce({ error: { message: 'DB error' } });
+
+      const fd = new FormData();
+      fd.append('fullName', 'Test User');
+      fd.append('phone', '+1234567890');
+      fd.append('address', '123 Test St');
+
+      const result = await updateProfile(fd);
+      expect(result.success).toBe(false);
+      expect(result.error).toBe('Failed to update profile. Please try again.');
+    });
+  });
+
+  describe('signInWithGoogle', () => {
+    it('returns error when Google OAuth fails', async () => {
+      mockSupabaseAuth.signInWithOAuth.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'OAuth error' },
+      });
+
+      const result = await signInWithGoogle('en');
+      expect(result).toEqual({ success: false, error: 'Google sign-in failed. Please try again.' });
+    });
+  });
+
+  describe('signInWithGithub', () => {
+    it('returns error when GitHub OAuth fails', async () => {
+      mockSupabaseAuth.signInWithOAuth.mockResolvedValueOnce({
+        data: null,
+        error: { message: 'OAuth error' },
+      });
+
+      const result = await signInWithGithub('en');
+      expect(result).toEqual({ success: false, error: 'GitHub sign-in failed. Please try again.' });
     });
   });
 });
