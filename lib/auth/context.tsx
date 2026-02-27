@@ -39,12 +39,13 @@ const AuthContext = createContext<AuthContextType>({
   refreshLoyalty: async () => {},
 });
 
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
+export function AuthProvider({ children, initialUser = null }: { children: ReactNode; initialUser?: User | null }) {
+  const [user, setUser] = useState<User | null>(initialUser);
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
-  const [loading, setLoading] = useState(true);
+  // If we already have the user from SSR, skip the loading state entirely.
+  const [loading, setLoading] = useState(initialUser === null);
   
   const supabase = useMemo(() => createClient(), []);
 

@@ -7,6 +7,7 @@ import { Footer } from '@/components/layout/footer';
 import { PromoBanner } from '@/components/layout/promo-banner';
 import { AuthToast } from '@/components/ui/registration-toast';
 import { AuthProvider } from '@/lib/auth/context';
+import { createClient } from '@/lib/supabase/server';
 import { routing } from '@/i18n/routing';
 import { WebVitals } from '@/components/monitoring/web-vitals';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -44,6 +45,12 @@ export default async function LocaleLayout({
 
   const messages = await getMessages({ locale });
 
+  // Read auth session server-side so AuthProvider can start with loading=false.
+  // This eliminates the client-side Supabase round-trip that causes the navbar
+  // to flash empty on every page load.
+  const supabase = await createClient();
+  const { data: { user: initialUser } } = await supabase.auth.getUser();
+
   return (
     <html lang={locale} className={`${inter.variable} ${fredoka.variable}`}>
       <body className="flex min-h-screen flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
@@ -54,7 +61,7 @@ export default async function LocaleLayout({
           Skip to main content
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
-            <AuthProvider>
+            <AuthProvider initialUser={initialUser}>
             <WebVitals />
             <SpeedInsights />
             <Analytics />
