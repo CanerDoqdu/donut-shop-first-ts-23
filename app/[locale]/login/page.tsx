@@ -98,11 +98,11 @@ export default function LoginPage() {
       return;
     }
 
-    // Browser client now owns the session — onAuthStateChange fires
-    // in the header/AuthProvider automatically.
+    // Full page navigation so the server proxy runs and picks up the
+    // new auth cookies — this is required for SSR to render correctly.
     setSuccess(true);
-    router.push(`/${locale}`);
-    router.refresh();
+    const redirectTo = searchParams.get('redirect') || `/${locale}`;
+    window.location.replace(redirectTo);
   }
 
   return (
