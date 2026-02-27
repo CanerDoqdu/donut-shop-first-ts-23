@@ -8,7 +8,7 @@ import { getSupabasePublicEnv } from '@/lib/supabase/env';
 
 const intlMiddleware = createMiddleware(routing);
 
-export async function proxy(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   // ── Generate / forward x-request-id ──
   const requestId = request.headers.get('x-request-id') ?? crypto.randomUUID();
 
