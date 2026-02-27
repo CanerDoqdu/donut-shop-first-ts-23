@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { ShoppingCart, Menu, X, Crown, Gift, Package, Users, ChevronDown, User, LogOut, LogIn, UserPlus } from 'lucide-react';
 import { useState, useEffect, startTransition } from 'react';
 import { useTranslations } from 'next-intl';
-import { Link } from '@/i18n/routing';
+import { Link, usePathname } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cart-store';
@@ -21,6 +21,7 @@ export function Header() {
   const router = useRouter();
   const totalItems = useCartStore((state) => state.getTotalItems());
   const { user, profile, loyalty, signOut } = useAuth();
+  const pathname = usePathname();
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -129,10 +130,10 @@ export function Header() {
           {/* Language Switcher */}
           <div className="flex gap-1">
             <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11">
-              <Link href="/" locale="tr">TR</Link>
+              <Link href={pathname} locale="tr">TR</Link>
             </Button>
             <Button asChild variant="ghost" size="sm" className="min-h-11 min-w-11">
-              <Link href="/" locale="en">EN</Link>
+              <Link href={pathname} locale="en">EN</Link>
             </Button>
           </div>
 
@@ -309,10 +310,10 @@ export function Header() {
             {/* Language Switcher */}
             <div className="flex gap-2 pt-2 border-t">
               <Button asChild variant="ghost" size="sm">
-                <Link href="/" locale="tr" onClick={() => setMobileMenuOpen(false)}>TR</Link>
+                <Link href={pathname} locale="tr" onClick={() => setMobileMenuOpen(false)}>TR</Link>
               </Button>
               <Button asChild variant="ghost" size="sm">
-                <Link href="/" locale="en" onClick={() => setMobileMenuOpen(false)}>EN</Link>
+                <Link href={pathname} locale="en" onClick={() => setMobileMenuOpen(false)}>EN</Link>
               </Button>
             </div>
 
