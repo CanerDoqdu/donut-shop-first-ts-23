@@ -45,11 +45,22 @@ export default async function LocaleLayout({
 
   const messages = await getMessages({ locale });
 
-  // Read auth session server-side so AuthProvider can start with loading=false.
-  // This eliminates the client-side Supabase round-trip that causes the navbar
-  // to flash empty on every page load.
+  // Read auth session + profile server-side so AuthProvider starts with
+  // loading=false and profile already populated — eliminates the client-side
+  // Supabase round-trip that causes the navbar flash and account page skeleton.
   const supabase = await createClient();
   const { data: { user: initialUser } } = await supabase.auth.getUser();
+
+  // Fetch profile in parallel only when a user is logged in.
+  // Single extra DB read per layout render; negligible vs. the UX win.
+  const initialProfile = initialUser
+    ? await supabase
+        .from('profiles')
+        .select('id, email, full_name')
+        .eq('id', initialUser.id)
+        .maybeSingle()
+        .then(({ data }) => data ?? null)
+    : null;
 
   return (
     <html lang={locale} className={`${inter.variable} ${fredoka.variable}`}>
@@ -61,7 +72,7 @@ export default async function LocaleLayout({
           Skip to main content
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
-            <AuthProvider initialUser={initialUser}>
+            <AuthProvider initialUser={initialUser} initialProfile={initialProfile}>
             <WebVitals />
             <SpeedInsights />
             <Analytics />

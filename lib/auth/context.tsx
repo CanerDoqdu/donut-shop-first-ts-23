@@ -39,10 +39,32 @@ const AuthContext = createContext<AuthContextType>({
   refreshLoyalty: async () => {},
 });
 
-export function AuthProvider({ children, initialUser = null }: { children: ReactNode; initialUser?: User | null }) {
+export function AuthProvider({
+  children,
+  initialUser = null,
+  initialProfile = null,
+}: {
+  children: ReactNode;
+  initialUser?: User | null;
+  initialProfile?: { id: string; email: string | null; full_name: string | null } | null;
+}) {
   const [user, setUser] = useState<User | null>(initialUser);
   const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(
+    // Prefer the SSR-fetched profile; fall back to constructing one from
+    // user_metadata so the navbar always has a name without a client fetch.
+    initialProfile ??
+    (initialUser
+      ? {
+          id: initialUser.id,
+          email: initialUser.email ?? null,
+          full_name:
+            initialUser.user_metadata?.full_name ??
+            initialUser.user_metadata?.name ??
+            null,
+        }
+      : null)
+  );
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
   // If we already have the user from SSR, skip the loading state entirely.
   const [loading, setLoading] = useState(initialUser === null);
