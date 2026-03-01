@@ -3,6 +3,16 @@
  * Single source of truth — no magic numbers scattered in components.
  */
 
+// ─── API Versioning ──────────────────────────────────────────────
+/**
+ * Date-based API version. Attached to every response as `x-api-version`.
+ * Bump this when the response contract changes (new required fields,
+ * removed fields, status-code semantics, etc.).
+ *
+ * @see docs/API-VERSIONING.md
+ */
+export const API_VERSION = '2025-07-01';
+
 // ─── Cart ────────────────────────────────────────────────────────
 export const CART_EXPIRY_MS = 2 * 24 * 60 * 60 * 1000; // 2 days
 export const CART_STORAGE_KEY = 'donut-cart-storage';

@@ -11,6 +11,7 @@ import type { Logger } from '@/lib/logger';
 import { captureWithContext } from '@/lib/sentry';
 import { confirmReservations, releaseReservations } from '@/lib/inventory';
 import { enqueueEmail, enqueueLoyaltyPoints } from '@/lib/queue';
+import { API_VERSION } from '@/lib/constants';
 import {
   E_WEBHOOK_SIGNATURE_MISSING,
   E_WEBHOOK_SIGNATURE_INVALID,
@@ -73,7 +74,7 @@ export async function POST(request: NextRequest) {
     log.warn('webhook.maintenance_mode', { requestId });
     return NextResponse.json(
       { code: 'MAINTENANCE', message: 'Webhook processing is disabled', requestId },
-      { status: 503, headers: { 'x-request-id': requestId } },
+      { status: 503, headers: { 'x-request-id': requestId, 'x-api-version': API_VERSION } },
     );
   }
 
@@ -85,7 +86,7 @@ export async function POST(request: NextRequest) {
     log.warn('webhook.missing_signature', { code: E_WEBHOOK_SIGNATURE_MISSING, requestId });
     return NextResponse.json(
       { code: E_WEBHOOK_SIGNATURE_MISSING, message: 'Missing stripe signature', requestId },
-      { status: 400, headers: { 'x-request-id': requestId } },
+      { status: 400, headers: { 'x-request-id': requestId, 'x-api-version': API_VERSION } },
     );
   }
 
@@ -105,7 +106,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(
       { code: E_WEBHOOK_SIGNATURE_INVALID, message: 'Invalid signature', requestId },
-      { status: 400, headers: { 'x-request-id': requestId } },
+      { status: 400, headers: { 'x-request-id': requestId, 'x-api-version': API_VERSION } },
     );
   }
 
@@ -118,7 +119,7 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(
       { received: true },
-      { headers: { 'x-request-id': requestId } },
+      { headers: { 'x-request-id': requestId, 'x-api-version': API_VERSION } },
     );
   }
 
@@ -185,7 +186,7 @@ export async function POST(request: NextRequest) {
     // Return 500 so Stripe retries this event
     return NextResponse.json(
       { code: E_WEBHOOK_HANDLER_ERROR, message: 'Internal error', requestId },
-      { status: 500, headers: { 'x-request-id': requestId } },
+      { status: 500, headers: { 'x-request-id': requestId, 'x-api-version': API_VERSION } },
     );
   }
 
@@ -194,7 +195,7 @@ export async function POST(request: NextRequest) {
 
   return NextResponse.json(
     { received: true },
-    { headers: { 'x-request-id': requestId } },
+    { headers: { 'x-request-id': requestId, 'x-api-version': API_VERSION } },
   );
 }
 
