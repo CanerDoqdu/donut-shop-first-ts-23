@@ -58,9 +58,11 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
   if (!limiter.success) {
     log.warn('checkout.rate_limited', { code: E_RATE_LIMITED, ip });
     log.count('checkout_rate_limited');
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': '60' } }
+    throw new ApiError(
+      E_RATE_LIMITED,
+      'Too many requests. Please try again later.',
+      429,
+      { headers: { 'Retry-After': '60' } },
     );
   }
 

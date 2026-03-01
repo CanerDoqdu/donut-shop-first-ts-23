@@ -9,7 +9,7 @@ import { ApiError } from '@/lib/api-error';
  * Validates the standardised response contract:
  *  - Success → original response + x-request-id header
  *  - ApiError → { code, message, requestId } with correct status
- *  - Unknown error → 500 with INTERNAL_ERROR code
+ *  - Unknown error → 500 with E_INTERNAL code
  */
 
 function makeRequest(headers: Record<string, string> = {}) {
@@ -114,7 +114,7 @@ describe('withHandler — response contract', () => {
 
   // ── Unknown error path ─────────────────────────────────────
 
-  it('catches unknown errors and returns INTERNAL_ERROR 500', async () => {
+  it('catches unknown errors and returns E_INTERNAL 500', async () => {
     const handler = withHandler(async () => {
       throw new Error('unexpected crash');
     });
@@ -123,7 +123,7 @@ describe('withHandler — response contract', () => {
     const body = await res.json();
 
     expect(res.status).toBe(500);
-    expect(body.code).toBe('INTERNAL_ERROR');
+    expect(body.code).toBe('E_INTERNAL');
     expect(body.message).toBe('An unexpected error occurred');
     expect(body.requestId).toBe('rid-crash');
     expect(res.headers.get('x-request-id')).toBe('rid-crash');
@@ -146,7 +146,7 @@ describe('withHandler — response contract', () => {
     const res = await handler(makeRequest());
     expect(res.status).toBe(500);
     const body = await res.json();
-    expect(body.code).toBe('INTERNAL_ERROR');
+    expect(body.code).toBe('E_INTERNAL');
   });
 
   // ── Header propagation ─────────────────────────────────────

@@ -5,6 +5,7 @@ import { classifyError } from './error-classification';
 import { captureWithContext, addCorrelatedBreadcrumb } from './sentry';
 import { metrics } from './metrics';
 import { validateOrigin } from './security';
+import { E_INTERNAL } from './error-codes';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -135,7 +136,9 @@ export function withHandler(handler: RouteHandler, domain?: string, options?: Ha
           });
         }
 
-        const res = apiErrorResponse(err.code, err.message, err.status, requestId);
+        const res = apiErrorResponse(err.code, err.message, err.status, requestId, {
+          headers: err.headers,
+        });
         res.headers.set('x-correlation-id', correlationId);
         return res;
       }
@@ -153,7 +156,7 @@ export function withHandler(handler: RouteHandler, domain?: string, options?: Ha
       );
 
       const res = apiErrorResponse(
-        'INTERNAL_ERROR',
+        E_INTERNAL,
         'An unexpected error occurred',
         500,
         requestId,

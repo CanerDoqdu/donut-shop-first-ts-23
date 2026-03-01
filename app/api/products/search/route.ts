@@ -6,7 +6,7 @@ import { withHandler } from '@/lib/api-handler';
 import { ApiError } from '@/lib/api-error';
 import { logger } from '@/lib/logger';
 import { captureWithContext } from '@/lib/sentry';
-import { E_RATE_LIMITED, E_VALIDATION_FAILED, E_DB_QUERY_FAILED } from '@/lib/error-codes';
+import { E_RATE_LIMITED, E_VALIDATION_FAILED } from '@/lib/error-codes';
 import { sampleProducts } from '@/lib/data';
 
 /**
@@ -33,9 +33,11 @@ export const GET = withHandler(async (req: NextRequest, { requestId }) => {
   const limiter = rateLimit(`search:${ip}`, { maxRequests: 30, windowSizeSeconds: 60 });
   if (!limiter.success) {
     log.warn('search.rate_limited', { code: E_RATE_LIMITED, ip });
-    return NextResponse.json(
-      { error: 'Too many requests' },
-      { status: 429, headers: { 'Retry-After': '60' } },
+    throw new ApiError(
+      E_RATE_LIMITED,
+      'Too many requests',
+      429,
+      { headers: { 'Retry-After': '60' } },
     );
   }
 

@@ -11,6 +11,8 @@ import { moderateReview, getModerationQueue } from '@/lib/reviews';
 import type { ReviewStatus } from '@/lib/reviews';
 import { logger } from '@/lib/logger';
 import { env } from '@/lib/env';
+import { apiErrorResponse, getRequestId } from '@/lib/api-error';
+import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_VALIDATION_FAILED } from '@/lib/error-codes';
 
 async function getAdminUser() {
   const { createClient: createServerClient } = await import('@/lib/supabase/server');
@@ -30,27 +32,29 @@ async function getAdminUser() {
   return { userId: user.id, admin };
 }
 
-export async function GET(): Promise<NextResponse> {
+export async function GET(req: Request): Promise<NextResponse> {
+  const requestId = getRequestId(req);
   const adminCtx = await getAdminUser();
   if (!adminCtx) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
   }
 
   try {
     const reviews = await getModerationQueue(adminCtx.admin);
-    return NextResponse.json({ reviews, count: reviews.length });
+    return NextResponse.json({ reviews, count: reviews.length }, { headers: { 'x-request-id': requestId } });
   } catch (err) {
     logger.error('api.admin_reviews.get_error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
   }
 }
 
 export async function PATCH(req: Request): Promise<NextResponse> {
+  const requestId = getRequestId(req);
   const adminCtx = await getAdminUser();
   if (!adminCtx) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
   }
 
   try {
@@ -62,16 +66,20 @@ export async function PATCH(req: Request): Promise<NextResponse> {
     };
 
     if (!reviewId || !status) {
-      return NextResponse.json(
-        { error: 'reviewId and status are required' },
-        { status: 400 },
+      return apiErrorResponse(
+        E_VALIDATION_FAILED,
+        'reviewId and status are required',
+        400,
+        requestId,
       );
     }
 
     if (!['approved', 'rejected', 'flagged'].includes(status)) {
-      return NextResponse.json(
-        { error: 'status must be approved, rejected, or flagged' },
-        { status: 400 },
+      return apiErrorResponse(
+        E_VALIDATION_FAILED,
+        'status must be approved, rejected, or flagged',
+        400,
+        requestId,
       );
     }
 
@@ -84,14 +92,22 @@ export async function PATCH(req: Request): Promise<NextResponse> {
     );
 
     if (!result.success) {
-      return NextResponse.json({ error: result.error }, { status: 422 });
+      return apiErrorResponse(
+        E_VALIDATION_FAILED,
+        result.error ?? 'Review moderation failed',
+        422,
+        requestId,
+      );
     }
 
-    return NextResponse.json({ success: true, reviewId, newStatus: status });
+    return NextResponse.json(
+      { success: true, reviewId, newStatus: status },
+      { headers: { 'x-request-id': requestId } },
+    );
   } catch (err) {
     logger.error('api.admin_reviews.patch_error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
   }
 }

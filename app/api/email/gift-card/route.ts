@@ -39,9 +39,11 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
   if (!limiter.success) {
     log.warn('gift_card_email.rate_limited', { code: E_RATE_LIMITED, ip });
     log.count('gift_card_email_rate_limited');
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': '60' } }
+    throw new ApiError(
+      E_RATE_LIMITED,
+      'Too many requests. Please try again later.',
+      429,
+      { headers: { 'Retry-After': '60' } },
     );
   }
 

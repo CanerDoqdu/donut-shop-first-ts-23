@@ -57,9 +57,11 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
   const limiter = rateLimit(`promo:${ip}`, { maxRequests: 10, windowSizeSeconds: 60 });
   if (!limiter.success) {
     log.warn('promo.rate_limited', { code: E_RATE_LIMITED, ip });
-    return NextResponse.json(
-      { error: 'Too many requests. Please try again later.' },
-      { status: 429, headers: { 'Retry-After': '60' } },
+    throw new ApiError(
+      E_RATE_LIMITED,
+      'Too many requests. Please try again later.',
+      429,
+      { headers: { 'Retry-After': '60' } },
     );
   }
 

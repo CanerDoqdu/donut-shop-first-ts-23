@@ -15,15 +15,18 @@ import { exportUserData } from '@/lib/gdpr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { env } from '@/lib/env';
+import { apiErrorResponse, getRequestId } from '@/lib/api-error';
+import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_RATE_LIMITED } from '@/lib/error-codes';
 
 export async function POST(req: Request): Promise<NextResponse> {
+  const requestId = getRequestId(req);
   try {
     const { createClient: createServerClient } = await import('@/lib/supabase/server');
     const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
     }
 
     // Rate limit: 3 per day
@@ -34,9 +37,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     if (!rl.success) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. Max 3 exports per day.' },
-        { status: 429, headers: { 'Retry-After': '86400' } },
+      return apiErrorResponse(
+        E_RATE_LIMITED,
+        'Rate limit exceeded. Max 3 exports per day.',
+        429,
+        requestId,
+        { headers: { 'Retry-After': '86400' } },
       );
     }
 
@@ -58,6 +64,6 @@ export async function POST(req: Request): Promise<NextResponse> {
     logger.error('api.gdpr_export.error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
   }
 }

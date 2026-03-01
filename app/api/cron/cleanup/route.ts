@@ -13,12 +13,15 @@
 import { NextResponse } from 'next/server';
 import { enqueueCleanup } from '@/lib/queue';
 import { logger } from '@/lib/logger';
+import { apiErrorResponse, getRequestId } from '@/lib/api-error';
+import { E_AUTH_SESSION_MISSING, E_INTERNAL } from '@/lib/error-codes';
 
 export async function POST(req: Request): Promise<NextResponse> {
+  const requestId = getRequestId(req);
   // Verify cron secret
   const secret = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace('Bearer ', '');
   if (secret !== process.env.CRON_SECRET) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
   }
 
   try {
@@ -32,11 +35,14 @@ export async function POST(req: Request): Promise<NextResponse> {
       );
     }
 
-    return NextResponse.json({ jobId, enqueuedAt: new Date().toISOString() });
+    return NextResponse.json(
+      { jobId, enqueuedAt: new Date().toISOString() },
+      { headers: { 'x-request-id': requestId } },
+    );
   } catch (err) {
     logger.error('cron.cleanup.error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
   }
 }

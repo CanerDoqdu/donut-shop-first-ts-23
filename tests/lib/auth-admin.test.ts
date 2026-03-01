@@ -135,6 +135,10 @@ describe('isAdmin', () => {
 });
 
 describe('requireAdmin', () => {
+  const fakeReq = new Request('http://localhost/api/admin/test', {
+    headers: { 'x-request-id': 'req-admin-test' },
+  });
+
   beforeEach(() => {
     vi.clearAllMocks();
     mockCacheGet.mockResolvedValue(null);
@@ -145,27 +149,29 @@ describe('requireAdmin', () => {
   it('returns 401 NextResponse when no authenticated user', async () => {
     mockGetUser.mockResolvedValue({ data: { user: null }, error: null });
 
-    const result = await requireAdmin();
+    const result = await requireAdmin(fakeReq);
 
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(401);
+    expect((result as Response).headers.get('x-request-id')).toBe('req-admin-test');
   });
 
   it('returns 403 NextResponse when authenticated user is not an admin', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'user@test.com' } }, error: null });
     mockMaybeSingle.mockResolvedValue({ data: null, error: null }); // not admin
 
-    const result = await requireAdmin();
+    const result = await requireAdmin(fakeReq);
 
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(403);
+    expect((result as Response).headers.get('x-request-id')).toBe('req-admin-test');
   });
 
   it('returns AdminInfo when user is a valid admin', async () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1', email: 'admin@test.com' } }, error: null });
     mockMaybeSingle.mockResolvedValue({ data: adminRow, error: null });
 
-    const result = await requireAdmin();
+    const result = await requireAdmin(fakeReq);
 
     expect(result).toEqual(adminInfo);
     expect((result as Response).status).toBeUndefined();
