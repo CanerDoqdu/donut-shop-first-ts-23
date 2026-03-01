@@ -270,18 +270,20 @@ jobs:
         run: |
           echo "Scanning for hardcoded secrets…"
           FOUND=0
+          # Exclude security-baseline files (they define/test the scan patterns, not real secrets)
+          EXCLUDES="--exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude=*security-baseline*"
           # Stripe secret keys
-          if grep -rn 'sk_live_[A-Za-z0-9]\{20,\}' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git .; then
+          if grep -rn 'sk_live_[A-Za-z0-9]\{20,\}' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' $EXCLUDES .; then
             echo "::error::Found Stripe live secret key in source"
             FOUND=1
           fi
           # PEM private keys
-          if grep -rn 'BEGIN.*PRIVATE KEY' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.pem' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git .; then
+          if grep -rn 'BEGIN.*PRIVATE KEY' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.pem' $EXCLUDES .; then
             echo "::error::Found PEM private key in source"
             FOUND=1
           fi
           # Webhook secrets (live)
-          if grep -rn 'whsec_[A-Za-z0-9]\{20,\}' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git .; then
+          if grep -rn 'whsec_[A-Za-z0-9]\{20,\}' --include='*.ts' --include='*.tsx' --include='*.js' $EXCLUDES .; then
             echo "::error::Found Stripe webhook secret in source"
             FOUND=1
           fi
