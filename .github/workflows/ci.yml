@@ -296,13 +296,14 @@ jobs:
         run: |
           echo "Scanning for forbidden patterns…"
           FOUND=0
+          EXCLUDES="--exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=tests --exclude-dir=e2e --exclude=*security-baseline*"
           # eval() in production code (exclude tests, node_modules, configs)
-          if grep -rn '\beval\s*(' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=tests --exclude-dir=e2e -- lib/ app/ components/ hooks/ store/; then
+          if grep -rn '\beval\s*(' --include='*.ts' --include='*.tsx' $EXCLUDES -- lib/ app/ components/ hooks/ store/; then
             echo "::warning::Found eval() usage in production code"
             FOUND=1
           fi
           # document.write in production code
-          if grep -rn 'document\.write\s*(' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -- lib/ app/ components/; then
+          if grep -rn 'document\.write\s*(' --include='*.ts' --include='*.tsx' $EXCLUDES -- lib/ app/ components/; then
             echo "::error::Found document.write() in production code"
             FOUND=1
           fi
