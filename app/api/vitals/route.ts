@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { metrics } from '@/lib/metrics';
+import { apiErrorResponse, getRequestId } from '@/lib/api-error';
+import { E_INTERNAL, E_VALIDATION_FAILED } from '@/lib/error-codes';
 
 /** Allowed Web Vital metric names. */
 const VALID_VITALS = new Set(['LCP', 'FID', 'CLS', 'INP', 'FCP', 'TTFB']);
@@ -12,16 +14,18 @@ const VALID_VITALS = new Set(['LCP', 'FID', 'CLS', 'INP', 'FCP', 'TTFB']);
  * Records metrics in the in-memory MetricsCollector and emits structured logs.
  */
 export async function POST(request: Request) {
+  const requestId = getRequestId(request);
+
   try {
     const body = await request.json();
 
     // Validation
     if (!body.name || typeof body.value !== 'number') {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 });
+      return apiErrorResponse(E_VALIDATION_FAILED, 'Invalid payload', 400, requestId);
     }
 
     if (!VALID_VITALS.has(body.name)) {
-      return NextResponse.json({ error: 'Unknown vital' }, { status: 400 });
+      return apiErrorResponse(E_VALIDATION_FAILED, 'Unknown vital', 400, requestId);
     }
 
     const route = typeof body.route === 'string' ? body.route : 'unknown';
@@ -38,11 +42,8 @@ export async function POST(request: Request) {
       route,
     });
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true }, { headers: { 'x-request-id': requestId } });
   } catch {
-    return NextResponse.json(
-      { error: 'Failed to process vitals' },
-      { status: 500 }
-    );
+    return apiErrorResponse(E_INTERNAL, 'Failed to process vitals', 500, requestId);
   }
 }

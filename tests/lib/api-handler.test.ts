@@ -182,4 +182,30 @@ describe('withHandler — metrics integration', () => {
     expect(res.status).toBe(200);
     expect(mockValidateOrigin).not.toHaveBeenCalled();
   });
+
+  it('forwards ApiError.headers to the error response (e.g. Retry-After)', async () => {
+    const handler = withHandler(async () => {
+      throw new ApiError('E_RATE_LIMITED', 'Slow down', 429, {
+        headers: { 'Retry-After': '60' },
+      });
+    });
+
+    const res = await handler(makeRequest('/api/products', 'GET'));
+    expect(res.status).toBe(429);
+    expect(res.headers.get('Retry-After')).toBe('60');
+    expect(res.headers.get('x-request-id')).toBeTruthy();
+  });
+
+  it('uses E_INTERNAL error code for unhandled (non-ApiError) exceptions', async () => {
+    const handler = withHandler(async () => {
+      throw new TypeError('unexpected null reference');
+    });
+
+    const res = await handler(makeRequest('/api/products', 'GET'));
+    expect(res.status).toBe(500);
+    const body = await res.json();
+    expect(body.code).toBe('E_INTERNAL');
+    expect(body.message).toBe('An unexpected error occurred');
+    expect(body.requestId).toBeTruthy();
+  });
 });

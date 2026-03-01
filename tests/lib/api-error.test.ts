@@ -15,6 +15,18 @@ describe('ApiError', () => {
     const err = new ApiError('INTERNAL', 'Something broke');
     expect(err.status).toBe(500);
   });
+
+  it('stores optional headers for response forwarding', () => {
+    const err = new ApiError('E_RATE_LIMITED', 'Slow down', 429, {
+      headers: { 'Retry-After': '60' },
+    });
+    expect(err.headers).toEqual({ 'Retry-After': '60' });
+  });
+
+  it('headers default to undefined', () => {
+    const err = new ApiError('E_INTERNAL', 'Oops', 500);
+    expect(err.headers).toBeUndefined();
+  });
 });
 
 describe('getRequestId', () => {
@@ -44,6 +56,25 @@ describe('apiErrorResponse', () => {
       code: 'VALIDATION_ERROR',
       message: 'Bad input',
       requestId: 'req-1',
+    });
+  });
+
+  it('merges headers and includes optional details', async () => {
+    const res = apiErrorResponse(
+      'RATE_LIMITED',
+      'Slow down',
+      429,
+      'req-2',
+      { headers: { 'Retry-After': '60' }, details: { limit: 30 } },
+    );
+
+    expect(res.headers.get('Retry-After')).toBe('60');
+    const body = await res.json();
+    expect(body).toEqual({
+      code: 'RATE_LIMITED',
+      message: 'Slow down',
+      requestId: 'req-2',
+      details: { limit: 30 },
     });
   });
 });

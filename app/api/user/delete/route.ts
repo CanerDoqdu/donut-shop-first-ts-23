@@ -15,8 +15,11 @@ import { deleteUserData } from '@/lib/gdpr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { env } from '@/lib/env';
+import { apiErrorResponse, getRequestId } from '@/lib/api-error';
+import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_RATE_LIMITED } from '@/lib/error-codes';
 
 export async function POST(req: Request): Promise<NextResponse> {
+  const requestId = getRequestId(req);
   try {
     // Create user-scoped client to verify auth
     const { createClient: createServerClient } = await import('@/lib/supabase/server');
@@ -24,7 +27,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
     }
 
     // Rate limit: 1 per day
@@ -35,9 +38,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     if (!rl.success) {
-      return NextResponse.json(
-        { error: 'Rate limit exceeded. You can only request deletion once per day.' },
-        { status: 429, headers: { 'Retry-After': '86400' } },
+      return apiErrorResponse(
+        E_RATE_LIMITED,
+        'Rate limit exceeded. You can only request deletion once per day.',
+        429,
+        requestId,
+        { headers: { 'Retry-After': '86400' } },
       );
     }
 
@@ -50,9 +56,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     const result = await deleteUserData(admin, user.id, ip || undefined);
 
     if (!result.success) {
-      return NextResponse.json(
-        { error: 'Deletion partially failed', details: result },
-        { status: 500 },
+      return apiErrorResponse(
+        E_INTERNAL,
+        'Deletion partially failed',
+        500,
+        requestId,
+        { details: { ...result } },
       );
     }
 
@@ -60,11 +69,11 @@ export async function POST(req: Request): Promise<NextResponse> {
       message: 'Your data has been anonymized',
       anonymizedFields: result.anonymizedFields,
       ordersAnonymized: result.ordersAnonymized,
-    });
+    }, { headers: { 'x-request-id': requestId } });
   } catch (err) {
     logger.error('api.gdpr_delete.error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
   }
 }

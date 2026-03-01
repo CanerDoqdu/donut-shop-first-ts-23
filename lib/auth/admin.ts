@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/logger';
 import { cache } from '@/lib/redis';
+import { apiErrorResponse, getRequestId } from '../api-error';
+import { E_AUTH_FORBIDDEN, E_AUTH_SESSION_MISSING } from '../error-codes';
 
 export type AdminRole = 'super_admin' | 'admin' | 'manager' | 'staff';
 
@@ -71,18 +73,19 @@ export async function isAdmin(): Promise<boolean> {
  *
  * Usage:
  * ```ts
- * const result = await requireAdmin();
+ * const result = await requireAdmin(req);
  * if (result instanceof NextResponse) return result;
  * const admin = result; // AdminInfo
  * ```
  */
-export async function requireAdmin(): Promise<AdminInfo | NextResponse> {
+export async function requireAdmin(req: Request): Promise<AdminInfo | NextResponse> {
+  const requestId = getRequestId(req);
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    logger.warn('requireAdmin: unauthenticated request');
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    logger.warn('requireAdmin: unauthenticated request', { requestId });
+    return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
   }
 
   const info = await getAdminInfo(user.id);
@@ -91,8 +94,9 @@ export async function requireAdmin(): Promise<AdminInfo | NextResponse> {
     logger.warn('requireAdmin: non-admin user attempted admin action', {
       userId: user.id,
       email: user.email,
+      requestId,
     });
-    return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    return apiErrorResponse(E_AUTH_FORBIDDEN, 'Forbidden', 403, requestId);
   }
 
   return info;

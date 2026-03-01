@@ -7,15 +7,18 @@
 
 import { NextResponse } from 'next/server';
 import { createReview, getProductReviews } from '@/lib/reviews';
-import { rateLimit, getClientIP } from '@/lib/rate-limit';
+import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
+import { apiErrorResponse, getRequestId } from '@/lib/api-error';
+import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_RATE_LIMITED, E_VALIDATION_FAILED } from '@/lib/error-codes';
 
 export async function GET(req: Request): Promise<NextResponse> {
+  const requestId = getRequestId(req);
   const { searchParams } = new URL(req.url);
   const productId = searchParams.get('productId');
 
   if (!productId) {
-    return NextResponse.json({ error: 'productId is required' }, { status: 400 });
+    return apiErrorResponse(E_VALIDATION_FAILED, 'productId is required', 400, requestId);
   }
 
   const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
@@ -28,38 +31,40 @@ export async function GET(req: Request): Promise<NextResponse> {
 
     return NextResponse.json(
       { reviews, count: reviews.length },
-      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120' } },
+      { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120', 'x-request-id': requestId } },
     );
   } catch (err) {
     logger.error('api.reviews.get_error', {
       productId,
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
   }
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
+  const requestId = getRequestId(req);
   try {
     const { createClient: createServerClient } = await import('@/lib/supabase/server');
     const supabase = await createServerClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
     }
 
     // Rate limit: 10 reviews per hour
-    const ip = getClientIP(req);
     const rl = rateLimit(`reviews:${user.id}`, {
       maxRequests: 10,
       windowSizeSeconds: 3600,
     });
 
     if (!rl.success) {
-      return NextResponse.json(
-        { error: 'Too many reviews. Please try again later.' },
-        { status: 429 },
+      return apiErrorResponse(
+        E_RATE_LIMITED,
+        'Too many reviews. Please try again later.',
+        429,
+        requestId,
       );
     }
 
@@ -68,10 +73,10 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     // Validate
     if (!productId || typeof productId !== 'string') {
-      return NextResponse.json({ error: 'productId is required' }, { status: 400 });
+      return apiErrorResponse(E_VALIDATION_FAILED, 'productId is required', 400, requestId);
     }
     if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
-      return NextResponse.json({ error: 'rating must be 1-5' }, { status: 400 });
+      return apiErrorResponse(E_VALIDATION_FAILED, 'rating must be 1-5', 400, requestId);
     }
 
     const result = await createReview(supabase, {
@@ -83,14 +88,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     if (result.error) {
-      return NextResponse.json({ error: result.error }, { status: 409 });
+      return apiErrorResponse(E_VALIDATION_FAILED, result.error, 409, requestId);
     }
 
-    return NextResponse.json({ review: result.review }, { status: 201 });
+    return NextResponse.json({ review: result.review }, { status: 201, headers: { 'x-request-id': requestId } });
   } catch (err) {
     logger.error('api.reviews.post_error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
   }
 }
