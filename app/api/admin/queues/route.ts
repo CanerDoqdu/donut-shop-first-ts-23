@@ -13,6 +13,7 @@ import { logger } from '@/lib/logger';
 import type { Queue } from 'bullmq';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL } from '@/lib/error-codes';
+import { withVersionHeader } from '@/lib/api-handler';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getQueueStats(name: string, getQueue: () => Queue<any> | null) {
@@ -42,7 +43,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   // Simple auth check — in production use proper admin middleware
   const authHeader = req.headers.get('authorization');
   if (authHeader !== `Bearer ${process.env.ADMIN_API_KEY}`) {
-    return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
+    return withVersionHeader(apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId));
   }
 
   try {
@@ -53,14 +54,14 @@ export async function GET(req: Request): Promise<NextResponse> {
       getQueueStats('dead-letter-queue', getDLQ),
     ]);
 
-    return NextResponse.json({
+    return withVersionHeader(NextResponse.json({
       timestamp: new Date().toISOString(),
       queues: { email, loyalty, cleanup, dlq },
-    }, { headers: { 'x-request-id': requestId } });
+    }, { headers: { 'x-request-id': requestId } }));
   } catch (err) {
     logger.error('admin.queues.error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
+    return withVersionHeader(apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId));
   }
 }

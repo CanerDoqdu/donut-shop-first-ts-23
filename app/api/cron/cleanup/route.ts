@@ -15,13 +15,14 @@ import { enqueueCleanup } from '@/lib/queue';
 import { logger } from '@/lib/logger';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL } from '@/lib/error-codes';
+import { withVersionHeader } from '@/lib/api-handler';
 
 export async function POST(req: Request): Promise<NextResponse> {
   const requestId = getRequestId(req);
   // Verify cron secret
   const secret = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace('Bearer ', '');
   if (secret !== process.env.CRON_SECRET) {
-    return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
+    return withVersionHeader(apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId));
   }
 
   try {
@@ -29,20 +30,20 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     if (!jobId) {
       logger.warn('cron.cleanup.queue_unavailable');
-      return NextResponse.json(
+      return withVersionHeader(NextResponse.json(
         { message: 'Queue unavailable — cleanup skipped', fallback: true },
         { status: 200 },
-      );
+      ));
     }
 
-    return NextResponse.json(
+    return withVersionHeader(NextResponse.json(
       { jobId, enqueuedAt: new Date().toISOString() },
       { headers: { 'x-request-id': requestId } },
-    );
+    ));
   } catch (err) {
     logger.error('cron.cleanup.error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
+    return withVersionHeader(apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId));
   }
 }

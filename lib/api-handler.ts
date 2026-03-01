@@ -6,6 +6,7 @@ import { captureWithContext, addCorrelatedBreadcrumb } from './sentry';
 import { metrics } from './metrics';
 import { validateOrigin } from './security';
 import { E_INTERNAL } from './error-codes';
+import { API_VERSION } from './constants';
 
 // ── Types ───────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ type RouteHandler = (
  *  4. **Structured error handling** — `ApiError` → standard JSON body.
  *  5. **Error classification** — operational / programmer / infrastructure.
  *  6. **Sentry capture** — with domain, requestId, correlationId, classification.
- *  7. **x-request-id + x-correlation-id** headers attached to every response.
+ *  7. **x-request-id + x-correlation-id + x-api-version** headers attached to every response.
  *
  * Usage:
  *   export const POST = withHandler(async (req, { requestId, correlationId }) => { ... });
@@ -77,6 +78,7 @@ export function withHandler(handler: RouteHandler, domain?: string, options?: Ha
       const res = await handler(req, { requestId, correlationId });
       res.headers.set('x-request-id', requestId);
       res.headers.set('x-correlation-id', correlationId);
+      res.headers.set('x-api-version', API_VERSION);
 
       const durationMs = elapsed();
 
@@ -140,6 +142,7 @@ export function withHandler(handler: RouteHandler, domain?: string, options?: Ha
           headers: err.headers,
         });
         res.headers.set('x-correlation-id', correlationId);
+        res.headers.set('x-api-version', API_VERSION);
         return res;
       }
 
@@ -162,7 +165,21 @@ export function withHandler(handler: RouteHandler, domain?: string, options?: Ha
         requestId,
       );
       res.headers.set('x-correlation-id', correlationId);
+      res.headers.set('x-api-version', API_VERSION);
       return res;
     }
   };
+}
+
+// -- Version header utility ------------------------------------------
+
+/**
+ * Attach the `x-api-version` response header.
+ * Use this in route handlers that don't go through `withHandler`.
+ *
+ * @example return withVersionHeader(NextResponse.json({ ok: true }));
+ */
+export function withVersionHeader<T extends NextResponse>(res: T): T {
+  res.headers.set('x-api-version', API_VERSION);
+  return res;
 }
