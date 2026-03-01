@@ -248,6 +248,67 @@ jobs:
         env:
           LHCI_GITHUB_APP_TOKEN: ${{ secrets.LHCI_GITHUB_APP_TOKEN || '' }}
 
+  # ─── Security Scan ──────────────────────────────────────────
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Dependency audit (high + critical)
+        run: npm audit --audit-level=high --omit=dev
+        continue-on-error: true
+
+      - name: Secret scan (source files)
+        run: |
+          echo "Scanning for hardcoded secrets…"
+          FOUND=0
+          # Stripe secret keys
+          if grep -rn 'sk_live_[A-Za-z0-9]\{20,\}' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git .; then
+            echo "::error::Found Stripe live secret key in source"
+            FOUND=1
+          fi
+          # PEM private keys
+          if grep -rn 'BEGIN.*PRIVATE KEY' --include='*.ts' --include='*.tsx' --include='*.js' --include='*.json' --include='*.pem' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git .; then
+            echo "::error::Found PEM private key in source"
+            FOUND=1
+          fi
+          # Webhook secrets (live)
+          if grep -rn 'whsec_[A-Za-z0-9]\{20,\}' --include='*.ts' --include='*.tsx' --include='*.js' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git .; then
+            echo "::error::Found Stripe webhook secret in source"
+            FOUND=1
+          fi
+          if [ "$FOUND" -ne 0 ]; then
+            exit 1
+          fi
+          echo "No hardcoded secrets found ✓"
+
+      - name: Forbidden pattern scan
+        run: |
+          echo "Scanning for forbidden patterns…"
+          FOUND=0
+          # eval() in production code (exclude tests, node_modules, configs)
+          if grep -rn '\beval\s*(' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git --exclude-dir=tests --exclude-dir=e2e -- lib/ app/ components/ hooks/ store/; then
+            echo "::warning::Found eval() usage in production code"
+            FOUND=1
+          fi
+          # document.write in production code
+          if grep -rn 'document\.write\s*(' --include='*.ts' --include='*.tsx' --exclude-dir=node_modules --exclude-dir=.next --exclude-dir=.git -- lib/ app/ components/; then
+            echo "::error::Found document.write() in production code"
+            FOUND=1
+          fi
+          if [ "$FOUND" -ne 0 ]; then
+            exit 1
+          fi
+          echo "No forbidden patterns found ✓"
+
   # ─── Visual Regression Tests ───────────────────────────────
   visual-regression:
     name: Visual Regression
