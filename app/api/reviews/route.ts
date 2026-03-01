@@ -11,6 +11,7 @@ import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_RATE_LIMITED, E_VALIDATION_FAILED } from '@/lib/error-codes';
+import { withVersionHeader } from '@/lib/api-handler';
 
 export async function GET(req: Request): Promise<NextResponse> {
   const requestId = getRequestId(req);
@@ -18,7 +19,7 @@ export async function GET(req: Request): Promise<NextResponse> {
   const productId = searchParams.get('productId');
 
   if (!productId) {
-    return apiErrorResponse(E_VALIDATION_FAILED, 'productId is required', 400, requestId);
+    return withVersionHeader(apiErrorResponse(E_VALIDATION_FAILED, 'productId is required', 400, requestId));
   }
 
   const limit = Math.min(parseInt(searchParams.get('limit') || '20', 10), 50);
@@ -29,16 +30,16 @@ export async function GET(req: Request): Promise<NextResponse> {
     const supabase = await createServerClient();
     const reviews = await getProductReviews(supabase, productId, limit, offset);
 
-    return NextResponse.json(
+    return withVersionHeader(NextResponse.json(
       { reviews, count: reviews.length },
       { headers: { 'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=120', 'x-request-id': requestId } },
-    );
+    ));
   } catch (err) {
     logger.error('api.reviews.get_error', {
       productId,
       error: err instanceof Error ? err.message : String(err),
     });
-    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
+    return withVersionHeader(apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId));
   }
 }
 
@@ -50,7 +51,7 @@ export async function POST(req: Request): Promise<NextResponse> {
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
     if (authError || !user) {
-      return apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId);
+      return withVersionHeader(apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId));
     }
 
     // Rate limit: 10 reviews per hour
@@ -60,12 +61,12 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     if (!rl.success) {
-      return apiErrorResponse(
+      return withVersionHeader(apiErrorResponse(
         E_RATE_LIMITED,
         'Too many reviews. Please try again later.',
         429,
         requestId,
-      );
+      ));
     }
 
     const body = await req.json();
@@ -73,10 +74,10 @@ export async function POST(req: Request): Promise<NextResponse> {
 
     // Validate
     if (!productId || typeof productId !== 'string') {
-      return apiErrorResponse(E_VALIDATION_FAILED, 'productId is required', 400, requestId);
+      return withVersionHeader(apiErrorResponse(E_VALIDATION_FAILED, 'productId is required', 400, requestId));
     }
     if (!rating || typeof rating !== 'number' || rating < 1 || rating > 5) {
-      return apiErrorResponse(E_VALIDATION_FAILED, 'rating must be 1-5', 400, requestId);
+      return withVersionHeader(apiErrorResponse(E_VALIDATION_FAILED, 'rating must be 1-5', 400, requestId));
     }
 
     const result = await createReview(supabase, {
@@ -88,14 +89,14 @@ export async function POST(req: Request): Promise<NextResponse> {
     });
 
     if (result.error) {
-      return apiErrorResponse(E_VALIDATION_FAILED, result.error, 409, requestId);
+      return withVersionHeader(apiErrorResponse(E_VALIDATION_FAILED, result.error, 409, requestId));
     }
 
-    return NextResponse.json({ review: result.review }, { status: 201, headers: { 'x-request-id': requestId } });
+    return withVersionHeader(NextResponse.json({ review: result.review }, { status: 201, headers: { 'x-request-id': requestId } }));
   } catch (err) {
     logger.error('api.reviews.post_error', {
       error: err instanceof Error ? err.message : String(err),
     });
-    return apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId);
+    return withVersionHeader(apiErrorResponse(E_INTERNAL, 'Internal error', 500, requestId));
   }
 }

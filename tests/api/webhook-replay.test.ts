@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
+import { API_VERSION } from '@/lib/constants';
 import checkoutCompleted from '@/tests/fixtures/stripe-checkout-completed.json';
 import checkoutExpired from '@/tests/fixtures/stripe-checkout-expired.json';
 import paymentFailed from '@/tests/fixtures/stripe-payment-failed.json';
@@ -128,17 +129,19 @@ describe('POST /api/webhooks/stripe — replay tests', () => {
     expect(status).toBe(200);
     expect(body.received).toBe(true);
     expect(headers.get('x-request-id')).toBe('rid-webhook-test');
+    expect(headers.get('x-api-version')).toBe(API_VERSION);
   }, 20000);
 
   // ── Maintenance mode ───────────────────────────────────────
 
   it('returns 503 MAINTENANCE when webhooks disabled', async () => {
     webhooksEnabled = false;
-    const { status, body } = await callWebhook('{}');
+    const { status, body, headers } = await callWebhook('{}');
 
     expect(status).toBe(503);
     expect(body.code).toBe('MAINTENANCE');
     expect(body).toHaveProperty('requestId');
+    expect(headers.get('x-api-version')).toBe(API_VERSION);
   });
 
   // ── Missing signature ──────────────────────────────────────
