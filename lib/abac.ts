@@ -28,6 +28,7 @@
  *   // { allowed: true, reason: 'owner' }
  */
 
+import { NextResponse } from 'next/server';
 import { logger } from './logger';
 
 // ── Types ───────────────────────────────────────────────────
@@ -255,7 +256,7 @@ export function evaluatePolicy(ctx: PolicyContext): PolicyDecision {
 export function requireAccess(
   ctx: PolicyContext,
   requestId?: string,
-): { status: 403; body: { code: string; message: string; requestId: string } } | null {
+): NextResponse | null {
   const decision = evaluatePolicy(ctx);
 
   if (!decision.allowed) {
@@ -266,14 +267,14 @@ export function requireAccess(
       reason: decision.reason,
       requestId,
     });
-    return {
-      status: 403,
-      body: {
+    return NextResponse.json(
+      {
         code: 'E_AUTH_FORBIDDEN',
         message: `Access denied: ${decision.reason}`,
         requestId: requestId ?? '',
       },
-    };
+      { status: 403 },
+    );
   }
 
   return null;

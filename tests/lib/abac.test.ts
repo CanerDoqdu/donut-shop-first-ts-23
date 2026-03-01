@@ -281,26 +281,28 @@ describe('requireAccess', () => {
     expect(result).toBeNull();
   });
 
-  it('returns 403 object when access is denied', () => {
+  it('returns NextResponse 403 when access is denied', async () => {
     const result = requireAccess(
       ctx({ resource: 'orders', action: 'read', subject: otherUser, resourceOwnerId: 'user-1' }),
       'req-2',
     );
-    expect(result).toEqual({
-      status: 403,
-      body: {
-        code: 'E_AUTH_FORBIDDEN',
-        message: 'Access denied: not_owner',
-        requestId: 'req-2',
-      },
+    expect(result).not.toBeNull();
+    expect(result!.status).toBe(403);
+    const body = await result!.json();
+    expect(body).toEqual({
+      code: 'E_AUTH_FORBIDDEN',
+      message: 'Access denied: not_owner',
+      requestId: 'req-2',
     });
   });
 
-  it('handles missing requestId', () => {
+  it('handles missing requestId', async () => {
     const result = requireAccess(
       ctx({ resource: 'orders', action: 'read', subject: anonSubject }),
     );
-    expect(result?.body.requestId).toBe('');
+    expect(result).not.toBeNull();
+    const body = await result!.json();
+    expect(body.requestId).toBe('');
   });
 });
 

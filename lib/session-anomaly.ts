@@ -142,10 +142,6 @@ export async function registerSession(
   await cache.set(sessionKey(sessionId), meta, SESSION_TTL_SECONDS);
 
   // Update user sessions index
-  const sessionIds = existingSessions.map((_, i) => {
-    const allIds = ([] as string[]);
-    return allIds;
-  });
   const currentIds = await cache.get<string[]>(userSessionsKey(userId)) ?? [];
   if (!currentIds.includes(sessionId)) {
     currentIds.push(sessionId);

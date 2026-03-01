@@ -18,6 +18,7 @@
  * Rejected: adds migration complexity and slower per-request lookups.
  */
 
+import { createHash } from 'node:crypto';
 import { logger } from './logger';
 import { cache } from './redis';
 
@@ -59,17 +60,12 @@ const USER_FAMILIES_PREFIX = 'user_families:';
 // ── Helpers ─────────────────────────────────────────────────
 
 /**
- * Simple hash for token comparison (not cryptographic storage — tokens
- * are already opaque JWTs; we just need equality checks).
+ * SHA-256 based hash for token comparison.
+ * Provides collision resistance required for secure reuse detection.
+ * Tokens are opaque JWTs — we need deterministic, unique fingerprints.
  */
 export function hashToken(token: string): string {
-  // Use a simple hash for comparison purposes
-  let hash = 0;
-  for (let i = 0; i < token.length; i++) {
-    const char = token.charCodeAt(i);
-    hash = ((hash << 5) - hash + char) | 0;
-  }
-  return `th_${Math.abs(hash).toString(36)}`;
+  return `th_${createHash('sha256').update(token).digest('hex')}`;
 }
 
 function familyKey(familyId: string): string {
@@ -132,6 +128,10 @@ export async function rotateToken(
   }
 
   const oldHash = hashToken(oldRefreshToken);
+
+  // NOTE: This read-modify-write is not atomic. Under high concurrency,
+  // parallel refresh requests could race. In production, wrap with a Redis
+  // Lua script or WATCH/MULTI for atomicity. Acceptable for current scale.
 
   // Check if the old token is the current valid token
   if (family.currentTokenHash === oldHash) {
