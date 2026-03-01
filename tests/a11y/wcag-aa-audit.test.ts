@@ -139,11 +139,11 @@ describe('WCAG 3.3.2 — Labels', () => {
     const src = readComponent('app/[locale]/login/page.tsx');
 
     it('has email input label or aria-label', () => {
-      expect(src).toMatch(/(label|aria-label).*([Ee]mail|e-?mail)/s);
+      expect(src).toMatch(/(label|aria-label)[\s\S]*([Ee]mail|e-?mail)/);
     });
 
     it('has password input label or aria-label', () => {
-      expect(src).toMatch(/(label|aria-label).*([Pp]assword|şifre|parola)/s);
+      expect(src).toMatch(/(label|aria-label)[\s\S]*([Pp]assword|şifre|parola)/);
     });
   });
 
