@@ -99,6 +99,9 @@ export async function proxy(request: NextRequest) {
   return intlResponse;
 }
 
+// TODO: restore original matcher after Vercel dxb1 incident resolves
+// See: https://stspg.io/2dfvhs9ymqym
+// Original: matcher: ['/', '/(tr|en)/:path*', '/((?!_next|_vercel|api|.*\\..*).*)'],
 export const config = {
-  matcher: ['/', '/(tr|en)/:path*', '/((?!_next|_vercel|api|.*\\..*).*)'],
+  matcher: [],
 };

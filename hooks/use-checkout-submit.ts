@@ -2,6 +2,8 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { getOrCreateIdempotencyKey, rotateIdempotencyKey } from '@/lib/idempotency';
+import { telemetry } from '@/lib/telemetry';
+import { isEnabled } from '@/lib/feature-flags';
 
 // ── Types ────────────────────────────────────────────────────
 
@@ -68,6 +70,14 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
 
     const idempotencyKey = getOrCreateIdempotencyKey();
 
+    // ── Telemetry: checkout_started ──
+    if (isEnabled('product_telemetry', idempotencyKey)) {
+      telemetry.track('checkout_started', {
+        cartSize: payload.items.length,
+        cartTotal: 0, // server-truth pricing — client doesn't know total
+      });
+    }
+
     const request = (async (): Promise<CheckoutResult> => {
       try {
         const res = await fetch('/api/checkout', {
@@ -102,9 +112,27 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
         // Success — rotate idempotency key for next checkout
         rotateIdempotencyKey();
 
+        // ── Telemetry: checkout_success ──
+        if (isEnabled('product_telemetry', idempotencyKey)) {
+          telemetry.track('checkout_success', {
+            orderId: data.orderId,
+            total: 0,
+            itemCount: payload.items.length,
+          });
+        }
+
         return { url: data.url, orderId: data.orderId };
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Unknown checkout error';
+
+        // ── Telemetry: checkout_failed ──
+        if (isEnabled('product_telemetry', idempotencyKey)) {
+          telemetry.track('checkout_failed', {
+            error: message,
+            step: 'payment',
+          });
+        }
+
         setError(message);
         throw err;
       } finally {

@@ -3,6 +3,8 @@
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useCartStore } from '@/store/cart-store';
 import type { Product, CartItem } from '@/lib/types';
+import { telemetry } from '@/lib/telemetry';
+import { isEnabled } from '@/lib/feature-flags';
 
 type AddToCartStatus = 'idle' | 'adding' | 'added' | 'error';
 
@@ -64,6 +66,15 @@ export function useAddToCart(): UseAddToCartReturn {
         (item: CartItem) => item.product.id === product.id,
       );
       const previousQuantity = existingItem?.quantity ?? 0;
+
+      // ── Telemetry: add_to_cart ──
+      if (isEnabled('product_telemetry', product.id)) {
+        telemetry.track('add_to_cart', {
+          productId: product.id,
+          quantity,
+          source: 'product_page',
+        });
+      }
 
       // ── Optimistic update ──
       addItem(product, quantity);
