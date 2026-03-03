@@ -4,9 +4,7 @@ import { cache, CACHE_TTL } from '@/lib/redis';
 import { createClient } from '@supabase/supabase-js';
 import type { Product } from '@/lib/types';
 
-// TODO: restore 'edge' runtime after Vercel dxb1 incident resolves
-// See: https://stspg.io/2dfvhs9ymqym
-// export const runtime = 'edge';
+export const runtime = 'edge';
 
 // Cache for 5 minutes, revalidate in background
 export const revalidate = 300;

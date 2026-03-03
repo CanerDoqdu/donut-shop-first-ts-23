@@ -23,6 +23,37 @@ export async function proxy(request: NextRequest) {
   const requestId =
     request.headers.get('x-request-id') ?? crypto.randomUUID();
 
+  try {
+    return await _handleRequest(request, requestId);
+  } catch (error) {
+    // ── Graceful degradation ──────────────────────────────────
+    // If Edge Runtime is unhealthy (region outage, cold-start timeout,
+    // Supabase unreachable, etc.) we log the error via Sentry and fall
+    // through to filesystem routing.  app/page.tsx (root fallback) and
+    // app/[locale]/... pages will still render on Node.js runtime.
+    //
+    // This prevents a middleware failure from turning the entire site
+    // into a 404/500 — the user sees content without auth guards until
+    // Edge recovers.
+    console.error(
+      `[middleware] Unhandled error – falling through to filesystem routing.`,
+      { requestId, path: request.nextUrl.pathname, error },
+    );
+    const fallback = NextResponse.next({ request });
+    fallback.headers.set('x-request-id', requestId);
+    fallback.headers.set('x-middleware-fallback', '1'); // observable signal
+    return fallback;
+  }
+}
+
+/**
+ * Core middleware logic — extracted so the outer `proxy()` can wrap
+ * it with a resilient try/catch boundary.
+ */
+async function _handleRequest(
+  request: NextRequest,
+  requestId: string,
+): Promise<NextResponse> {
   // -- 1. Refresh Supabase auth session --
   // Following the official Supabase SSR pattern: create a mutable response
   // that gets recreated inside setAll so the *modified* request (with fresh

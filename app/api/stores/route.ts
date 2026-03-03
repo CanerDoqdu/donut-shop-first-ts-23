@@ -2,9 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getSupabasePublicEnv } from '@/lib/supabase/env';
 
-// TODO: restore 'edge' runtime after Vercel dxb1 incident resolves
-// See: https://stspg.io/2dfvhs9ymqym
-// export const runtime = 'edge';
+export const runtime = 'edge';
 
 // Cache for 10 minutes
 export const revalidate = 600;
