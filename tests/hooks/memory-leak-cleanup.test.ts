@@ -16,11 +16,18 @@ vi.mock('@/store/cart-store', () => ({
 
 vi.mock('@/lib/logger', () => ({
   logger: {
-    withContext: () => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+    metric: vi.fn(),
+    count: vi.fn(),
+    withContext: vi.fn(() => ({
       info: vi.fn(),
       warn: vi.fn(),
       error: vi.fn(),
-    }),
+      debug: vi.fn(),
+    })),
   },
 }));
 
