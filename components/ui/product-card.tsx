@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState, useEffect } from 'react';
+import { memo, useState } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,7 +10,6 @@ import { AddToCartButton } from '@/components/ui/add-to-cart-button';
 import type { Product } from '@/lib/types';
 
 const FALLBACK_IMG = '/donut-empty.png';
-const LOAD_TIMEOUT_MS = 5000;
 
 /** Encode spaces & parens in image paths so Next.js Image handles them correctly */
 function safeSrc(url: string): string {
@@ -23,18 +22,6 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
   const [imgSrc, setImgSrc] = useState(() => safeSrc(src));
   const [errored, setErrored] = useState(false);
-
-  // Safety net: if image neither loads nor errors within timeout → show fallback
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!loaded && !errored) {
-        setImgSrc(FALLBACK_IMG);
-        setLoaded(true);
-        setErrored(true);
-      }
-    }, LOAD_TIMEOUT_MS);
-    return () => clearTimeout(timer);
-  }, [loaded, errored]);
 
   return (
     <div className="w-full aspect-square relative mb-4 group-hover:scale-110 transition-transform">
@@ -96,7 +83,7 @@ export const ProductCard = memo(function ProductCard({
     <Card className="group hover:scale-105 transition-transform">
       <Link href={{ pathname: '/products/[slug]', params: { slug: product.slug } }}>
         <CardContent className="pt-6 cursor-pointer">
-          <ProductImage src={product.image_url} alt={name} />
+          <ProductImage key={product.image_url} src={product.image_url} alt={name} />
           <CardTitle className="text-center mb-2 text-lg">
             {name}
           </CardTitle>
