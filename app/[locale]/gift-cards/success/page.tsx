@@ -2,17 +2,17 @@
 
 import { useParams, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { Check, Gift, Copy, CheckCircle } from 'lucide-react';
+import { Check, Gift, Copy, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
 export default function GiftCardSuccessPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || 'tr';
-  const code = searchParams.get('code');
   const sessionId = searchParams.get('session_id');
+  const [code, setCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(() => !!searchParams.get('session_id'));
   const [copied, setCopied] = useState(false);
-  const [processed, setProcessed] = useState(false);
 
   const t = {
     tr: {
@@ -24,6 +24,8 @@ export default function GiftCardSuccessPage() {
       emailSent: 'Alıcıya e-posta gönderildi',
       backToShop: 'Alışverişe Devam Et',
       buyAnother: 'Başka Bir Hediye Kartı Al',
+      loading: 'Hediye kartınız hazırlanıyor...',
+      emailFallback: 'Hediye kartı kodunuz alıcının e-postasına gönderildi.',
     },
     en: {
       title: 'Gift Card Created!',
@@ -34,33 +36,62 @@ export default function GiftCardSuccessPage() {
       emailSent: 'Email sent to recipient',
       backToShop: 'Continue Shopping',
       buyAnother: 'Buy Another Gift Card',
+      loading: 'Preparing your gift card...',
+      emailFallback: 'Your gift card code has been sent to the recipient\'s email.',
     },
   }[locale as 'tr' | 'en'];
 
   useEffect(() => {
-    // Process the gift card after successful payment
-    async function processGiftCard() {
-      if (!code || !sessionId || processed) return;
-      setProcessed(true);
+    if (!sessionId) return;
+
+    const sid = sessionId; // narrow to string for closure
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    async function poll(attempt = 0): Promise<void> {
+      if (signal.aborted) return;
 
       try {
-        // Verify payment and create gift card in database
-        const response = await fetch('/api/webhook/gift-card-success', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId, code }),
-        });
+        const res = await fetch(
+          `/api/gift-card/lookup?session_id=${encodeURIComponent(sid)}`,
+          { signal },
+        );
+        const data = await res.json();
 
-        if (!response.ok) {
-          console.error('Failed to process gift card');
+        if (signal.aborted) return;
+
+        if (data.status === 'ready' && data.code) {
+          setCode(data.code);
+          setLoading(false);
+          return;
         }
-      } catch (error) {
-        console.error('Error processing gift card:', error);
+
+        // Webhook hasn't processed yet — retry with backoff (max 5 attempts, ~15s total)
+        if (attempt < 5) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+          await new Promise<void>((resolve) => {
+            const tid = setTimeout(resolve, delay);
+            signal.addEventListener('abort', () => clearTimeout(tid), { once: true });
+          });
+          if (!signal.aborted) return poll(attempt + 1);
+        }
+
+        if (!signal.aborted) setLoading(false);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+
+        if (attempt < 3 && !signal.aborted) {
+          await new Promise<void>((r) => setTimeout(r, 2000));
+          if (!signal.aborted) return poll(attempt + 1);
+        }
+        if (!signal.aborted) setLoading(false);
       }
     }
 
-    processGiftCard();
-  }, [code, sessionId, processed]);
+    poll();
+
+    return () => controller.abort();
+  }, [sessionId]);
 
   const handleCopy = async () => {
     if (code) {
@@ -82,8 +113,13 @@ export default function GiftCardSuccessPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">{t.title}</h1>
           <p className="text-gray-600 mb-8">{t.subtitle}</p>
 
-          {/* Gift Card Code */}
-          {code && (
+          {/* Gift Card Code — fetched from server after payment confirmation */}
+          {loading ? (
+            <div className="bg-linear-to-br from-amber-50 to-pink-50 rounded-xl p-6 mb-6 flex items-center justify-center gap-3">
+              <Loader2 className="w-5 h-5 text-amber-600 animate-spin" />
+              <span className="text-gray-600">{t.loading}</span>
+            </div>
+          ) : code ? (
             <div className="bg-linear-to-br from-amber-50 to-pink-50 rounded-xl p-6 mb-6">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Gift className="w-5 h-5 text-amber-600" />
@@ -106,6 +142,10 @@ export default function GiftCardSuccessPage() {
                   </>
                 )}
               </button>
+            </div>
+          ) : (
+            <div className="bg-amber-50 rounded-xl p-6 mb-6">
+              <p className="text-gray-600 text-sm">{t.emailFallback}</p>
             </div>
           )}
 
