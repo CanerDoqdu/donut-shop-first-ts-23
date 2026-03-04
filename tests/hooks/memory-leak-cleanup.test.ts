@@ -13,10 +13,10 @@ vi.mock('@/store/cart-store', () => {
 
   const useCartStore = vi.fn((selector: (s: typeof storeState) => unknown) =>
     selector(storeState),
-  );
+  ) as ReturnType<typeof vi.fn> & { getState: () => typeof storeState };
 
   // Zustand stores expose getState() for reading outside React
-  useCartStore.getState = vi.fn(() => storeState);
+  useCartStore.getState = () => storeState;
 
   return { useCartStore };
 });
