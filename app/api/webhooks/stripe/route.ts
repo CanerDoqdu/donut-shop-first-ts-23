@@ -10,7 +10,6 @@ import { logger, startTimer } from '@/lib/logger';
 import type { Logger } from '@/lib/logger';
 import { captureWithContext } from '@/lib/sentry';
 import { confirmReservations, releaseReservations } from '@/lib/inventory';
-import { Resend } from 'resend';
 import { enqueueEmail, enqueueLoyaltyPoints } from '@/lib/queue';
 import { API_VERSION } from '@/lib/constants';
 import {
@@ -394,7 +393,7 @@ async function handleGiftCardCompleted(
       giftCardCode: code,
       error: insertError.message,
     });
-    captureWithContext(insertError, 'webhook.gift_card', {
+    captureWithContext(insertError, 'webhook', {
       sessionId: session.id,
       giftCardCode: code,
     });
@@ -420,6 +419,7 @@ async function handleGiftCardCompleted(
   // ── Send gift card email ───────────────────────────────────
   if (meta.recipientEmail) {
     try {
+      const { Resend } = await import('resend');
       const resend = new Resend(env.RESEND_API_KEY);
       await withTimeout(
         resend.emails.send({

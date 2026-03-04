@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Gift, Copy, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
@@ -11,7 +11,7 @@ export default function GiftCardSuccessPage() {
   const locale = (params.locale as string) || 'tr';
   const sessionId = searchParams.get('session_id');
   const [code, setCode] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(() => !!searchParams.get('session_id'));
   const [copied, setCopied] = useState(false);
 
   const t = {
@@ -41,64 +41,57 @@ export default function GiftCardSuccessPage() {
     },
   }[locale as 'tr' | 'en'];
 
-  const fetchGiftCard = useCallback(async (sid: string, signal: AbortSignal, attempt = 0): Promise<void> => {
-    if (signal.aborted) return;
+  useEffect(() => {
+    if (!sessionId) return;
 
-    try {
-      const res = await fetch(
-        `/api/gift-card/lookup?session_id=${encodeURIComponent(sid)}`,
-        { signal },
-      );
-      const data = await res.json();
+    const sid = sessionId; // narrow to string for closure
+    const controller = new AbortController();
+    const { signal } = controller;
 
+    async function poll(attempt = 0): Promise<void> {
       if (signal.aborted) return;
 
-      if (data.status === 'ready' && data.code) {
-        setCode(data.code);
-        setLoading(false);
-        return;
-      }
+      try {
+        const res = await fetch(
+          `/api/gift-card/lookup?session_id=${encodeURIComponent(sid)}`,
+          { signal },
+        );
+        const data = await res.json();
 
-      // Webhook hasn't processed yet — retry with backoff (max 5 attempts, ~15s total)
-      if (attempt < 5) {
-        const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
-        await new Promise((r) => {
-          const tid = setTimeout(r, delay);
-          // Cancel the pending timer if component unmounts
-          signal.addEventListener('abort', () => clearTimeout(tid), { once: true });
-        });
-        if (!signal.aborted) {
-          return fetchGiftCard(sid, signal, attempt + 1);
+        if (signal.aborted) return;
+
+        if (data.status === 'ready' && data.code) {
+          setCode(data.code);
+          setLoading(false);
+          return;
         }
-      }
 
-      // Give up — show fallback message
-      if (!signal.aborted) setLoading(false);
-    } catch (err) {
-      // Don't retry on abort (unmount)
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-
-      if (attempt < 3 && !signal.aborted) {
-        await new Promise((r) => setTimeout(r, 2000));
-        if (!signal.aborted) {
-          return fetchGiftCard(sid, signal, attempt + 1);
+        // Webhook hasn't processed yet — retry with backoff (max 5 attempts, ~15s total)
+        if (attempt < 5) {
+          const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+          await new Promise<void>((resolve) => {
+            const tid = setTimeout(resolve, delay);
+            signal.addEventListener('abort', () => clearTimeout(tid), { once: true });
+          });
+          if (!signal.aborted) return poll(attempt + 1);
         }
-      }
-      if (!signal.aborted) setLoading(false);
-    }
-  }, []);
 
-  useEffect(() => {
-    if (!sessionId) {
-      setLoading(false);
-      return;
+        if (!signal.aborted) setLoading(false);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return;
+
+        if (attempt < 3 && !signal.aborted) {
+          await new Promise<void>((r) => setTimeout(r, 2000));
+          if (!signal.aborted) return poll(attempt + 1);
+        }
+        if (!signal.aborted) setLoading(false);
+      }
     }
 
-    const controller = new AbortController();
-    fetchGiftCard(sessionId, controller.signal);
+    poll();
 
     return () => controller.abort();
-  }, [sessionId, fetchGiftCard]);
+  }, [sessionId]);
 
   const handleCopy = async () => {
     if (code) {
