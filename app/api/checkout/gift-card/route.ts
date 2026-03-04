@@ -48,8 +48,9 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
 
     const { amount, senderName, senderEmail, recipientName, recipientEmail, message, locale } = parsed.data;
 
-    // Generate unique gift card code for metadata
-    const code = `GC-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
+    // NOTE: Gift card code is NOT generated here.
+    // Code is generated only after payment is confirmed via webhook
+    // (checkout.session.completed) to prevent pre-payment code leakage.
 
     // Create Stripe checkout session with timeout
     const session = await withTimeout(
@@ -71,28 +72,28 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
           },
         ],
         customer_email: senderEmail,
-        success_url: `${env.NEXT_PUBLIC_APP_URL}/${locale}/gift-cards/success?session_id={CHECKOUT_SESSION_ID}&code=${code}`,
+        success_url: `${env.NEXT_PUBLIC_APP_URL}/${locale}/gift-cards/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${env.NEXT_PUBLIC_APP_URL}/${locale}/gift-cards?cancelled=true`,
         metadata: {
           type: 'gift_card',
-          code,
           amount: amount.toString(),
           senderName,
           senderEmail,
           recipientName,
           recipientEmail,
           message: message || '',
+          locale: locale || 'tr',
         },
       }),
       10_000,
       'stripe.giftCardCheckout',
     );
 
-    log.info('gift_card.success', { code, amount });
+    log.info('gift_card.session_created', { sessionId: session.id, amount });
     log.metric('gift_card_checkout_duration_ms', elapsed());
     log.count('gift_card_checkout_success');
 
-    return NextResponse.json({ url: session.url, code });
+    return NextResponse.json({ url: session.url, sessionId: session.id });
   } catch (err) {
     if (!(err instanceof ApiError)) {
       log.error('gift_card.failed', { code: E_STRIPE_GIFT_CARD_FAILED, error: err instanceof Error ? err.message : String(err) });

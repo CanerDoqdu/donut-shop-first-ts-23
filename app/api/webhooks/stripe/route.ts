@@ -10,6 +10,7 @@ import { logger, startTimer } from '@/lib/logger';
 import type { Logger } from '@/lib/logger';
 import { captureWithContext } from '@/lib/sentry';
 import { confirmReservations, releaseReservations } from '@/lib/inventory';
+import { Resend } from 'resend';
 import { enqueueEmail, enqueueLoyaltyPoints } from '@/lib/queue';
 import { API_VERSION } from '@/lib/constants';
 import {
@@ -19,6 +20,7 @@ import {
   E_WEBHOOK_IDEMPOTENCY_FAILED,
   E_WEBHOOK_ORDER_UPDATE_FAILED,
   E_WEBHOOK_RPC_UNAVAILABLE,
+  E_STRIPE_GIFT_CARD_FAILED,
 } from '@/lib/error-codes';
 import { dualWriteStripeSession } from '@/lib/migration';
 
@@ -129,15 +131,22 @@ export async function POST(request: NextRequest) {
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
-        await withTimeout(
-          handleCheckoutCompleted(
-            supabaseAdmin,
-            event.data.object as Stripe.Checkout.Session,
-            log,
-          ),
-          15_000,
-          'webhook.handleCheckoutCompleted',
-        );
+        const session = event.data.object as Stripe.Checkout.Session;
+
+        // Route gift card sessions to dedicated handler
+        if (session.metadata?.type === 'gift_card') {
+          await withTimeout(
+            handleGiftCardCompleted(supabaseAdmin, session, log),
+            15_000,
+            'webhook.handleGiftCardCompleted',
+          );
+        } else {
+          await withTimeout(
+            handleCheckoutCompleted(supabaseAdmin, session, log),
+            15_000,
+            'webhook.handleCheckoutCompleted',
+          );
+        }
         break;
       }
 
@@ -336,6 +345,163 @@ async function handleCheckoutCompleted(
       });
     });
   }
+}
+
+// ── Gift card: code generation + DB insert + email (post-payment) ──
+/**
+ * Generates the gift card code ONLY after payment is confirmed.
+ * This prevents pre-payment code leakage, abandoned checkout abuse,
+ * and replay attacks.
+ *
+ * Flow: generate code → insert into gift_cards table → send email.
+ */
+async function handleGiftCardCompleted(
+  supabase: SupabaseClient,
+  session: Stripe.Checkout.Session,
+  log: Logger,
+) {
+  const meta = session.metadata ?? {};
+  const amount = parseFloat(meta.amount || '0');
+  const locale = meta.locale || 'tr';
+
+  // Generate unique code only now — payment is confirmed
+  const code = `GC-${Date.now().toString(36).toUpperCase()}-${crypto.randomUUID().slice(0, 6).toUpperCase()}`;
+
+  log.info('webhook.gift_card_completed', {
+    sessionId: session.id,
+    code,
+    amount,
+    recipientEmail: meta.recipientEmail,
+  });
+
+  // ── Insert gift card into database ─────────────────────────
+  const { error: insertError } = await supabase.from('gift_cards').insert({
+    code,
+    initial_balance: amount,
+    current_balance: amount,
+    purchaser_email: meta.senderEmail || session.customer_email || '',
+    recipient_email: meta.recipientEmail || '',
+    recipient_name: meta.recipientName || '',
+    message: meta.message || null,
+    is_active: true,
+    expires_at: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(), // 1 year
+  });
+
+  if (insertError) {
+    log.error('webhook.gift_card_insert_failed', {
+      code: E_STRIPE_GIFT_CARD_FAILED,
+      sessionId: session.id,
+      giftCardCode: code,
+      error: insertError.message,
+    });
+    throw insertError;
+  }
+
+  log.info('webhook.gift_card_created', { code, amount });
+
+  // ── Store code in Stripe session metadata for success page retrieval ──
+  try {
+    const stripe = getStripe();
+    await stripe.checkout.sessions.update(session.id, {
+      metadata: { ...meta, code },
+    });
+  } catch (updateErr) {
+    // Non-fatal: code is already in DB, success page can fall back to DB lookup
+    log.warn('webhook.gift_card_session_update_failed', {
+      sessionId: session.id,
+      error: updateErr instanceof Error ? updateErr.message : String(updateErr),
+    });
+  }
+
+  // ── Send gift card email ───────────────────────────────────
+  if (meta.recipientEmail) {
+    try {
+      const resend = new Resend(env.RESEND_API_KEY);
+      await withTimeout(
+        resend.emails.send({
+          from: 'Donut Shop <onboarding@resend.dev>',
+          to: meta.recipientEmail,
+          subject: locale === 'tr' ? 'Hediye Kartınız Hazır!' : 'Your Gift Card is Ready!',
+          html: buildGiftCardEmailHtml({
+            recipientName: meta.recipientName || '',
+            senderName: meta.senderName || '',
+            code,
+            amount,
+            message: meta.message || '',
+            locale,
+          }),
+        }),
+        10_000,
+        'resend.giftCardEmail',
+      );
+      log.info('webhook.gift_card_email_sent', { recipientEmail: meta.recipientEmail });
+    } catch (emailErr) {
+      // Non-fatal — card is created, email can be retried
+      log.warn('webhook.gift_card_email_failed', {
+        sessionId: session.id,
+        error: emailErr instanceof Error ? emailErr.message : String(emailErr),
+      });
+    }
+  }
+}
+
+/** HTML-escape to prevent injection in email bodies */
+function escapeHtml(value: unknown): string {
+  const str = String(value ?? '');
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function buildGiftCardEmailHtml(opts: {
+  recipientName: string;
+  senderName: string;
+  code: string;
+  amount: number;
+  message: string;
+  locale: string;
+}): string {
+  const { recipientName, senderName, code, amount, message, locale } = opts;
+  const isTr = locale === 'tr';
+  return `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <div style="background: linear-gradient(135deg, #f59e0b, #ec4899); padding: 40px; text-align: center; border-radius: 16px;">
+        <h1 style="color: white; margin: 0;">🍩 Donut Shop</h1>
+        <p style="color: rgba(255,255,255,0.9); margin-top: 8px;">Gift Card</p>
+      </div>
+      <div style="padding: 40px; background: #f9fafb;">
+        <h2 style="color: #1f2937; margin: 0 0 16px;">
+          ${isTr ? `Merhaba ${escapeHtml(recipientName)}!` : `Hello ${escapeHtml(recipientName)}!`}
+        </h2>
+        <p style="color: #4b5563;">
+          ${isTr
+            ? `${escapeHtml(senderName)} size bir hediye kartı gönderdi!`
+            : `${escapeHtml(senderName)} sent you a gift card!`}
+        </p>
+        <div style="background: white; border-radius: 12px; padding: 24px; margin: 24px 0; text-align: center;">
+          <p style="color: #6b7280; margin: 0 0 8px;">${isTr ? 'Hediye Kartı Kodu' : 'Gift Card Code'}</p>
+          <p style="font-size: 24px; font-weight: bold; color: #1f2937; letter-spacing: 2px; margin: 0;">${escapeHtml(code)}</p>
+          <p style="font-size: 32px; font-weight: bold; color: #f59e0b; margin: 16px 0 0;">₺${escapeHtml(amount)}</p>
+        </div>
+        ${message ? `
+          <div style="background: #fef3c7; border-radius: 12px; padding: 16px; margin: 24px 0;">
+            <p style="color: #92400e; font-style: italic; margin: 0;">"${escapeHtml(message)}"</p>
+            <p style="color: #b45309; margin: 8px 0 0; font-size: 14px;">- ${escapeHtml(senderName)}</p>
+          </div>
+        ` : ''}
+        <a href="${env.NEXT_PUBLIC_SITE_URL || env.NEXT_PUBLIC_APP_URL}/checkout"
+           style="display: inline-block; background: #f59e0b; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; margin-top: 16px;">
+          ${isTr ? 'Şimdi Kullan' : 'Use Now'}
+        </a>
+      </div>
+      <div style="padding: 24px; text-align: center; color: #9ca3af; font-size: 12px;">
+        <p>© ${new Date().getFullYear()} Donut Shop. ${isTr ? 'Tüm hakları saklıdır.' : 'All rights reserved.'}</p>
+      </div>
+    </div>
+  `;
 }
 
 // ── checkout.session.expired ─────────────────────────────────

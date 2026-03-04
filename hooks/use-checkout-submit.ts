@@ -5,6 +5,11 @@ import { getOrCreateIdempotencyKey, rotateIdempotencyKey } from '@/lib/idempoten
 import { telemetry } from '@/lib/telemetry';
 import { isEnabled } from '@/lib/feature-flags';
 
+// ── Constants ────────────────────────────────────────────────
+
+/** Hard timeout for checkout fetch — prevents infinite in-flight lock */
+const CHECKOUT_TIMEOUT_MS = 30_000;
+
 // ── Types ────────────────────────────────────────────────────
 
 export interface CheckoutPayload {
@@ -41,7 +46,8 @@ export interface UseCheckoutSubmitReturn {
  * Prevents concurrent checkout submissions via:
  *  1. In-flight ref guard — ignores calls while one is pending
  *  2. Idempotency key — server deduplicates via DB unique constraint
- *  3. State tracking — `isSubmitting` for UI button disable
+ *  3. AbortController — enforces hard timeout on network requests
+ *  4. Deterministic cleanup — finally block always releases lock
  *
  * Race condition timeline prevented:
  * ```
@@ -50,12 +56,14 @@ export interface UseCheckoutSubmitReturn {
  *   T2: Second call sees inflight=true → returns same promise
  *   T3: Server receives 1 request (not 2)
  *   T4: If somehow 2 arrive, server returns 409 on duplicate idempotency key
+ *   T5: Timeout fires at 30s → abort + release lock → user can retry
  * ```
  */
 export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const inflightRef = useRef<Promise<CheckoutResult> | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const clearError = useCallback(() => setError(null), []);
 
@@ -78,6 +86,11 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
       });
     }
 
+    // ── AbortController for hard timeout ──
+    const controller = new AbortController();
+    abortRef.current = controller;
+    const timeoutId = setTimeout(() => controller.abort(), CHECKOUT_TIMEOUT_MS);
+
     const request = (async (): Promise<CheckoutResult> => {
       try {
         const res = await fetch('/api/checkout', {
@@ -90,6 +103,7 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
             ...payload,
             idempotencyKey,
           }),
+          signal: controller.signal,
         });
 
         // Handle idempotency conflict (409) — order already exists
@@ -97,6 +111,7 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
           const data = await res.json();
           // If server returned the existing order, treat as success (replay-safe)
           if (data.orderId) {
+            // Don't rotate key — the existing order was for this key
             return { url: data.url || '', orderId: data.orderId };
           }
           throw new Error(data.error || 'Duplicate checkout request');
@@ -123,19 +138,28 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
 
         return { url: data.url, orderId: data.orderId };
       } catch (err) {
-        const message = err instanceof Error ? err.message : 'Unknown checkout error';
+        // Map AbortError to a user-friendly timeout message
+        const isTimeout = err instanceof DOMException && err.name === 'AbortError';
+        const message = isTimeout
+          ? 'Checkout timed out. Please try again.'
+          : err instanceof Error
+            ? err.message
+            : 'Unknown checkout error';
 
         // ── Telemetry: checkout_failed ──
         if (isEnabled('product_telemetry', idempotencyKey)) {
           telemetry.track('checkout_failed', {
             error: message,
-            step: 'payment',
+            step: isTimeout ? 'timeout' : 'payment',
           });
         }
 
         setError(message);
         throw err;
       } finally {
+        // Deterministic cleanup — always release lock regardless of outcome
+        clearTimeout(timeoutId);
+        abortRef.current = null;
         inflightRef.current = null;
         setIsSubmitting(false);
       }
@@ -143,7 +167,7 @@ export function useCheckoutSubmit(): UseCheckoutSubmitReturn {
 
     inflightRef.current = request;
     return request;
-  }, []);
+  }, []); // No external deps captured — all state accessed via refs or stable setters
 
   return { submit, isSubmitting, error, clearError };
 }

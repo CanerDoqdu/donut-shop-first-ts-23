@@ -1,18 +1,18 @@
 'use client';
 
 import { useParams, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Check, Gift, Copy, CheckCircle } from 'lucide-react';
+import { useEffect, useState, useCallback } from 'react';
+import { Check, Gift, Copy, CheckCircle, Loader2 } from 'lucide-react';
 import { Link } from '@/i18n/routing';
 
 export default function GiftCardSuccessPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const locale = (params.locale as string) || 'tr';
-  const code = searchParams.get('code');
   const sessionId = searchParams.get('session_id');
+  const [code, setCode] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [processed, setProcessed] = useState(false);
 
   const t = {
     tr: {
@@ -24,6 +24,7 @@ export default function GiftCardSuccessPage() {
       emailSent: 'Alıcıya e-posta gönderildi',
       backToShop: 'Alışverişe Devam Et',
       buyAnother: 'Başka Bir Hediye Kartı Al',
+      loading: 'Hediye kartınız hazırlanıyor...',
     },
     en: {
       title: 'Gift Card Created!',
@@ -34,33 +35,46 @@ export default function GiftCardSuccessPage() {
       emailSent: 'Email sent to recipient',
       backToShop: 'Continue Shopping',
       buyAnother: 'Buy Another Gift Card',
+      loading: 'Preparing your gift card...',
     },
   }[locale as 'tr' | 'en'];
 
-  useEffect(() => {
-    // Process the gift card after successful payment
-    async function processGiftCard() {
-      if (!code || !sessionId || processed) return;
-      setProcessed(true);
+  const fetchGiftCard = useCallback(async (sid: string, attempt = 0): Promise<void> => {
+    try {
+      const res = await fetch(`/api/gift-card/lookup?session_id=${encodeURIComponent(sid)}`);
+      const data = await res.json();
 
-      try {
-        // Verify payment and create gift card in database
-        const response = await fetch('/api/webhook/gift-card-success', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ sessionId, code }),
-        });
-
-        if (!response.ok) {
-          console.error('Failed to process gift card');
-        }
-      } catch (error) {
-        console.error('Error processing gift card:', error);
+      if (data.status === 'ready' && data.code) {
+        setCode(data.code);
+        setLoading(false);
+        return;
       }
-    }
 
-    processGiftCard();
-  }, [code, sessionId, processed]);
+      // Webhook hasn't processed yet — retry with backoff (max 5 attempts, ~15s total)
+      if (attempt < 5) {
+        const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
+        await new Promise((r) => setTimeout(r, delay));
+        return fetchGiftCard(sid, attempt + 1);
+      }
+
+      // Give up — show fallback message
+      setLoading(false);
+    } catch {
+      if (attempt < 3) {
+        await new Promise((r) => setTimeout(r, 2000));
+        return fetchGiftCard(sid, attempt + 1);
+      }
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!sessionId) {
+      setLoading(false);
+      return;
+    }
+    fetchGiftCard(sessionId);
+  }, [sessionId, fetchGiftCard]);
 
   const handleCopy = async () => {
     if (code) {
@@ -82,8 +96,13 @@ export default function GiftCardSuccessPage() {
           <h1 className="text-2xl font-bold text-gray-800 mb-2">{t.title}</h1>
           <p className="text-gray-600 mb-8">{t.subtitle}</p>
 
-          {/* Gift Card Code */}
-          {code && (
+          {/* Gift Card Code — fetched from server after payment confirmation */}
+          {loading ? (
+            <div className="bg-linear-to-br from-amber-50 to-pink-50 rounded-xl p-6 mb-6 flex items-center justify-center gap-3">
+              <Loader2 className="w-5 h-5 text-amber-600 animate-spin" />
+              <span className="text-gray-600">{t.loading}</span>
+            </div>
+          ) : code ? (
             <div className="bg-linear-to-br from-amber-50 to-pink-50 rounded-xl p-6 mb-6">
               <div className="flex items-center justify-center gap-2 mb-2">
                 <Gift className="w-5 h-5 text-amber-600" />
@@ -107,7 +126,7 @@ export default function GiftCardSuccessPage() {
                 )}
               </button>
             </div>
-          )}
+          ) : null}
 
           <p className="text-sm text-gray-500 mb-8">
             <CheckCircle className="w-4 h-4 inline mr-1 text-green-500" />
