@@ -66,7 +66,11 @@
     "dailyFresh": "her gün taze",
     "plainDonut": "Sade donut",
     "decoratedDonut": "Süslü donut",
-    "oven": "FIRIN"
+    "oven": "FIRIN",
+    "chocolateDreamPrice": "₺45.00",
+    "berryBlissPrice": "₺35.00",
+    "caramelCrunchPrice": "₺48",
+    "mangoSunsetPrice": "₺38"
   },
   "products": {
     "title": "Ürünlerimiz",
@@ -254,5 +258,21 @@
     "title": "Sayfa Bulunamadı",
     "description": "Bu donut kaybolmuş görünüyor! Sizi geri yönlendirelim.",
     "backHome": "Ana Sayfaya Dön"
+  },
+  "errorPage": {
+    "networkTitle": "Bağlantı Kesildi",
+    "networkDesc": "Çevrimdışı görünüyorsunuz veya sunucularımıza ulaşılamıyor. İnternet bağlantınızı kontrol edip tekrar deneyin.",
+    "authTitle": "Erişim Engellendi",
+    "authDesc": "Oturumunuz sona ermiş veya yetkiniz olmayabilir. Lütfen tekrar giriş yapın.",
+    "serverTitle": "Sunucu Hatası",
+    "serverDesc": "Sunucularımız biraz sorunlu. Üzerinde çalışıyoruz — lütfen kısa bir süre sonra tekrar deneyin.",
+    "unknownTitle": "Hay aksi! Bir şeyler ters gitti",
+    "unknownDesc": "Bir donut düşürdük. Merak etmeyin, topluyoruz!",
+    "tryAgain": "Tekrar Dene",
+    "retryIn": "{seconds}s sonra tekrar dene",
+    "goHome": "Ana Sayfa",
+    "errorId": "Hata ID: {digest}",
+    "stillNotWorking": "Hâlâ çalışmıyor mu? Sayfayı yenilemeyi deneyin veya",
+    "goBackHome": "ana sayfaya dönün"
   }
 }

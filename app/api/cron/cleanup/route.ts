@@ -16,12 +16,13 @@ import { logger } from '@/lib/logger';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL } from '@/lib/error-codes';
 import { withVersionHeader } from '@/lib/api-handler';
+import { safeCompare } from '@/lib/safe-compare';
 
 export async function POST(req: Request): Promise<NextResponse> {
   const requestId = getRequestId(req);
-  // Verify cron secret
+  // Verify cron secret — reject if env var is not configured
   const secret = req.headers.get('x-cron-secret') || req.headers.get('authorization')?.replace('Bearer ', '');
-  if (secret !== process.env.CRON_SECRET) {
+  if (!safeCompare(secret, process.env.CRON_SECRET)) {
     return withVersionHeader(apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId));
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { memo, useState } from 'react';
+import { memo, useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -9,8 +9,32 @@ import { Link } from '@/i18n/routing';
 import { AddToCartButton } from '@/components/ui/add-to-cart-button';
 import type { Product } from '@/lib/types';
 
+const FALLBACK_IMG = '/donut-empty.png';
+const LOAD_TIMEOUT_MS = 5000;
+
+/** Encode spaces & parens in image paths so Next.js Image handles them correctly */
+function safeSrc(url: string): string {
+  // Already a data-uri or absolute URL → leave as-is
+  if (url.startsWith('data:') || url.startsWith('http')) return url;
+  return encodeURI(decodeURI(url)); // idempotent encode
+}
+
 function ProductImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(() => safeSrc(src));
+  const [errored, setErrored] = useState(false);
+
+  // Safety net: if image neither loads nor errors within timeout → show fallback
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!loaded && !errored) {
+        setImgSrc(FALLBACK_IMG);
+        setLoaded(true);
+        setErrored(true);
+      }
+    }, LOAD_TIMEOUT_MS);
+    return () => clearTimeout(timer);
+  }, [loaded, errored]);
 
   return (
     <div className="w-full aspect-square relative mb-4 group-hover:scale-110 transition-transform">
@@ -26,12 +50,20 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
         </div>
       )}
       <Image
-        src={src}
+        src={imgSrc}
         alt={alt}
         fill
         sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
         className={`object-contain drop-shadow-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setLoaded(true)}
+        onError={() => {
+          if (!errored) {
+            setImgSrc(FALLBACK_IMG);
+            setErrored(true);
+          }
+          setLoaded(true);
+        }}
+        unoptimized
       />
     </div>
   );

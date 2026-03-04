@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, RefreshCw } from 'lucide-react';
 import { sampleProducts } from '@/lib/data';
 import { useDebounce } from '@/hooks';
 import { SEARCH_DEBOUNCE_MS, PRODUCT_CATEGORIES } from '@/lib/constants';
 import { ProductCard } from '@/components/ui/product-card';
 import { SectionSuspense } from '@/components/ui/section-suspense';
+import type { Product } from '@/lib/types';
 
 export default function ProductsPage() {
   const t = useTranslations();
@@ -17,8 +18,31 @@ export default function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const debouncedSearch = useDebounce(searchQuery, SEARCH_DEBOUNCE_MS);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [products, setProducts] = useState<Product[]>(sampleProducts);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredProducts = sampleProducts.filter((product) => {
+  const fetchProducts = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetch('/api/products');
+      if (res.ok) {
+        const data = await res.json() as { products: Product[] };
+        if (data.products && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      }
+    } catch {
+      // fallback to sampleProducts (already set as default)
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchProducts();
+  }, [fetchProducts]);
+
+  const filteredProducts = products.filter((product) => {
     const q = debouncedSearch.toLowerCase();
     const matchesSearch =
       product.name_en.toLowerCase().includes(q) ||

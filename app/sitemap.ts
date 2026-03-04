@@ -2,10 +2,9 @@ import type { MetadataRoute } from 'next';
 import { sampleProducts } from '@/lib/data';
 
 const BASE_URL = 'https://glazedandsipped.com';
+const LOCALES = ['en', 'tr'] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const locales = ['en', 'tr'];
-
   const staticPages = [
     '',
     '/products',
@@ -20,26 +19,36 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const entries: MetadataRoute.Sitemap = [];
 
-  // Static pages for each locale
-  for (const locale of locales) {
+  // Static pages — one entry per locale with hreflang alternates
+  for (const locale of LOCALES) {
     for (const page of staticPages) {
       entries.push({
         url: `${BASE_URL}/${locale}${page}`,
         lastModified: new Date(),
         changeFrequency: page === '' ? 'daily' : 'weekly',
         priority: page === '' ? 1 : 0.8,
+        alternates: {
+          languages: Object.fromEntries(
+            LOCALES.map((l) => [l, `${BASE_URL}/${l}${page}`]),
+          ),
+        },
       });
     }
   }
 
-  // Product pages
-  for (const locale of locales) {
+  // Product pages — one entry per locale with hreflang alternates
+  for (const locale of LOCALES) {
     for (const product of sampleProducts) {
       entries.push({
         url: `${BASE_URL}/${locale}/products/${product.slug}`,
         lastModified: new Date(),
         changeFrequency: 'weekly',
         priority: 0.7,
+        alternates: {
+          languages: Object.fromEntries(
+            LOCALES.map((l) => [l, `${BASE_URL}/${l}/products/${product.slug}`]),
+          ),
+        },
       });
     }
   }

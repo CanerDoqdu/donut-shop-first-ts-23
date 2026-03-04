@@ -9,7 +9,7 @@
  * Requires: authenticated session
  */
 
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { deleteUserData } from '@/lib/gdpr';
 import { rateLimit, getClientIP } from '@/lib/rate-limit';
@@ -17,9 +17,14 @@ import { logger } from '@/lib/logger';
 import { env } from '@/lib/env';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_RATE_LIMITED } from '@/lib/error-codes';
+import { validateOrigin } from '@/lib/security';
 
-export async function POST(req: Request): Promise<NextResponse> {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   const requestId = getRequestId(req);
+
+  // CSRF: verify request origin (prevents cross-site mutation)
+  const csrfError = validateOrigin(req);
+  if (csrfError) return csrfError;
   try {
     // Create user-scoped client to verify auth
     const { createClient: createServerClient } = await import('@/lib/supabase/server');

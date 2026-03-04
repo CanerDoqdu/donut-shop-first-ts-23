@@ -52,37 +52,37 @@ VALUES
   ('a1b2c3d4-0010-4000-8000-000000000010', 'chocolate-milkshake', 'Çikolatalı Milkshake', 'Chocolate Milkshake',
    'Kremsi Belçika çikolatalı milkshake. Üzerinde krem şanti ve çikolata sosu.',
    'Creamy Belgian chocolate milkshake. Topped with whipped cream and chocolate sauce.',
-   70.00, '/beverage 2.png', 'beverage', 40, false),
+  70.00, '/beverage 2.png', 'beverage', 40, false),
 
   ('a1b2c3d4-0011-4000-8000-000000000011', 'caramel-frappe', 'Karamelli Frappe', 'Caramel Frappe',
    'Buzlu karamelli kahve, krem şanti ile taçlandırılmış. Tatlı sevenler için.',
    'Iced caramel coffee topped with whipped cream. For sweet lovers.',
-   68.00, '/beverage 3.png', 'beverage', 35, false),
+  68.00, '/beverage 3.png', 'beverage', 35, false),
 
   ('a1b2c3d4-0012-4000-8000-000000000012', 'strawberry-lemonade', 'Çilekli Limonata', 'Strawberry Lemonade',
    'Taze çilek ve limon ile hazırlanan serinletici içecek. Yaz favorisi.',
    'Refreshing drink made with fresh strawberries and lemon. Summer favorite.',
-   55.00, '/beverage 4.png', 'beverage', 60, false),
+  55.00, '/beverage 4.png', 'beverage', 60, false),
 
   ('a1b2c3d4-0013-4000-8000-000000000013', 'vanilla-iced-latte', 'Vanilyalı Buzlu Latte', 'Vanilla Iced Latte',
    'Soğuk espresso ve vanilya şurubu ile hazırlanan kremsi latte.',
    'Creamy latte made with cold espresso and vanilla syrup.',
-   62.00, '/beverage 5.png', 'beverage', 45, true),
+  62.00, '/beverage 5.png', 'beverage', 45, true),
 
   ('a1b2c3d4-0014-4000-8000-000000000014', 'mango-passion-smoothie', 'Mango Passion Smoothie', 'Mango Passion Smoothie',
    'Tropikal mango ve çarkıfelek meyvesi ile hazırlanan egzotik smoothie.',
    'Exotic smoothie made with tropical mango and passion fruit.',
-   68.00, '/beverage 6.png', 'beverage', 38, false),
+  68.00, '/beverage 6.png', 'beverage', 38, false),
 
   ('a1b2c3d4-0015-4000-8000-000000000015', 'iced-mocha', 'Buzlu Mocha', 'Iced Mocha',
    'Espresso, çikolata ve soğuk süt birleşimi. Kahve ve çikolata severler için.',
    'Combination of espresso, chocolate and cold milk. For coffee and chocolate lovers.',
-   72.00, '/beverage 7.png', 'beverage', 42, false),
+  72.00, '/beverage 7.png', 'beverage', 42, false),
 
   ('a1b2c3d4-0016-4000-8000-000000000016', 'pink-cloud-shake', 'Pembe Bulut Shake', 'Pink Cloud Shake',
    'Çilekli ve frambuazlı özel pembe milkshake. Instagram favorisi!',
    'Special pink milkshake with strawberry and raspberry. Instagram favorite!',
-   75.00, '/beverage 18.png', 'beverage', 30, true)
+  75.00, '/beverage 18.png', 'beverage', 30, true)
 ON CONFLICT (id) DO UPDATE SET
   slug         = EXCLUDED.slug,
   name_tr      = EXCLUDED.name_tr,
