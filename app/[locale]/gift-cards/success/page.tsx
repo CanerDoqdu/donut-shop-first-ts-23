@@ -25,6 +25,7 @@ export default function GiftCardSuccessPage() {
       backToShop: 'Alışverişe Devam Et',
       buyAnother: 'Başka Bir Hediye Kartı Al',
       loading: 'Hediye kartınız hazırlanıyor...',
+      emailFallback: 'Hediye kartı kodunuz alıcının e-postasına gönderildi.',
     },
     en: {
       title: 'Gift Card Created!',
@@ -36,13 +37,21 @@ export default function GiftCardSuccessPage() {
       backToShop: 'Continue Shopping',
       buyAnother: 'Buy Another Gift Card',
       loading: 'Preparing your gift card...',
+      emailFallback: 'Your gift card code has been sent to the recipient\'s email.',
     },
   }[locale as 'tr' | 'en'];
 
-  const fetchGiftCard = useCallback(async (sid: string, attempt = 0): Promise<void> => {
+  const fetchGiftCard = useCallback(async (sid: string, signal: AbortSignal, attempt = 0): Promise<void> => {
+    if (signal.aborted) return;
+
     try {
-      const res = await fetch(`/api/gift-card/lookup?session_id=${encodeURIComponent(sid)}`);
+      const res = await fetch(
+        `/api/gift-card/lookup?session_id=${encodeURIComponent(sid)}`,
+        { signal },
+      );
       const data = await res.json();
+
+      if (signal.aborted) return;
 
       if (data.status === 'ready' && data.code) {
         setCode(data.code);
@@ -53,18 +62,29 @@ export default function GiftCardSuccessPage() {
       // Webhook hasn't processed yet — retry with backoff (max 5 attempts, ~15s total)
       if (attempt < 5) {
         const delay = Math.min(1000 * Math.pow(2, attempt), 5000);
-        await new Promise((r) => setTimeout(r, delay));
-        return fetchGiftCard(sid, attempt + 1);
+        await new Promise((r) => {
+          const tid = setTimeout(r, delay);
+          // Cancel the pending timer if component unmounts
+          signal.addEventListener('abort', () => clearTimeout(tid), { once: true });
+        });
+        if (!signal.aborted) {
+          return fetchGiftCard(sid, signal, attempt + 1);
+        }
       }
 
       // Give up — show fallback message
-      setLoading(false);
-    } catch {
-      if (attempt < 3) {
+      if (!signal.aborted) setLoading(false);
+    } catch (err) {
+      // Don't retry on abort (unmount)
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+
+      if (attempt < 3 && !signal.aborted) {
         await new Promise((r) => setTimeout(r, 2000));
-        return fetchGiftCard(sid, attempt + 1);
+        if (!signal.aborted) {
+          return fetchGiftCard(sid, signal, attempt + 1);
+        }
       }
-      setLoading(false);
+      if (!signal.aborted) setLoading(false);
     }
   }, []);
 
@@ -73,7 +93,11 @@ export default function GiftCardSuccessPage() {
       setLoading(false);
       return;
     }
-    fetchGiftCard(sessionId);
+
+    const controller = new AbortController();
+    fetchGiftCard(sessionId, controller.signal);
+
+    return () => controller.abort();
   }, [sessionId, fetchGiftCard]);
 
   const handleCopy = async () => {
@@ -126,7 +150,11 @@ export default function GiftCardSuccessPage() {
                 )}
               </button>
             </div>
-          ) : null}
+          ) : (
+            <div className="bg-amber-50 rounded-xl p-6 mb-6">
+              <p className="text-gray-600 text-sm">{t.emailFallback}</p>
+            </div>
+          )}
 
           <p className="text-sm text-gray-500 mb-8">
             <CheckCircle className="w-4 h-4 inline mr-1 text-green-500" />

@@ -394,6 +394,10 @@ async function handleGiftCardCompleted(
       giftCardCode: code,
       error: insertError.message,
     });
+    captureWithContext(insertError, 'webhook.gift_card', {
+      sessionId: session.id,
+      giftCardCode: code,
+    });
     throw insertError;
   }
 
