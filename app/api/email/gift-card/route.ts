@@ -90,10 +90,10 @@ export const POST = withHandler(async (request: NextRequest, { requestId }) => {
                   ${locale === 'tr' ? 'Hediye Kartı Kodu' : 'Gift Card Code'}
                 </p>
                 <p style="font-size: 24px; font-weight: bold; color: #1f2937; letter-spacing: 2px; margin: 0;">
-                  ${giftCard.code}
+                  ${escapeHtml(giftCard.code)}
                 </p>
                 <p style="font-size: 32px; font-weight: bold; color: #f59e0b; margin: 16px 0 0;">
-                  ₺${giftCard.initial_balance}
+                  ₺${escapeHtml(giftCard.initial_balance)}
                 </p>
               </div>
               

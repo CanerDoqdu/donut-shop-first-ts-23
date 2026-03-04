@@ -3,16 +3,23 @@ import { renderHook, act } from '@testing-library/react';
 
 // ── Mocks ────────────────────────────────────────────────────
 
-vi.mock('@/store/cart-store', () => ({
-  useCartStore: vi.fn((selector: (s: Record<string, unknown>) => unknown) =>
-    selector({
-      addItem: vi.fn(),
-      removeItem: vi.fn(),
-      updateQuantity: vi.fn(),
-      items: [],
-    }),
-  ),
-}));
+vi.mock('@/store/cart-store', () => {
+  const storeState = {
+    addItem: vi.fn(),
+    removeItem: vi.fn(),
+    updateQuantity: vi.fn(),
+    items: [] as unknown[],
+  };
+
+  const useCartStore = vi.fn((selector: (s: typeof storeState) => unknown) =>
+    selector(storeState),
+  ) as ReturnType<typeof vi.fn> & { getState: () => typeof storeState };
+
+  // Zustand stores expose getState() for reading outside React
+  useCartStore.getState = () => storeState;
+
+  return { useCartStore };
+});
 
 vi.mock('@/lib/logger', () => ({
   logger: {

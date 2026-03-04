@@ -14,6 +14,7 @@ import type { Queue } from 'bullmq';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL } from '@/lib/error-codes';
 import { withVersionHeader } from '@/lib/api-handler';
+import { safeCompare } from '@/lib/safe-compare';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function getQueueStats(name: string, getQueue: () => Queue<any> | null) {
@@ -40,9 +41,9 @@ async function getQueueStats(name: string, getQueue: () => Queue<any> | null) {
 
 export async function GET(req: Request): Promise<NextResponse> {
   const requestId = getRequestId(req);
-  // Simple auth check — in production use proper admin middleware
-  const authHeader = req.headers.get('authorization');
-  if (authHeader !== `Bearer ${process.env.ADMIN_API_KEY}`) {
+  // Timing-safe auth check — rejects when ADMIN_API_KEY is not configured
+  const authHeader = req.headers.get('authorization')?.replace('Bearer ', '');
+  if (!safeCompare(authHeader, process.env.ADMIN_API_KEY)) {
     return withVersionHeader(apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId));
   }
 

@@ -66,7 +66,11 @@
     "dailyFresh": "daily fresh",
     "plainDonut": "Plain donut",
     "decoratedDonut": "Decorated donut",
-    "oven": "OVEN"
+    "oven": "OVEN",
+    "chocolateDreamPrice": "$4.99",
+    "berryBlissPrice": "$3.99",
+    "caramelCrunchPrice": "$5.49",
+    "mangoSunsetPrice": "$4.49"
   },
   "products": {
     "title": "Our Products",
@@ -255,5 +259,21 @@
     "title": "Page Not Found",
     "description": "This donut seems to have disappeared! Let's get you back on track.",
     "backHome": "Back to Home"
+  },
+  "errorPage": {
+    "networkTitle": "Connection Lost",
+    "networkDesc": "It looks like you're offline or our servers can't be reached. Check your internet connection and try again.",
+    "authTitle": "Access Denied",
+    "authDesc": "Your session may have expired or you don't have permission. Please sign in again.",
+    "serverTitle": "Server Hiccup",
+    "serverDesc": "Our servers are having a moment. We're on it — please try again shortly.",
+    "unknownTitle": "Oops! Something went wrong",
+    "unknownDesc": "We dropped a donut. Don't worry, we're picking it up!",
+    "tryAgain": "Try Again",
+    "retryIn": "Retry in {seconds}s",
+    "goHome": "Go Home",
+    "errorId": "Error ID: {digest}",
+    "stillNotWorking": "Still not working? Try refreshing the page or",
+    "goBackHome": "go back home"
   }
 }

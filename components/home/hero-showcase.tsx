@@ -85,7 +85,7 @@ export function HeroShowcase() {
                 {t('chocolateDreamDesc')}
               </p>
               <div className="mt-auto pt-2 md:pt-3 border-t border-white/10 w-full text-center">
-                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>₺45.00</span>
+                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>{t('chocolateDreamPrice')}</span>
               </div>
             </div>
 
@@ -115,7 +115,7 @@ export function HeroShowcase() {
                 {t('berryBlissDesc')}
               </p>
               <div className="mt-auto pt-2 md:pt-3 border-t border-white/10 w-full text-center">
-                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>₺35.00</span>
+                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>{t('berryBlissPrice')}</span>
               </div>
             </div>
           </div>
@@ -137,7 +137,7 @@ export function HeroShowcase() {
                 <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{t('caramelCrunch')}</span>
                 <span className="text-[7px] sm:text-[8px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded-full shrink-0 font-bold uppercase" style={{ background: 'rgba(255,140,66,0.2)', color: '#FF8C42' }}>{t('new')}</span>
               </div>
-              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">₺48</span>
+              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">{t('caramelCrunchPrice')}</span>
             </div>
             <div className="w-full h-px my-2 md:my-3" style={{ background: 'rgba(255,255,255,0.08)' }} />
             <div className="flex items-center justify-between">
@@ -147,7 +147,7 @@ export function HeroShowcase() {
                 </div>
                 <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{t('mangoSunset')}</span>
               </div>
-              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">₺38</span>
+              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">{t('mangoSunsetPrice')}</span>
             </div>
           </div>
 

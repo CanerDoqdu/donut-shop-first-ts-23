@@ -11,6 +11,9 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Standalone output for Docker deployments (Vercel ignores this)
+  output: 'standalone',
+
   // Build-time env injection
   env: {
     NEXT_PUBLIC_APP_VERSION: process.env.npm_package_version ?? '0.0.0-dev',

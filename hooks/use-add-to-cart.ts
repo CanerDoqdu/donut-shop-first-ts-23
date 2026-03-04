@@ -39,7 +39,6 @@ export function useAddToCart(): UseAddToCartReturn {
   const addItem = useCartStore((s) => s.addItem);
   const removeItem = useCartStore((s) => s.removeItem);
   const updateQuantity = useCartStore((s) => s.updateQuantity);
-  const getItems = useCartStore((s) => s.items);
 
   const [status, setStatus] = useState<AddToCartStatus>('idle');
   const [error, setError] = useState<string | null>(null);
@@ -61,8 +60,9 @@ export function useAddToCart(): UseAddToCartReturn {
       const controller = new AbortController();
       abortRef.current = controller;
 
-      // Snapshot cart state for rollback
-      const existingItem = getItems.find(
+      // Snapshot cart state for rollback — read fresh from store, not stale closure
+      const currentItems = useCartStore.getState().items;
+      const existingItem = currentItems.find(
         (item: CartItem) => item.product.id === product.id,
       );
       const previousQuantity = existingItem?.quantity ?? 0;
@@ -139,7 +139,7 @@ export function useAddToCart(): UseAddToCartReturn {
           timerRef.current = setTimeout(() => setStatus('idle'), 1500);
         });
     },
-    [addItem, removeItem, updateQuantity, getItems],
+    [addItem, removeItem, updateQuantity],
   );
 
   return {

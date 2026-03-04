@@ -9,8 +9,19 @@ import { Link } from '@/i18n/routing';
 import { AddToCartButton } from '@/components/ui/add-to-cart-button';
 import type { Product } from '@/lib/types';
 
+const FALLBACK_IMG = '/donut-empty.png';
+
+/** Encode spaces & parens in image paths so Next.js Image handles them correctly */
+function safeSrc(url: string): string {
+  // Already a data-uri or absolute URL → leave as-is
+  if (url.startsWith('data:') || url.startsWith('http')) return url;
+  return encodeURI(decodeURI(url)); // idempotent encode
+}
+
 function ProductImage({ src, alt }: { src: string; alt: string }) {
   const [loaded, setLoaded] = useState(false);
+  const [imgSrc, setImgSrc] = useState(() => safeSrc(src));
+  const [errored, setErrored] = useState(false);
 
   return (
     <div className="w-full aspect-square relative mb-4 group-hover:scale-110 transition-transform">
@@ -26,12 +37,20 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
         </div>
       )}
       <Image
-        src={src}
+        src={imgSrc}
         alt={alt}
         fill
         sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
         className={`object-contain drop-shadow-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setLoaded(true)}
+        onError={() => {
+          if (!errored) {
+            setImgSrc(FALLBACK_IMG);
+            setErrored(true);
+          }
+          setLoaded(true);
+        }}
+        unoptimized
       />
     </div>
   );
@@ -64,7 +83,7 @@ export const ProductCard = memo(function ProductCard({
     <Card className="group hover:scale-105 transition-transform">
       <Link href={{ pathname: '/products/[slug]', params: { slug: product.slug } }}>
         <CardContent className="pt-6 cursor-pointer">
-          <ProductImage src={product.image_url} alt={name} />
+          <ProductImage key={product.image_url} src={product.image_url} alt={name} />
           <CardTitle className="text-center mb-2 text-lg">
             {name}
           </CardTitle>
