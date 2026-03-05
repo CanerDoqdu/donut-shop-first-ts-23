@@ -14,7 +14,6 @@ const eslintConfig = defineConfig([
     "next-env.d.ts",
     // CommonJS scripts — require() is expected
     "scripts/**/*.cjs",
-    "push-migration-020.cjs",
   ]),
 ]);
 

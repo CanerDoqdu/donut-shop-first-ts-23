@@ -1,8 +1,5 @@
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Local project tracking (not for git)
-TODO.md
-
 # dependencies
 /node_modules
 /.pnp
@@ -18,6 +15,9 @@ TODO.md
 /test-results/
 /playwright-report/
 /blob-report/
+build-output.txt
+vitest-err.txt
+vitest-output.txt
 
 # next.js
 /.next/
@@ -57,11 +57,12 @@ toLearn.md
 *.png
 !public/**/*.png
 
-# Sentry Config File
-.env.sentry-build-plugin
-
 # Local debug notes (personal, never commit)
 LOCAL-DEBUG-NOTES.md
 GITHUB_ISSUES_TO_CREATE.md
 update.md
 PROJECT-KNOWLEDGE.md
+
+# Private Copilot customization (do not publish)
+.github/agents/
+.github/prompts/

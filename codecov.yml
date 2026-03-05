@@ -16,4 +16,3 @@ comment:
 ignore:
   - "coverage/**"
   - "scripts/**"
-  - "push-migration-020.cjs"
