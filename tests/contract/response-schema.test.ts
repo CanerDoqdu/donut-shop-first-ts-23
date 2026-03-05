@@ -16,7 +16,27 @@
  *   ✓ Error code registry stability
  */
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Mock heavy transitive imports to avoid cold-import timeouts under parallel load
+vi.mock('@/lib/sentry', () => ({
+  captureWithContext: vi.fn(),
+  addCorrelatedBreadcrumb: vi.fn(),
+}));
+
+vi.mock('@/lib/logger', () => {
+  const noop = () => {};
+  const noopLogger = {
+    info: noop, warn: noop, error: noop, debug: noop,
+    metric: noop, count: noop, classifiedError: noop,
+    withContext: () => noopLogger,
+  };
+  return {
+    logger: noopLogger,
+    startTimer: () => () => 0,
+    extractCorrelationId: () => 'cid-test',
+  };
+});
 
 // ── Helpers ─────────────────────────────────────────────────
 
@@ -75,6 +95,10 @@ describe('Error response contract', () => {
 // ── 2. withHandler envelope ─────────────────────────────────
 
 describe('withHandler response envelope', () => {
+  beforeEach(() => {
+    vi.resetModules();
+  });
+
   it('attaches x-request-id and x-correlation-id on success', async () => {
     const { withHandler } = await import('@/lib/api-handler');
     const { NextRequest, NextResponse } = await import('next/server');
@@ -89,7 +113,7 @@ describe('withHandler response envelope', () => {
     const res = await handler(req);
     expect(res.headers.get('x-request-id')).toBe('rid-100');
     expect(res.headers.has('x-correlation-id')).toBe(true);
-  });
+  }, 15000);
 
   it('returns standard error body on ApiError path', async () => {
     const { withHandler } = await import('@/lib/api-handler');

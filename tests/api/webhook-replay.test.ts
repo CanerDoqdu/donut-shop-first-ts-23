@@ -78,6 +78,28 @@ vi.mock('@/lib/fetch-with-timeout', () => ({
   withTimeout: (promise: Promise<unknown>) => promise,
 }));
 
+// Mock queue to avoid heavy bullmq/ioredis imports
+vi.mock('@/lib/queue', () => ({
+  enqueueEmail: vi.fn().mockResolvedValue(undefined),
+  enqueueLoyaltyPoints: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock inventory to avoid extra Supabase client creation
+vi.mock('@/lib/inventory', () => ({
+  confirmReservations: vi.fn().mockResolvedValue(undefined),
+  releaseReservations: vi.fn().mockResolvedValue(undefined),
+}));
+
+// Mock sentry to avoid heavy @sentry/nextjs import
+vi.mock('@/lib/sentry', () => ({
+  captureWithContext: vi.fn(),
+}));
+
+// Mock migration to avoid transitive imports
+vi.mock('@/lib/migration', () => ({
+  dualWriteStripeSession: vi.fn().mockResolvedValue(undefined),
+}));
+
 // Suppress logger output in tests
 vi.mock('@/lib/logger', () => {
   const noop = () => {};
@@ -93,6 +115,7 @@ vi.mock('@/lib/logger', () => {
 
 async function callWebhook(body: string, headers: Record<string, string> = {}) {
   // Reset module cache so fresh mock state is picked up
+  vi.resetModules();
   const mod = await import('@/app/api/webhooks/stripe/route');
   const req = new NextRequest('http://localhost/api/webhooks/stripe', {
     method: 'POST',
@@ -147,6 +170,7 @@ describe('POST /api/webhooks/stripe — replay tests', () => {
   // ── Missing signature ──────────────────────────────────────
 
   it('returns 400 when stripe-signature header is missing', async () => {
+    vi.resetModules();
     const mod = await import('@/app/api/webhooks/stripe/route');
     const req = new NextRequest('http://localhost/api/webhooks/stripe', {
       method: 'POST',
