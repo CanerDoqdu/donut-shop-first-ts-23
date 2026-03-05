@@ -37,6 +37,16 @@ export const featureFlags = {
   /** Enable bundle analyzer (set ANALYZE=true in env) */
   bundleAnalyzer: process.env.ANALYZE === 'true',
 
+  /** Normalize promo codes (trim + uppercase) before validation/apply */
+  get normalizePromoCodes(): boolean {
+    return process.env.NORMALIZE_PROMO_CODES !== 'false';
+  },
+
+  /** Fail webhook idempotency insert errors closed when true */
+  get strictWebhookIdempotency(): boolean {
+    return process.env.STRICT_WEBHOOK_IDEMPOTENCY === 'true';
+  },
+
   // ── Maintenance mode toggles ──────────────────────────────
   // Set CHECKOUT_ENABLED=false or WEBHOOKS_ENABLED=false in env to
   // disable these subsystems without a deploy (e.g. during incidents).

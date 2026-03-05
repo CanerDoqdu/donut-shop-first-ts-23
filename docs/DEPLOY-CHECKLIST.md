@@ -2,6 +2,7 @@
 
 > Last updated: 2026-03-01  
 > Code: `lib/deploy-checklist.ts` | Script: `scripts/post-deploy-smoke.ts`
+> Evidence Log: `docs/DEPLOY-VERIFICATION-EVIDENCE.md`
 
 ---
 

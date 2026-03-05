@@ -16,6 +16,7 @@ export default defineConfig({
     include: ['tests/**/*.test.{ts,tsx}'],
     coverage: {
       provider: 'v8',
+      reporter: ['text', 'html', 'json-summary'],
       include: ['lib/**/*.ts', 'components/**/*.tsx'],
       exclude: ['lib/supabase/**', 'lib/stripe/**'],
     },

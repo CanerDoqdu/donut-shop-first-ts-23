@@ -105,6 +105,24 @@ Queue reliability events to watch in logs:
 | DLQ entry created | `queue.dlq.added` | warn |
 | Replay attempted | `queue.dlq.replayed` | info |
 
+## Circuit Breaker Fallback Proof (PR35)
+
+Run this drill to verify graceful degradation behavior is still enforced:
+
+```bash
+npm test -- tests/lib/circuit-breaker.test.ts
+```
+
+Expected proof points from the suite:
+
+- `stripe` breaker trips after 2 consecutive failures and fast-fails while OPEN.
+- `redis` breaker trips after 3 consecutive failures and fallback path remains reachable.
+- Alert rules fire at expected thresholds:
+  - `stripe_circuit_breaker_tripped` at `>= 5`
+  - `redis_circuit_breaker_tripped` at `>= 3`
+
+If this suite fails, do not promote queue-related changes until degradation paths are restored.
+
 ## See Also
 
 - [DEAD-LETTER.md](DEAD-LETTER.md) — DLQ architecture

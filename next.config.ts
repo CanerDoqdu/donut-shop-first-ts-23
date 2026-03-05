@@ -10,9 +10,15 @@ const withBundleAnalyzer = bundleAnalyzer({
   openAnalyzer: false,
 });
 
+const isWindows = process.platform === 'win32';
+
 const nextConfig: NextConfig = {
-  // Standalone output for Docker deployments (Vercel ignores this)
-  output: 'standalone',
+  // Standalone output is useful for Linux container deploys.
+  // Disable on Windows dev machines to avoid colon-in-path trace copy warnings.
+  ...(isWindows ? {} : { output: 'standalone' }),
+
+  // Force bundling for BullMQ+ioredis to avoid unresolved external warnings.
+  serverExternalPackages: [],
 
   // Build-time env injection
   env: {
@@ -69,7 +75,9 @@ const nextConfig: NextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://va.vercel-scripts.com",
+              // script-src: nonce-based CSP is set per-request in middleware (proxy.ts).
+              // This static fallback allows Stripe + Vercel scripts for non-middleware routes.
+              "script-src 'self' 'unsafe-inline' https://js.stripe.com https://va.vercel-scripts.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
               "font-src 'self' https://fonts.gstatic.com",
@@ -79,6 +87,7 @@ const nextConfig: NextConfig = {
               "base-uri 'self'",
               "form-action 'self'",
               "frame-ancestors 'none'",
+              "upgrade-insecure-requests",
             ].join('; '),
           },
         ],

@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { logger } from '@/lib/logger';
 import { metrics } from '@/lib/metrics';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_INTERNAL, E_VALIDATION_FAILED } from '@/lib/error-codes';
 import { withVersionHeader } from '@/lib/api-handler';
+import { validateOrigin } from '@/lib/security';
 
 /** Allowed Web Vital metric names. */
 const VALID_VITALS = new Set(['LCP', 'FID', 'CLS', 'INP', 'FCP', 'TTFB']);
@@ -14,8 +16,10 @@ const VALID_VITALS = new Set(['LCP', 'FID', 'CLS', 'INP', 'FCP', 'TTFB']);
  * Receives Core Web Vitals beacons from the client.
  * Records metrics in the in-memory MetricsCollector and emits structured logs.
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   const requestId = getRequestId(request);
+  const csrfError = validateOrigin(request);
+  if (csrfError) return withVersionHeader(csrfError);
 
   try {
     const body = await request.json();

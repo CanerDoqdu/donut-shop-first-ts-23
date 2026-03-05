@@ -50,6 +50,16 @@ k6 run --env BASE_URL=https://staging.example.com scripts/load-test.js
 k6 run --out json=results.json scripts/load-test.js
 ```
 
+### CI Integration
+
+k6 is now integrated into GitHub Actions CI (`.github/workflows/ci.yml` → `load-test` job).
+Triggered on PRs with the `ci:load` label. Results are uploaded as artifacts.
+
+```bash
+# To trigger in CI: add the `ci:load` label to your PR
+```
+```
+
 ---
 
 ## Thresholds
@@ -103,11 +113,22 @@ When k6 completes, the script writes a JSON summary to `scripts/load-test-result
 
 ---
 
-## Baseline Results (Estimated)
+## Baseline Results (Projected — Pending Live Validation)
 
-> **Note:** k6 is not installed in the current CI/build environment. The results below
-> are projections based on single-instance benchmarking and the app's architecture.
-> Run the k6 command above to get actual numbers.
+> **⚠️ IMPORTANT:** The results below are **projections** based on single-instance
+> benchmarking and the app's architecture. They have NOT been verified with a live
+> k6 load test run yet.
+>
+> **To get real numbers**, run:
+> ```bash
+> npm run dev          # start the app
+> k6 run scripts/load-test.js   # in another terminal
+> ```
+>
+> After running k6, replace the projected values below with actual results
+> and change this section title to "Verified Results (Date: YYYY-MM-DD)".
+
+### Status: ⏳ Awaiting First Real k6 Run
 
 ### Latency Summary
 

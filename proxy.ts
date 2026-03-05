@@ -124,15 +124,56 @@ async function _handleRequest(
   // -- 4. Merge Supabase cookies into the intl response --
   forwardAuthCookies(supabaseResponse, intlResponse);
 
+  // -- 5. Nonce-based CSP (per-request) --
+  const nonce = generateCspNonce();
+  const csp = buildCspHeader(nonce);
+  intlResponse.headers.set('Content-Security-Policy', csp);
+  intlResponse.headers.set('x-nonce', nonce);
+
   // Attach request-id for observability
   intlResponse.headers.set('x-request-id', requestId);
 
   return intlResponse;
 }
 
-// TODO: restore original matcher after Vercel dxb1 incident resolves
-// See: https://stspg.io/2dfvhs9ymqym
-// Original: matcher: ['/', '/(tr|en)/:path*', '/((?!_next|_vercel|api|.*\\..*).*)'],
+/**
+ * Generate a cryptographically random nonce for CSP.
+ * Uses Edge-compatible crypto.getRandomValues.
+ */
+function generateCspNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  // btoa + custom base64 for Edge Runtime compatibility
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+/**
+ * Build a strict CSP header using a per-request nonce.
+ * - script-src uses nonce instead of 'unsafe-inline'
+ * - style-src keeps 'unsafe-inline' (required by Tailwind CSS / Next.js)
+ * - upgrade-insecure-requests enforces HTTPS
+ */
+function buildCspHeader(nonce: string): string {
+  return [
+    "default-src 'self'",
+    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com https://va.vercel-scripts.com`,
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
+    "font-src 'self' https://fonts.gstatic.com",
+    "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.stripe.com https://*.ingest.de.sentry.io https://vitals.vercel-insights.com https://va.vercel-scripts.com https://api.pwnedpasswords.com",
+    "frame-src https://js.stripe.com https://hooks.stripe.com",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join('; ');
+}
+
 export const config = {
-  matcher: [],
+  matcher: ['/', '/(tr|en)/:path*', '/((?!_next|_vercel|api|.*\\..*).*)'],
 };

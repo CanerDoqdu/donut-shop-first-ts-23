@@ -15,7 +15,8 @@
  * Checks:
  *   1. Homepage responds 200 (or redirect to locale)
  *   2. Products page responds 200
- *   3. API health — GET /api/vitals returns 200
+ *   3. Checkout page responds 200/redirect (critical purchase path)
+ *   4. API health — POST /api/vitals returns expected status
  *   4. Static assets — manifest.json loads
  *   5. Security headers present
  *   6. Response time under 5s
@@ -25,6 +26,7 @@ interface SmokeCheck {
   name: string;
   url: string;
   method?: 'GET' | 'POST' | 'HEAD';
+  body?: string;
   expectedStatus?: number | number[];
   maxResponseTimeMs?: number;
   validateBody?: (body: string) => boolean;
@@ -67,10 +69,17 @@ const CHECKS: SmokeCheck[] = [
     maxResponseTimeMs: 5000,
   },
   {
+    name: 'Checkout page loads',
+    url: '/en/checkout',
+    expectedStatus: [200, 301, 302, 307, 308],
+    maxResponseTimeMs: 5000,
+  },
+  {
     name: 'API vitals endpoint responds',
     url: '/api/vitals',
     method: 'POST',
-    expectedStatus: [200, 400, 405], // 400 if no body, that's OK — endpoint exists
+    body: JSON.stringify({ name: 'LCP', value: 1200, id: 'smoke-lcp', delta: 0 }),
+    expectedStatus: [200, 403, 405], // 403 can happen if origin policy rejects the probe
     maxResponseTimeMs: 3000,
   },
   {
@@ -92,9 +101,16 @@ const CHECKS: SmokeCheck[] = [
     url: '/en',
     expectedStatus: [200, 301, 302, 307, 308],
     validateHeaders: (headers) => {
-      // At minimum, X-Content-Type-Options should be set
       const xContentType = headers.get('x-content-type-options');
-      return xContentType === 'nosniff';
+      const xFrameOptions = headers.get('x-frame-options');
+      const csp = headers.get('content-security-policy');
+
+      return (
+        xContentType === 'nosniff' &&
+        xFrameOptions === 'DENY' &&
+        typeof csp === 'string' &&
+        csp.includes("default-src 'self'")
+      );
     },
   },
 ];
@@ -109,8 +125,12 @@ async function runCheck(check: SmokeCheck): Promise<SmokeResult> {
 
     const res = await fetch(url, {
       method: check.method ?? 'GET',
+      body: check.body,
       redirect: 'manual', // don't follow — we check status directly
       signal: controller.signal,
+      headers: {
+        'content-type': 'application/json',
+      },
     });
     clearTimeout(timeout);
 

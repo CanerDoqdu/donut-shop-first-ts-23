@@ -6,12 +6,14 @@
  */
 
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createReview, getProductReviews } from '@/lib/reviews';
 import { rateLimit } from '@/lib/rate-limit';
 import { logger } from '@/lib/logger';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_RATE_LIMITED, E_VALIDATION_FAILED } from '@/lib/error-codes';
 import { withVersionHeader } from '@/lib/api-handler';
+import { validateOrigin } from '@/lib/security';
 
 export async function GET(req: Request): Promise<NextResponse> {
   const requestId = getRequestId(req);
@@ -43,8 +45,11 @@ export async function GET(req: Request): Promise<NextResponse> {
   }
 }
 
-export async function POST(req: Request): Promise<NextResponse> {
+export async function POST(req: NextRequest): Promise<NextResponse> {
   const requestId = getRequestId(req);
+  const csrfError = validateOrigin(req);
+  if (csrfError) return withVersionHeader(csrfError);
+
   try {
     const { createClient: createServerClient } = await import('@/lib/supabase/server');
     const supabase = await createServerClient();

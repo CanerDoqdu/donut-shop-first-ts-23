@@ -13,6 +13,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:load": "k6 run scripts/load-test.js",
     "analyze": "cross-env ANALYZE=true next build",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed"
