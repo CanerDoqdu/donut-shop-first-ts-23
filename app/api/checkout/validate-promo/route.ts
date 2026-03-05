@@ -8,6 +8,7 @@ import { withHandler } from '@/lib/api-handler';
 import { ApiError } from '@/lib/api-error';
 import { previewPromo } from '@/lib/promo';
 import { logger, startTimer } from '@/lib/logger';
+import { featureFlags } from '@/lib/config';
 import {
   E_RATE_LIMITED,
   E_VALIDATION_FAILED,
@@ -73,19 +74,20 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
   }
 
   const { code, orderTotal } = parsed.data;
+  const normalizedCode = featureFlags.normalizePromoCodes ? code.trim().toUpperCase() : code;
   const admin = createAdminClient();
 
-  const result = await previewPromo(admin, code, orderTotal);
+  const result = await previewPromo(admin, normalizedCode, orderTotal);
 
   log.metric('promo_validate_ms', elapsed());
 
   if (!result.success) {
     const errorCode = REASON_TO_CODE[result.reason] || E_PROMO_INVALID;
-    log.info('promo.rejected', { code: errorCode, reason: result.reason, promoCode: code });
+    log.info('promo.rejected', { code: errorCode, reason: result.reason, promoCode: normalizedCode });
     throw new ApiError(errorCode, result.message, 400);
   }
 
-  log.info('promo.validated', { promoCode: code, discountValue: result.discountValue });
+  log.info('promo.validated', { promoCode: normalizedCode, discountValue: result.discountValue });
   return NextResponse.json({
     valid: true,
     discountType: result.discountType,

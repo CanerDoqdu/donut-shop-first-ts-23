@@ -6,6 +6,7 @@
  */
 
 import { NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { moderateReview, getModerationQueue } from '@/lib/reviews';
 import type { ReviewStatus } from '@/lib/reviews';
@@ -14,6 +15,7 @@ import { env } from '@/lib/env';
 import { apiErrorResponse, getRequestId } from '@/lib/api-error';
 import { E_AUTH_SESSION_MISSING, E_INTERNAL, E_VALIDATION_FAILED } from '@/lib/error-codes';
 import { withVersionHeader } from '@/lib/api-handler';
+import { validateOrigin } from '@/lib/security';
 
 async function getAdminUser() {
   const { createClient: createServerClient } = await import('@/lib/supabase/server');
@@ -23,13 +25,13 @@ async function getAdminUser() {
 
   // Check admin role
   const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY);
-  const { data: profile } = await admin
-    .from('profiles')
-    .select('role')
-    .eq('id', user.id)
-    .single();
+  const { data: adminMembership } = await admin
+    .from('admin_users')
+    .select('user_id')
+    .eq('user_id', user.id)
+    .maybeSingle();
 
-  if (profile?.role !== 'admin') return null;
+  if (!adminMembership) return null;
   return { userId: user.id, admin };
 }
 
@@ -51,8 +53,13 @@ export async function GET(req: Request): Promise<NextResponse> {
   }
 }
 
-export async function PATCH(req: Request): Promise<NextResponse> {
+export async function PATCH(req: NextRequest): Promise<NextResponse> {
   const requestId = getRequestId(req);
+  const csrfError = validateOrigin(req);
+  if (csrfError) {
+    return withVersionHeader(csrfError);
+  }
+
   const adminCtx = await getAdminUser();
   if (!adminCtx) {
     return withVersionHeader(apiErrorResponse(E_AUTH_SESSION_MISSING, 'Unauthorized', 401, requestId));

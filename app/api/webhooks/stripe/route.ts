@@ -52,13 +52,17 @@ async function recordEvent(
   if (error?.code === '23505') return false;
 
   if (error) {
-    // Table may not exist yet — warn but don't block
+    // In production, fail closed so duplicates cannot be processed.
     logger.warn('webhook.idempotency_insert_failed', {
       code: E_WEBHOOK_IDEMPOTENCY_FAILED,
       eventId,
       pgCode: error.code,
       error: error.message,
     });
+
+    if (featureFlags.strictWebhookIdempotency) {
+      throw new Error(E_WEBHOOK_IDEMPOTENCY_FAILED);
+    }
   }
 
   return true;
@@ -112,7 +116,22 @@ export async function POST(request: NextRequest) {
   }
 
   // ── Idempotency: skip already-processed events ─────────────
-  const isNew = await recordEvent(supabaseAdmin, event.id, event.type);
+  let isNew: boolean;
+  try {
+    isNew = await recordEvent(supabaseAdmin, event.id, event.type);
+  } catch (err) {
+    log.error('webhook.idempotency_fatal', {
+      code: E_WEBHOOK_IDEMPOTENCY_FAILED,
+      eventId: event.id,
+      type: event.type,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return NextResponse.json(
+      { code: E_WEBHOOK_HANDLER_ERROR, message: 'Internal error', requestId },
+      { status: 500, headers: { 'x-request-id': requestId, 'x-api-version': API_VERSION } },
+    );
+  }
+
   if (!isNew) {
     log.info('webhook.duplicate_skipped', {
       eventId: event.id,

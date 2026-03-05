@@ -77,6 +77,9 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     }
 
     const { items, customerEmail, customerName, customerPhone, customerAddress, locale, cartTimestamp, promoCode, idempotencyKey } = parsed.data;
+    const normalizedPromoCode = promoCode
+      ? (featureFlags.normalizePromoCodes ? promoCode.trim().toUpperCase() : promoCode)
+      : undefined;
 
     // Admin client (service_role) — created once and reused throughout the handler.
     const admin = createAdminClient();
@@ -207,17 +210,17 @@ export const POST = withHandler(async (req: NextRequest, { requestId }) => {
     let discountAmount = 0;
     let appliedPromoId: string | null = null;
 
-    if (promoCode) {
+    if (normalizedPromoCode) {
       try {
-        const promo = await applyPromo(admin, promoCode, subtotal);
+        const promo = await applyPromo(admin, normalizedPromoCode, subtotal);
         if (!promo.success) {
           throw new Error(promo.message);
         }
         discountAmount = promo.discountValue;
         appliedPromoId = promo.promoId;
-        log.info('checkout.promo_applied', { promoCode, discountAmount, promoId: appliedPromoId });
+        log.info('checkout.promo_applied', { promoCode: normalizedPromoCode, discountAmount, promoId: appliedPromoId });
       } catch (promoErr) {
-        log.error('checkout.promo_failed', { code: E_PROMO_APPLY_FAILED, promoCode, error: promoErr instanceof Error ? promoErr.message : String(promoErr) });
+        log.error('checkout.promo_failed', { code: E_PROMO_APPLY_FAILED, promoCode: normalizedPromoCode, error: promoErr instanceof Error ? promoErr.message : String(promoErr) });
         throw new ApiError(E_PROMO_APPLY_FAILED, promoErr instanceof Error ? promoErr.message : 'Invalid promo code', 400);
       }
     }

@@ -25,11 +25,14 @@ const mockUpdate = vi.fn().mockReturnValue({
   }),
 });
 const mockInsert = vi.fn();
+const mockGiftCardInsert = vi.fn();
+const mockStripeSessionUpdate = vi.fn().mockResolvedValue({ id: 'cs_gift_1' });
 
 const mockSupabase = {
   from: vi.fn((table: string) => {
     if (table === 'stripe_events') return { insert: mockInsert };
     if (table === 'orders') return { update: mockUpdate };
+    if (table === 'gift_cards') return { insert: mockGiftCardInsert };
     return {};
   }),
   rpc: mockRpc,
@@ -51,9 +54,11 @@ vi.mock('@/lib/env', () => ({
 
 // Mock config with feature flags
 let webhooksEnabled = true;
+let strictWebhookIdempotency = false;
 vi.mock('@/lib/config', () => ({
   featureFlags: {
     get webhooksEnabled() { return webhooksEnabled; },
+    get strictWebhookIdempotency() { return strictWebhookIdempotency; },
     checkoutEnabled: true,
   },
 }));
@@ -68,6 +73,11 @@ vi.mock('@/lib/stripe/server', () => ({
       constructEvent: () => {
         if (constructEventThrow) throw constructEventThrow;
         return constructEventResult;
+      },
+    },
+    checkout: {
+      sessions: {
+        update: mockStripeSessionUpdate,
       },
     },
   }),
@@ -136,10 +146,13 @@ async function callWebhook(body: string, headers: Record<string, string> = {}) {
 beforeEach(() => {
   vi.clearAllMocks();
   webhooksEnabled = true;
+  strictWebhookIdempotency = false;
   constructEventResult = null;
   constructEventThrow = null;
   // Default: first insert succeeds (new event)
   mockInsert.mockResolvedValue({ error: null });
+  mockGiftCardInsert.mockResolvedValue({ error: null });
+  mockStripeSessionUpdate.mockResolvedValue({ id: 'cs_gift_1' });
 });
 
 describe('POST /api/webhooks/stripe — replay tests', () => {
@@ -209,6 +222,27 @@ describe('POST /api/webhooks/stripe — replay tests', () => {
     expect(body.received).toBe(true);
   });
 
+  it('continues when idempotency insert fails and strict mode is disabled', async () => {
+    constructEventResult = checkoutCompleted;
+    mockInsert.mockResolvedValue({ error: { code: '42P01', message: 'missing table' } });
+
+    const { status, body } = await callWebhook(JSON.stringify(checkoutCompleted));
+
+    expect(status).toBe(200);
+    expect(body.received).toBe(true);
+  });
+
+  it('fails closed when idempotency insert fails and strict mode is enabled', async () => {
+    strictWebhookIdempotency = true;
+    constructEventResult = checkoutCompleted;
+    mockInsert.mockResolvedValue({ error: { code: '42P01', message: 'missing table' } });
+
+    const { status, body } = await callWebhook(JSON.stringify(checkoutCompleted));
+
+    expect(status).toBe(500);
+    expect(body.code).toBe('E_WEBHOOK_HANDLER_ERROR');
+  });
+
   // ── Event: checkout.session.completed ──────────────────────
 
   it('processes checkout.session.completed via RPC', async () => {
@@ -240,6 +274,36 @@ describe('POST /api/webhooks/stripe — replay tests', () => {
 
     expect(status).toBe(200);
     expect(body.received).toBe(true);
+  });
+
+  it('routes gift card checkout.session.completed to gift_card handler', async () => {
+    constructEventResult = {
+      id: 'evt_gift_1',
+      type: 'checkout.session.completed',
+      data: {
+        object: {
+          id: 'cs_gift_1',
+          payment_intent: 'pi_gift_1',
+          customer_email: 'buyer@donut.dev',
+          metadata: {
+            type: 'gift_card',
+            amount: '150',
+            locale: 'en',
+            senderName: 'Donut Buyer',
+          },
+        },
+      },
+    };
+
+    const { status, body } = await callWebhook('{}');
+
+    expect(status).toBe(200);
+    expect(body.received).toBe(true);
+    expect(mockGiftCardInsert).toHaveBeenCalledTimes(1);
+    expect(mockStripeSessionUpdate).toHaveBeenCalledWith(
+      'cs_gift_1',
+      expect.objectContaining({ metadata: expect.objectContaining({ type: 'gift_card' }) }),
+    );
   });
 
   // ── Handler error → 500 ────────────────────────────────────

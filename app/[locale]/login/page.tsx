@@ -37,6 +37,18 @@ export default function LoginPage() {
     checkAuth();
   }, [locale, router, supabase]);
 
+  function getSafeRedirect(redirect: string | null): string {
+    if (!redirect) return `/${locale}`;
+
+    try {
+      const parsed = new URL(redirect, window.location.origin);
+      if (parsed.origin !== window.location.origin) return `/${locale}`;
+      return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+      return `/${locale}`;
+    }
+  }
+
   const t = {
     tr: {
       title: 'Giriş Yap',
@@ -101,7 +113,7 @@ export default function LoginPage() {
     // Full page navigation so the server proxy runs and picks up the
     // new auth cookies — this is required for SSR to render correctly.
     setSuccess(true);
-    const redirectTo = searchParams.get('redirect') || `/${locale}`;
+    const redirectTo = getSafeRedirect(searchParams.get('redirect'));
     window.location.replace(redirectTo);
   }
 

@@ -7,12 +7,18 @@ const mockRedisRateLimit = vi.hoisted(() => vi.fn());
 const mockParseBody = vi.hoisted(() => vi.fn());
 const mockGetProductsByIds = vi.hoisted(() => vi.fn());
 const mockCreateCheckoutSession = vi.hoisted(() => vi.fn());
+const mockStripeSessionRetrieve = vi.hoisted(() => vi.fn());
 const mockReserveStock = vi.hoisted(() => vi.fn());
 const mockReleaseReservations = vi.hoisted(() => vi.fn());
 const mockApplyPromo = vi.hoisted(() => vi.fn());
 const mockRollbackPromo = vi.hoisted(() => vi.fn());
 const mockWithTimeout = vi.hoisted(() => vi.fn());
-const mockFeatureFlags = vi.hoisted(() => ({ checkoutEnabled: true, webhooksEnabled: true }));
+const mockFeatureFlags = vi.hoisted(() => ({
+  checkoutEnabled: true,
+  webhooksEnabled: true,
+  normalizePromoCodes: true,
+  strictWebhookIdempotency: false,
+}));
 const mockGetUser = vi.hoisted(() => vi.fn());
 
 const mockOrdersMaybeSingle = vi.hoisted(() => vi.fn());
@@ -48,7 +54,7 @@ vi.mock('@/lib/stripe/server', () => ({
   getStripe: () => ({
     checkout: {
       sessions: {
-        retrieve: vi.fn(),
+        retrieve: mockStripeSessionRetrieve,
       },
     },
   }),
@@ -177,6 +183,7 @@ describe('POST /api/checkout — integration', () => {
 
     mockValidateOrigin.mockReturnValue(null);
     mockFeatureFlags.checkoutEnabled = true;
+    mockFeatureFlags.normalizePromoCodes = true;
     mockRedisRateLimit.mockResolvedValue({ success: true });
     mockGetUser.mockResolvedValue({ data: { user: null } });
 
@@ -207,6 +214,11 @@ describe('POST /api/checkout — integration', () => {
     mockOrderItemsInsert.mockResolvedValue({ error: null });
     mockReserveStock.mockResolvedValue({ success: true });
     mockCreateCheckoutSession.mockResolvedValue({ id: 'cs_test_1', url: 'https://stripe.test/checkout/cs_test_1' });
+    mockStripeSessionRetrieve.mockResolvedValue({
+      id: 'cs_existing_1',
+      url: 'https://stripe.test/checkout/cs_existing_1',
+      status: 'open',
+    });
     mockWithTimeout.mockImplementation((promise: Promise<unknown>) => promise);
     mockOrdersUpdateEq.mockResolvedValue({ error: null });
     mockApplyPromo.mockResolvedValue({ success: true, discountValue: 0, promoId: null });
@@ -261,5 +273,127 @@ describe('POST /api/checkout — integration', () => {
     expect(body.orderId).toBe('order-1');
     expect(headers.get('x-api-version')).toBe(API_VERSION);
     expect(mockCreateCheckoutSession).toHaveBeenCalled();
+  });
+
+  it('normalizes promo code before apply when feature flag is enabled', async () => {
+    mockParseBody.mockReturnValueOnce({
+      success: true,
+      data: {
+        items: [{ id: 'donut-1', quantity: 2 }],
+        customerEmail: 'test@donut.dev',
+        customerName: 'Test User',
+        customerPhone: '',
+        customerAddress: '',
+        locale: 'en',
+        cartTimestamp: Date.now(),
+        promoCode: ' firstdonut ',
+      },
+    });
+
+    const { status } = await callCheckout({});
+
+    expect(status).toBe(200);
+    expect(mockApplyPromo).toHaveBeenCalledWith(expect.anything(), 'FIRSTDONUT', expect.any(Number));
+  });
+
+  it('keeps promo code as-is when normalization flag is disabled', async () => {
+    mockFeatureFlags.normalizePromoCodes = false;
+    mockParseBody.mockReturnValueOnce({
+      success: true,
+      data: {
+        items: [{ id: 'donut-1', quantity: 2 }],
+        customerEmail: 'test@donut.dev',
+        customerName: 'Test User',
+        customerPhone: '',
+        customerAddress: '',
+        locale: 'en',
+        cartTimestamp: Date.now(),
+        promoCode: ' firstdonut ',
+      },
+    });
+
+    const { status } = await callCheckout({});
+
+    expect(status).toBe(200);
+    expect(mockApplyPromo).toHaveBeenCalledWith(expect.anything(), ' firstdonut ', expect.any(Number));
+  });
+
+  it('returns existing checkout URL when idempotency key hits an open Stripe session', async () => {
+    mockParseBody.mockReturnValueOnce({
+      success: true,
+      data: {
+        items: [{ id: 'donut-1', quantity: 1 }],
+        customerEmail: 'test@donut.dev',
+        customerName: 'Replay User',
+        customerPhone: '',
+        customerAddress: '',
+        locale: 'en',
+        cartTimestamp: Date.now(),
+        idempotencyKey: 'idem-123',
+      },
+    });
+
+    mockOrdersMaybeSingle.mockResolvedValueOnce({
+      data: { id: 'order-existing-1', stripe_session_id: 'cs_existing_1' },
+      error: null,
+    });
+
+    const { status, body, headers } = await callCheckout({});
+
+    expect(status).toBe(200);
+    expect(body).toEqual({
+      url: 'https://stripe.test/checkout/cs_existing_1',
+      orderId: 'order-existing-1',
+    });
+    expect(headers.get('x-idempotent-replay')).toBe('true');
+    expect(mockStripeSessionRetrieve).toHaveBeenCalledWith('cs_existing_1');
+    expect(mockCreateCheckoutSession).not.toHaveBeenCalled();
+  });
+
+  it('returns 400 when promo application fails', async () => {
+    mockParseBody.mockReturnValueOnce({
+      success: true,
+      data: {
+        items: [{ id: 'donut-1', quantity: 1 }],
+        customerEmail: 'test@donut.dev',
+        customerName: 'Promo User',
+        customerPhone: '',
+        customerAddress: '',
+        locale: 'en',
+        cartTimestamp: Date.now(),
+        promoCode: 'BROKENPROMO',
+      },
+    });
+    mockApplyPromo.mockResolvedValueOnce({ success: false, message: 'Promo invalid' });
+
+    const { status, body } = await callCheckout({});
+
+    expect(status).toBe(400);
+    expect(body.code).toBe('E_PROMO_APPLY_FAILED');
+  });
+
+  it('rolls back promo and reservations when Stripe checkout session creation fails', async () => {
+    mockParseBody.mockReturnValueOnce({
+      success: true,
+      data: {
+        items: [{ id: 'donut-1', quantity: 1 }],
+        customerEmail: 'test@donut.dev',
+        customerName: 'Stripe Error User',
+        customerPhone: '',
+        customerAddress: '',
+        locale: 'en',
+        cartTimestamp: Date.now(),
+        promoCode: 'FIRSTDONUT',
+      },
+    });
+    mockApplyPromo.mockResolvedValueOnce({ success: true, discountValue: 2, promoId: 'promo-1' });
+    mockCreateCheckoutSession.mockRejectedValueOnce(new Error('Stripe timeout'));
+
+    const { status, body } = await callCheckout({});
+
+    expect(status).toBe(500);
+    expect(body.code).toBe('E_STRIPE_CHECKOUT_FAILED');
+    expect(mockReleaseReservations).toHaveBeenCalledWith('order-1');
+    expect(mockRollbackPromo).toHaveBeenCalledWith(expect.anything(), 'promo-1');
   });
 });

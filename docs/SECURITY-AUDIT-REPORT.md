@@ -243,19 +243,27 @@ Admin RLS → EXISTS(admin_users WHERE user_id = auth.uid()) → WORKS
 ## Remaining Items
 
 ### Requires Manual Action
-1. **Apply Migration 021** — Run the SQL in `supabase/migrations/021_fix_admin_rls_and_signup_trigger.sql` via Supabase Dashboard SQL Editor or install Supabase CLI and run `supabase db push`
-2. **Verify Upstash Redis** — Ensure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set in production environment (Vercel)
+1. **Apply Migration 021 + 022** — Run `node scripts/apply-migrations.cjs` or apply manually via Supabase Dashboard SQL Editor:
+   - `supabase/migrations/021_fix_admin_rls_and_signup_trigger.sql`
+   - `supabase/migrations/022_harden_admin_role_boundary.sql`
+   - Then validate: `supabase/migrations/022_harden_admin_role_boundary_validate.sql`
+2. **Verify Upstash Redis in Production** — Run `node scripts/verify-redis.cjs` with production env vars, or check Vercel environment:
+   - Ensure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` are set
+   - Verify with: `node scripts/verify-redis.cjs`
+
+### Automation Scripts Added (2026-03-05)
+- `scripts/apply-migrations.cjs` — Guides migration application with CLI/Dashboard/psql options
+- `scripts/verify-redis.cjs` — Automated Upstash Redis connectivity and read/write verification
 
 ### Known Limitations
 - **Vercel Analytics/Speed Insights** — 404 errors in local development (expected, works in production)
 - **Schema drift** — `order_items` table missing `product_image` and `total_price` columns until migration 021 is applied. Checkout code handles this gracefully
 - **CLS metric** — Some pages show "needs-improvement" CLS scores due to layout shift during auth state resolution. The loading gate mitigates the auth-specific flash but doesn't eliminate all CLS
 
-### Production Readiness Deductions (-12 points)
-- -5: Migration 021 not yet applied to live database
-- -3: No automated E2E test for checkout flow (Stripe integration)  
+### Production Readiness Deductions (-9 points)
+- -5: Migration 021+022 not yet applied to live database (scripts provided: `scripts/apply-migrations.cjs`)
 - -2: No DAST/penetration testing performed
-- -2: Missing CSP report-uri for violation monitoring
+- -2: Missing CSP report-uri for violation monitoring (CSP nonce planned)
 
 ---
 
