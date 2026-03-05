@@ -1,3 +1,0 @@
-
-[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/caner/Desktop/donut/donut-shop-first-ts-23[39m
-
