@@ -58,7 +58,7 @@ export default function ProductsPage() {
         <h1 className="font-fredoka text-5xl font-bold mb-4 bg-gradient-donut bg-clip-text text-transparent">
           {t('products.title')}
         </h1>
-        <p className="text-gray-600 text-lg">
+        <p className="text-gray-700 text-lg">
           {t('products.subtitle')}
         </p>
       </div>
@@ -92,8 +92,9 @@ export default function ProductsPage() {
 
       {/* Products Grid */}
       <SectionSuspense name="ProductGrid">
+      <h2 className="sr-only">{t('products.title')} listing</h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {filteredProducts.map((product) => (
+        {filteredProducts.map((product, index) => (
           <ProductCard
             key={product.id}
             product={product}
@@ -101,13 +102,14 @@ export default function ProductsPage() {
             categoryLabel={t(`products.categories.${product.category}`)}
             addToCartLabel={t('products.addToCart')}
             outOfStockLabel={t('products.outOfStock')}
+            priority={index === 0}
           />
         ))}
       </div>
 
       {filteredProducts.length === 0 && (
         <div className="text-center py-20">
-          <p className="text-gray-500 text-lg">{t('products.noProducts')} {t('products.tryDifferentSearch')}</p>
+          <p className="text-gray-700 text-lg">{t('products.noProducts')} {t('products.tryDifferentSearch')}</p>
         </div>
       )}
       </SectionSuspense>

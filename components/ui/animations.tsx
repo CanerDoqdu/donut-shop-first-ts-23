@@ -1,6 +1,3 @@
-'use client';
-
-import { motion } from 'framer-motion';
 import { ReactNode } from 'react';
 
 interface FadeInProps {
@@ -18,34 +15,14 @@ export function FadeIn({
   duration = 0.6,
   className = '',
 }: FadeInProps) {
-  const directionOffset = {
-    up: { y: 40, x: 0 },
-    down: { y: -40, x: 0 },
-    left: { x: 40, y: 0 },
-    right: { x: -40, y: 0 },
-  };
+  void direction;
+  void delay;
+  void duration;
 
   return (
-    <motion.div
-      initial={{
-        opacity: 0,
-        ...directionOffset[direction],
-      }}
-      whileInView={{
-        opacity: 1,
-        x: 0,
-        y: 0,
-      }}
-      viewport={{ once: true, margin: '-50px' }}
-      transition={{
-        duration,
-        delay,
-        ease: [0.25, 0.46, 0.45, 0.94],
-      }}
-      className={className}
-    >
+    <div className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -60,23 +37,11 @@ export function StaggerContainer({
   className = '',
   staggerDelay = 0.1,
 }: StaggerContainerProps) {
+  void staggerDelay;
   return (
-    <motion.div
-      initial="hidden"
-      whileInView="visible"
-      viewport={{ once: true, margin: '-50px' }}
-      variants={{
-        hidden: {},
-        visible: {
-          transition: {
-            staggerChildren: staggerDelay,
-          },
-        },
-      }}
-      className={className}
-    >
+    <div className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -88,20 +53,9 @@ export function StaggerItem({
   className?: string;
 }) {
   return (
-    <motion.div
-      variants={{
-        hidden: { opacity: 0, y: 30, scale: 0.95 },
-        visible: {
-          opacity: 1,
-          y: 0,
-          scale: 1,
-          transition: { duration: 0.5, ease: [0.25, 0.46, 0.45, 0.94] },
-        },
-      }}
-      className={className}
-    >
+    <div className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -116,20 +70,12 @@ export function FloatingElement({
   duration?: number;
   distance?: number;
 }) {
+  void duration;
+  void distance;
   return (
-    <motion.div
-      animate={{
-        y: [-distance, distance, -distance],
-      }}
-      transition={{
-        duration,
-        repeat: Infinity,
-        ease: 'easeInOut',
-      }}
-      className={className}
-    >
+    <div className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }
 
@@ -142,14 +88,10 @@ export function ScaleOnHover({
   className?: string;
   scale?: number;
 }) {
+  void scale;
   return (
-    <motion.div
-      whileHover={{ scale }}
-      whileTap={{ scale: 0.98 }}
-      transition={{ duration: 0.2 }}
-      className={className}
-    >
+    <div className={className}>
       {children}
-    </motion.div>
+    </div>
   );
 }

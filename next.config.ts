@@ -11,14 +11,17 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const isWindows = process.platform === 'win32';
+const isProduction = process.env.NODE_ENV === 'production';
 
 const nextConfig: NextConfig = {
   // Standalone output is useful for Linux container deploys.
   // Disable on Windows dev machines to avoid colon-in-path trace copy warnings.
   ...(isWindows ? {} : { output: 'standalone' }),
 
-  // Force bundling for BullMQ+ioredis to avoid unresolved external warnings.
-  serverExternalPackages: [],
+  // Mark ioredis + bullmq as runtime externals so Next.js doesn't try to bundle
+  // ESM sub-paths like ioredis/built/utils that aren't in the exports map.
+  // Both packages are production deps so they're present in node_modules at runtime.
+  serverExternalPackages: ['ioredis', 'bullmq'],
 
   // Build-time env injection
   env: {
@@ -39,6 +42,7 @@ const nextConfig: NextConfig = {
     ],
     minimumCacheTTL: 31536000, // 1 yıl cache
     formats: ['image/avif', 'image/webp'], // Modern formatlar
+    qualities: [60, 75],
   },
 
   // Experimental optimizations
@@ -77,7 +81,7 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
               // script-src: nonce-based CSP is set per-request in middleware (proxy.ts).
               // This static fallback allows Stripe + Vercel scripts for non-middleware routes.
-              "script-src 'self' 'unsafe-inline' https://js.stripe.com https://va.vercel-scripts.com",
+              `script-src 'self' 'unsafe-inline'${isProduction ? '' : " 'unsafe-eval'"} https://js.stripe.com https://va.vercel-scripts.com`,
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
               "font-src 'self' https://fonts.gstatic.com",

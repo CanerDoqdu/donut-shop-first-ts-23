@@ -23,6 +23,12 @@ vitest-output.txt
 /.next/
 /out/
 
+# generated performance artifacts
+.lighthouseci/
+
+# local media backup artifacts
+public/_originals/
+
 # production
 /build
 

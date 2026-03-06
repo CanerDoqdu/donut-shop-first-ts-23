@@ -1,41 +1,22 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useEffect } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { Loader2 } from 'lucide-react';
+// The main PKCE callback is handled by /api/auth/callback.
+// This page is a server-side fallback that redirects immediately —
+// no client JS, no layout shift.
+export default async function AuthCallbackPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ locale: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const { locale } = await params;
+  const sp = await searchParams;
+  const code = typeof sp.code === 'string' ? sp.code : undefined;
 
-// This page is a fallback. The main PKCE callback is handled by /api/auth/callback.
-// If a user lands here directly, redirect them to the home page.
-export default function AuthCallbackPage() {
-  const params = useParams();
-  const router = useRouter();
-  const locale = (params.locale as string) || 'en';
+  if (code) {
+    redirect(`/api/auth/callback?code=${encodeURIComponent(code)}&locale=${locale}`);
+  }
 
-  useEffect(() => {
-    // If there's a code in the URL, redirect to the API callback handler
-    const queryParams = new URLSearchParams(window.location.search);
-    const code = queryParams.get('code');
-    if (code) {
-      window.location.replace(`/api/auth/callback?code=${code}&locale=${locale}`);
-      return;
-    }
-
-    // Otherwise redirect home after a short delay
-    const timeout = setTimeout(() => {
-      router.replace(`/${locale}`);
-    }, 1000);
-
-    return () => clearTimeout(timeout);
-  }, [locale, router]);
-
-  return (
-    <section className="min-h-screen flex items-center justify-center bg-linear-to-br from-amber-50 via-white to-pink-50">
-      <div className="text-center">
-        <Loader2 className="w-10 h-10 animate-spin text-amber-500 mx-auto mb-4" />
-        <p className="text-gray-600 text-lg">
-          {locale === 'tr' ? 'Giriş yapılıyor...' : 'Signing you in...'}
-        </p>
-      </div>
-    </section>
-  );
+  redirect(`/${locale}`);
 }

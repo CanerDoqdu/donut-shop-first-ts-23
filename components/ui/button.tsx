@@ -13,9 +13,9 @@ const buttonVariants = cva(
         secondary:
           'bg-linear-to-r from-[#FF8C42] to-[#FFD93D] text-white shadow-lg hover:shadow-xl hover:from-[#FF7D32] hover:to-[#FFC92D]',
         outline:
-          'border-2 border-[#FF6BBF] bg-transparent text-[#FF6BBF] hover:bg-[#FF6BBF] hover:text-white',
-        ghost: 'hover:bg-[#FFF8E7] hover:text-[#FF6BBF]',
-        link: 'text-[#FF6BBF] underline-offset-4 hover:underline',
+          'border-2 border-[#C9297A] bg-transparent text-[#C9297A] hover:bg-[#C9297A] hover:text-white',
+        ghost: 'hover:bg-[#FFF8E7] hover:text-[#C9297A]',
+        link: 'text-[#C9297A] underline-offset-4 hover:underline',
       },
       size: {
         default: 'h-11 px-8 py-2',

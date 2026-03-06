@@ -18,10 +18,6 @@ Sentry.init({
   // Capture 10% of transactions for performance monitoring
   tracesSampleRate: 0.1,
 
-  // Session replay for error diagnostics (1% general, 100% on error)
-  replaysSessionSampleRate: 0.01,
-  replaysOnErrorSampleRate: 1.0,
-
   // Filter out noisy browser errors
   ignoreErrors: [
     'ResizeObserver loop',
@@ -34,11 +30,5 @@ Sentry.init({
   release: process.env.NEXT_PUBLIC_APP_VERSION,
   environment: process.env.NODE_ENV,
 
-  integrations: [
-    Sentry.replayIntegration({
-      maskAllText: true,
-      blockAllMedia: true,
-    }),
-    Sentry.browserTracingIntegration(),
-  ],
+  integrations: [Sentry.browserTracingIntegration()],
 });

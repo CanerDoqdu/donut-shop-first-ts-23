@@ -90,6 +90,10 @@ export const routing = defineRouting({
       tr: '/gizlilik',
       en: '/privacy',
     },
+    '/project-wiki': {
+      tr: '/proje-wiki',
+      en: '/project-wiki',
+    },
   },
 });
 

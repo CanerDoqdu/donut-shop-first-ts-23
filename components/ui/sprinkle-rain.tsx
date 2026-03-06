@@ -49,10 +49,27 @@ function generateSprinkles(count: number): RainDrop[] {
 export function SprinkleRain({ count = 60 }: { count?: number }) {
   const [drops, setDrops] = useState<RainDrop[]>([]);
   const [scrollOpacity, setScrollOpacity] = useState(1);
+  const [isActive, setIsActive] = useState(false);
 
   useEffect(() => {
+    // Do not animate before interaction to avoid early-layout instability.
+    const enable = () => setIsActive(true);
+    const options: AddEventListenerOptions = { once: true, passive: true };
+    window.addEventListener('scroll', enable, options);
+    window.addEventListener('pointerdown', enable, options);
+    window.addEventListener('keydown', enable, { once: true });
+    return () => {
+      window.removeEventListener('scroll', enable);
+      window.removeEventListener('pointerdown', enable);
+      window.removeEventListener('keydown', enable);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isActive) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDrops(generateSprinkles(count));
-  }, [count]);
+  }, [count, isActive]);
 
   const handleScroll = useCallback(() => {
     const y = window.scrollY;
@@ -64,7 +81,7 @@ export function SprinkleRain({ count = 60 }: { count?: number }) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, [handleScroll]);
 
-  if (drops.length === 0) return null;
+  if (!isActive || drops.length === 0) return null;
 
   return (
     <>

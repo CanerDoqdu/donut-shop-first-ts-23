@@ -123,7 +123,7 @@ export default function AdminPage() {
             initial={{ x: -280 }}
             animate={{ x: 0 }}
             exit={{ x: -280 }}
-            className="w-64 bg-white border-r border-gray-200 fixed h-full z-30"
+            className="w-64 bg-white border-r border-gray-200 shrink-0 z-30"
           >
             <div className="p-6">
               <div className="flex items-center gap-3 mb-8">
@@ -169,7 +169,7 @@ export default function AdminPage() {
       </AnimatePresence>
 
       {/* Main Content */}
-      <section className={`flex-1 transition-all ${sidebarOpen ? 'ml-64' : 'ml-0'}`}>
+      <section className="flex-1 min-w-0">
         {/* Top Bar */}
         <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between sticky top-0 z-20">
           <button
