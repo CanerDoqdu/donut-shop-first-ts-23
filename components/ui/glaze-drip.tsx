@@ -1,5 +1,43 @@
 'use client';
 
+import { useMemo } from 'react';
+import { useMounted } from '@/hooks/use-mounted';
+
+interface FallingDrop {
+  id: number;
+  x: number;
+  delay: number;
+  dur: number;
+  size: number;
+  swingAmt: number;
+}
+
+function unit(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function generateDrops(count: number): FallingDrop[] {
+  const drops: FallingDrop[] = [];
+  for (let i = 0; i < count; i++) {
+    const a = unit(i * 11.3 + 1.7);
+    const b = unit(i * 7.9 + 3.1);
+    const c = unit(i * 5.7 + 6.2);
+    const d = unit(i * 13.1 + 2.4);
+    const e = unit(i * 3.8 + 9.6);
+
+    drops.push({
+      id: i,
+      x: 3 + a * 94,
+      delay: b * 6,
+      dur: 1.5 + c * 2.5,
+      size: 4 + d * 8,
+      swingAmt: -15 + e * 30,
+    });
+  }
+  return drops;
+}
+
 /* ──────────────────────────────────────────────────────
    Chocolate Sauce Drip — Thick chocolate pool with
    drops that detach, fall randomly, and disappear.
@@ -10,6 +48,10 @@ export function GlazeDrip({
 }: {
   toColor?: string;
 }) {
+  const mounted = useMounted();
+
+  // Generate only after client mount to keep SSR and hydration markup identical.
+  const drops = useMemo(() => (mounted ? generateDrops(18) : []), [mounted]);
   const poolH = 50;
   const totalH = poolH + 220;
 
@@ -80,8 +122,60 @@ export function GlazeDrip({
         <rect x="0" y="0" width="1000" height={poolH * 0.5} rx="0" fill="url(#choco-gloss)" />
         {/* Animated shimmer */}
         <rect x="0" y="2" width="1000" height={poolH * 0.3} fill="url(#choco-shimmer)" />
-      </svg>
 
+      </svg>
+      {/* Falling drops — detach from pool, fall randomly, and disappear */}
+      <div
+        className="absolute left-0 right-0 pointer-events-none"
+        style={{ top: '18%', height: '82%', overflow: 'hidden' }}
+      >
+        {drops.map((d) => (
+          <div
+            key={d.id}
+            className="choco-drop"
+            style={{
+              position: 'absolute',
+              left: `${d.x}%`,
+              top: '0px',
+              width: `${d.size}px`,
+              height: `${d.size}px`,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 35% 35%, #7B3F10, #3E1F0D)',
+              boxShadow: '0 2px 6px rgba(62,31,13,0.5)',
+              animation: `chocoDropFall ${d.dur}s ${d.delay}s ease-in infinite`,
+              ['--swing' as string]: `${d.swingAmt}px`,
+              willChange: 'transform, opacity',
+            }}
+          />
+        ))}
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes chocoDropFall {
+          0% {
+            transform: translateY(0) translateX(0) scale(0.5);
+            opacity: 0;
+          }
+          8% {
+            transform: translateY(0) translateX(0) scale(1);
+            opacity: 0.9;
+          }
+          80% {
+            opacity: 0.7;
+          }
+          100% {
+            transform: translateY(200px) translateX(var(--swing)) scale(0.3);
+            opacity: 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .choco-drop {
+            animation: none !important;
+            opacity: 0 !important;
+          }
+        }
+      ` }} />
     </div>
   );
 }

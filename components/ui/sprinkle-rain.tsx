@@ -6,7 +6,7 @@
    Fades out as user scrolls (0→600px).
    ────────────────────────────────────────────────────── */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 
 interface RainDrop {
   id: number;
@@ -46,10 +46,10 @@ function generateSprinkles(count: number): RainDrop[] {
   return drops;
 }
 
-export function SprinkleRain({ count = 60 }: { count?: number }) {
-  const [drops, setDrops] = useState<RainDrop[]>([]);
+export function SprinkleRain({ count = 36 }: { count?: number }) {
   const [scrollOpacity, setScrollOpacity] = useState(1);
   const [isActive, setIsActive] = useState(false);
+  const rafRef = useRef<number | null>(null);
 
   useEffect(() => {
     // Do not animate before interaction to avoid early-layout instability.
@@ -65,20 +65,28 @@ export function SprinkleRain({ count = 60 }: { count?: number }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!isActive) return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setDrops(generateSprinkles(count));
+  const drops = useMemo(() => {
+    if (!isActive) return [];
+    return generateSprinkles(count);
   }, [count, isActive]);
 
   const handleScroll = useCallback(() => {
-    const y = window.scrollY;
-    setScrollOpacity(Math.max(0, 1 - y / 600));
+    if (rafRef.current !== null) return;
+    rafRef.current = window.requestAnimationFrame(() => {
+      const y = window.scrollY;
+      setScrollOpacity(Math.max(0, 1 - y / 600));
+      rafRef.current = null;
+    });
   }, []);
 
   useEffect(() => {
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
+      }
+    };
   }, [handleScroll]);
 
   if (!isActive || drops.length === 0) return null;
@@ -86,6 +94,10 @@ export function SprinkleRain({ count = 60 }: { count?: number }) {
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: `
+        @media (prefers-reduced-motion: reduce) {
+          .sprinkle-rain-drop { animation: none !important; opacity: 0 !important; }
+        }
+
         @keyframes sprinkleFall {
           0% {
             transform: translateY(-30px) translateX(0) rotate(var(--rot)) scale(1);
@@ -122,6 +134,7 @@ export function SprinkleRain({ count = 60 }: { count?: number }) {
         {drops.map((d) => (
           <div
             key={d.id}
+            className="sprinkle-rain-drop"
             style={{
               position: 'absolute',
               left: `${d.x}%`,
