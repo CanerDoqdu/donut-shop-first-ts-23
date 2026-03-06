@@ -18,9 +18,8 @@ describe('Home page dynamic imports', () => {
     expect(src).toContain("import dynamic from 'next/dynamic'");
   });
 
-  it('lazy-loads SprinkleRain with ssr: false', () => {
+  it('lazy-loads SprinkleRain via dynamic()', () => {
     expect(src).toContain("import('@/components/ui/sprinkle-rain')");
-    expect(src).toContain('ssr: false');
   });
 
   it('lazy-loads FadeIn via dynamic()', () => {

@@ -11,7 +11,7 @@ const FadeIn = dynamic(() => import('@/components/ui/animations').then((m) => m.
 const StaggerContainer = dynamic(() => import('@/components/ui/animations').then((m) => m.StaggerContainer));
 const StaggerItem = dynamic(() => import('@/components/ui/animations').then((m) => m.StaggerItem));
 const FloatingElement = dynamic(() => import('@/components/ui/animations').then((m) => m.FloatingElement));
-const SprinkleRain = dynamic(() => import('@/components/ui/sprinkle-rain').then((m) => m.SprinkleRain), { ssr: false });
+const SprinkleRain = dynamic(() => import('@/components/ui/sprinkle-rain').then((m) => m.SprinkleRain));
 import { sampleProducts } from '@/lib/data';
 import { Star, Clock, Heart, ArrowRight, MapPin, Phone, Award, ShoppingBag } from 'lucide-react';
 import { AddToCartButton } from '@/components/ui/add-to-cart-button';
