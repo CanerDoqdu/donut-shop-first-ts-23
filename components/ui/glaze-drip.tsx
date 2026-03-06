@@ -1,5 +1,7 @@
 'use client';
 
+import { useMemo } from 'react';
+
 /* ──────────────────────────────────────────────────────
    Chocolate Sauce Drip — Thick chocolate pool with
    drops that detach, fall randomly, and disappear.
@@ -10,6 +12,33 @@ export function GlazeDrip({
 }: {
   toColor?: string;
 }) {
+  interface FallingDrop {
+    id: number;
+    x: number;
+    delay: number;
+    dur: number;
+    size: number;
+    swingAmt: number;
+  }
+
+  const generateDrops = (count: number): FallingDrop[] => {
+    const drops: FallingDrop[] = [];
+    for (let i = 0; i < count; i++) {
+      drops.push({
+        id: i,
+        x: 3 + Math.random() * 94,
+        delay: Math.random() * 6,
+        dur: 1.5 + Math.random() * 2.5,
+        size: 4 + Math.random() * 8,
+        swingAmt: -15 + Math.random() * 30,
+      });
+    }
+    return drops;
+  };
+
+  // Generate once to avoid per-render animation reshuffles.
+  const drops = useMemo(() => generateDrops(18), []);
+
   const poolH = 50;
   const totalH = poolH + 220;
 
@@ -81,39 +110,60 @@ export function GlazeDrip({
         {/* Animated shimmer */}
         <rect x="0" y="2" width="1000" height={poolH * 0.3} fill="url(#choco-shimmer)" />
 
-        {/* 3) Falling chocolate drops */}
-        <g opacity="0.95">
-          <ellipse cx="120" cy={poolH + 10} rx="9" ry="12" fill="#5C2E0E">
-            <animate attributeName="cy" values={`${poolH + 10};${poolH + 180}`} dur="2.8s" begin="0.2s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.95;0.95;0" dur="2.8s" begin="0.2s" repeatCount="indefinite" />
-          </ellipse>
-
-          <ellipse cx="245" cy={poolH + 8} rx="7" ry="10" fill="#7B3F10">
-            <animate attributeName="cy" values={`${poolH + 8};${poolH + 170}`} dur="2.4s" begin="1.1s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.9;0.9;0" dur="2.4s" begin="1.1s" repeatCount="indefinite" />
-          </ellipse>
-
-          <ellipse cx="410" cy={poolH + 12} rx="10" ry="13" fill="#3E1F0D">
-            <animate attributeName="cy" values={`${poolH + 12};${poolH + 190}`} dur="3.1s" begin="0.7s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;1;1;0" dur="3.1s" begin="0.7s" repeatCount="indefinite" />
-          </ellipse>
-
-          <ellipse cx="575" cy={poolH + 9} rx="8" ry="11" fill="#5C2E0E">
-            <animate attributeName="cy" values={`${poolH + 9};${poolH + 175}`} dur="2.6s" begin="1.8s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.9;0.9;0" dur="2.6s" begin="1.8s" repeatCount="indefinite" />
-          </ellipse>
-
-          <ellipse cx="735" cy={poolH + 11} rx="9" ry="12" fill="#7B3F10">
-            <animate attributeName="cy" values={`${poolH + 11};${poolH + 185}`} dur="2.9s" begin="0.4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.95;0.95;0" dur="2.9s" begin="0.4s" repeatCount="indefinite" />
-          </ellipse>
-
-          <ellipse cx="890" cy={poolH + 7} rx="7" ry="10" fill="#3E1F0D">
-            <animate attributeName="cy" values={`${poolH + 7};${poolH + 165}`} dur="2.2s" begin="1.4s" repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;0.85;0.85;0" dur="2.2s" begin="1.4s" repeatCount="indefinite" />
-          </ellipse>
-        </g>
       </svg>
+
+      {/* Falling drops — detach from pool, fall randomly, and disappear */}
+      <div
+        className="absolute left-0 right-0 pointer-events-none"
+        style={{ top: '18%', height: '82%', overflow: 'hidden' }}
+      >
+        {drops.map((d) => (
+          <div
+            key={d.id}
+            className="choco-drop"
+            style={{
+              position: 'absolute',
+              left: `${d.x}%`,
+              top: '0px',
+              width: `${d.size}px`,
+              height: `${d.size}px`,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle at 35% 35%, #7B3F10, #3E1F0D)',
+              boxShadow: '0 2px 6px rgba(62,31,13,0.5)',
+              animation: `chocoDropFall ${d.dur}s ${d.delay}s ease-in infinite`,
+              ['--swing' as string]: `${d.swingAmt}px`,
+              willChange: 'transform, opacity',
+            }}
+          />
+        ))}
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes chocoDropFall {
+          0% {
+            transform: translateY(0) translateX(0) scale(0.5);
+            opacity: 0;
+          }
+          8% {
+            transform: translateY(0) translateX(0) scale(1);
+            opacity: 0.9;
+          }
+          80% {
+            opacity: 0.7;
+          }
+          100% {
+            transform: translateY(200px) translateX(var(--swing)) scale(0.3);
+            opacity: 0;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .choco-drop {
+            animation: none !important;
+            opacity: 0 !important;
+          }
+        }
+      ` }} />
 
     </div>
   );
