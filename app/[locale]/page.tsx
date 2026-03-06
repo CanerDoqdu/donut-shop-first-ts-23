@@ -1,11 +1,17 @@
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
 import { HeroShowcase } from '@/components/home/hero-showcase';
-import { FadeIn, FloatingElement, StaggerContainer, StaggerItem } from '@/components/ui/animations';
 import { formatPrice } from '@/lib/utils';
+
+const FadeIn = dynamic(() => import('@/components/ui/animations').then((m) => m.FadeIn));
+const StaggerContainer = dynamic(() => import('@/components/ui/animations').then((m) => m.StaggerContainer));
+const StaggerItem = dynamic(() => import('@/components/ui/animations').then((m) => m.StaggerItem));
+const FloatingElement = dynamic(() => import('@/components/ui/animations').then((m) => m.FloatingElement));
+const SprinkleRain = dynamic(() => import('@/components/ui/sprinkle-rain').then((m) => m.SprinkleRain), { ssr: false });
 import { sampleProducts } from '@/lib/data';
 import { Star, Clock, Heart, ArrowRight, MapPin, Phone, Award, ShoppingBag } from 'lucide-react';
 import { AddToCartButton } from '@/components/ui/add-to-cart-button';
