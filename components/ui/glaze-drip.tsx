@@ -3,6 +3,41 @@
 import { useMemo } from 'react';
 import { useMounted } from '@/hooks/use-mounted';
 
+interface FallingDrop {
+  id: number;
+  x: number;
+  delay: number;
+  dur: number;
+  size: number;
+  swingAmt: number;
+}
+
+function unit(seed: number): number {
+  const x = Math.sin(seed) * 10000;
+  return x - Math.floor(x);
+}
+
+function generateDrops(count: number): FallingDrop[] {
+  const drops: FallingDrop[] = [];
+  for (let i = 0; i < count; i++) {
+    const a = unit(i * 11.3 + 1.7);
+    const b = unit(i * 7.9 + 3.1);
+    const c = unit(i * 5.7 + 6.2);
+    const d = unit(i * 13.1 + 2.4);
+    const e = unit(i * 3.8 + 9.6);
+
+    drops.push({
+      id: i,
+      x: 3 + a * 94,
+      delay: b * 6,
+      dur: 1.5 + c * 2.5,
+      size: 4 + d * 8,
+      swingAmt: -15 + e * 30,
+    });
+  }
+  return drops;
+}
+
 /* ──────────────────────────────────────────────────────
    Chocolate Sauce Drip — Thick chocolate pool with
    drops that detach, fall randomly, and disappear.
@@ -15,33 +50,8 @@ export function GlazeDrip({
 }) {
   const mounted = useMounted();
 
-  interface FallingDrop {
-    id: number;
-    x: number;
-    delay: number;
-    dur: number;
-    size: number;
-    swingAmt: number;
-  }
-
-  const generateDrops = (count: number): FallingDrop[] => {
-    const drops: FallingDrop[] = [];
-    for (let i = 0; i < count; i++) {
-      drops.push({
-        id: i,
-        x: 3 + Math.random() * 94,
-        delay: Math.random() * 6,
-        dur: 1.5 + Math.random() * 2.5,
-        size: 4 + Math.random() * 8,
-        swingAmt: -15 + Math.random() * 30,
-      });
-    }
-    return drops;
-  };
-
   // Generate only after client mount to keep SSR and hydration markup identical.
   const drops = useMemo(() => (mounted ? generateDrops(18) : []), [mounted]);
-
   const poolH = 50;
   const totalH = poolH + 220;
 
@@ -114,7 +124,6 @@ export function GlazeDrip({
         <rect x="0" y="2" width="1000" height={poolH * 0.3} fill="url(#choco-shimmer)" />
 
       </svg>
-
       {/* Falling drops — detach from pool, fall randomly, and disappear */}
       <div
         className="absolute left-0 right-0 pointer-events-none"
@@ -167,7 +176,6 @@ export function GlazeDrip({
           }
         }
       ` }} />
-
     </div>
   );
 }
