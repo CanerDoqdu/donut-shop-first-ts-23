@@ -45,6 +45,8 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col overflow-x-hidden">
+      <SprinkleRain count={36} />
+
       {/* ═══════════════════════════════════════════════════════ */}
       {/*  HERO — Full viewport: Typo top | Bev left Donut right | Belt bottom */}
       {/* ═══════════════════════════════════════════════════════ */}

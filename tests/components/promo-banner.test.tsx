@@ -17,11 +17,12 @@ import { PromoBanner } from '@/components/layout/promo-banner';
 
 describe('PromoBanner', () => {
   it('renders all five promo items on desktop', () => {
-    render(<PromoBanner />);
-    // Each PROMO_KEY is rendered via useTranslations
+    const { container } = render(<PromoBanner />);
+    // Promo text is rendered inside a marquee string; verify each token exists.
+    const text = container.textContent ?? '';
     const promoKeys = ['freeDelivery', 'newFlavors', 'firstOrder', 'fastDelivery', 'newDonut'];
     for (const key of promoKeys) {
-      expect(screen.getAllByText(`promo.${key}`).length).toBeGreaterThan(0);
+      expect(text).toContain(`promo.${key}`);
     }
   });
 

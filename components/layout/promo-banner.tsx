@@ -1,11 +1,10 @@
 'use client';
 
 /* ──────────────────────────────────────────────────────
-   Promo News Banner — sticky below navbar.
-   Desktop: static row with dot separators.
-   Mobile: infinite CSS marquee ticker so text is readable.
-   GlazeDrip sits behind the banner (hidden behind it).
-   ────────────────────────────────────────────────────── */
+  Promo News Banner — sticky below navbar.
+  Desktop + mobile: infinite marquee ticker.
+  GlazeDrip sits behind the banner (hidden behind it).
+  ────────────────────────────────────────────────────── */
 
 import { GlazeDrip } from '@/components/ui/glaze-drip';
 import { useTranslations } from 'next-intl';
@@ -38,24 +37,26 @@ export function PromoBanner() {
           background: 'linear-gradient(90deg, #FF6BBF 0%, #FF8C42 50%, #FFD93D 100%)',
         }}
       >
-        {/* ── Desktop: static row ── */}
-        <div className="hidden md:flex items-center justify-center h-full gap-6 px-4">
-          {promos.map((promo, i) => (
-            <span key={i} className="flex items-center gap-6">
-              <span className="text-white text-sm font-semibold whitespace-nowrap">{promo}</span>
-              {i < promos.length - 1 && (
-                <span className="text-white/40 text-xs">•</span>
-              )}
-            </span>
-          ))}
+        {/* ── Desktop: marquee ticker ── */}
+        <div className="hidden md:flex items-center h-full overflow-hidden">
+          <div
+            className="whitespace-nowrap text-white text-sm font-semibold promo-banner-track"
+            style={{
+              animation: 'promoBannerMarqueeDesktop 32s linear infinite',
+              willChange: 'transform',
+            }}
+          >
+            {marqueeText}
+          </div>
         </div>
 
         {/* ── Mobile: marquee ticker ── */}
         <div className="md:hidden flex items-center h-full overflow-hidden">
           <div
-            className="whitespace-nowrap text-white text-sm font-semibold"
+            className="whitespace-nowrap text-white text-sm font-semibold promo-banner-track"
             style={{
               animation: 'promoBannerMarquee 25s linear infinite',
+              willChange: 'transform',
             }}
           >
             {marqueeText}
@@ -68,6 +69,17 @@ export function PromoBanner() {
         @keyframes promoBannerMarquee {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-50%); }
+        }
+
+        @keyframes promoBannerMarqueeDesktop {
+          0% { transform: translate3d(0%, 0, 0); }
+          100% { transform: translate3d(-50%, 0, 0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .promo-banner-track {
+            animation: none !important;
+          }
         }
       ` }} />
     </div>
