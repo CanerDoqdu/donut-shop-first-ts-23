@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useMounted } from '@/hooks/use-mounted';
 
 /* ──────────────────────────────────────────────────────
    Chocolate Sauce Drip — Thick chocolate pool with
@@ -12,6 +13,8 @@ export function GlazeDrip({
 }: {
   toColor?: string;
 }) {
+  const mounted = useMounted();
+
   interface FallingDrop {
     id: number;
     x: number;
@@ -36,8 +39,8 @@ export function GlazeDrip({
     return drops;
   };
 
-  // Generate once to avoid per-render animation reshuffles.
-  const drops = useMemo(() => generateDrops(18), []);
+  // Generate only after client mount to keep SSR and hydration markup identical.
+  const drops = useMemo(() => (mounted ? generateDrops(18) : []), [mounted]);
 
   const poolH = 50;
   const totalH = poolH + 220;
