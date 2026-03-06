@@ -80,6 +80,39 @@ export function GlazeDrip({
         <rect x="0" y="0" width="1000" height={poolH * 0.5} rx="0" fill="url(#choco-gloss)" />
         {/* Animated shimmer */}
         <rect x="0" y="2" width="1000" height={poolH * 0.3} fill="url(#choco-shimmer)" />
+
+        {/* 3) Falling chocolate drops */}
+        <g opacity="0.95">
+          <ellipse cx="120" cy={poolH + 10} rx="9" ry="12" fill="#5C2E0E">
+            <animate attributeName="cy" values={`${poolH + 10};${poolH + 180}`} dur="2.8s" begin="0.2s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.95;0.95;0" dur="2.8s" begin="0.2s" repeatCount="indefinite" />
+          </ellipse>
+
+          <ellipse cx="245" cy={poolH + 8} rx="7" ry="10" fill="#7B3F10">
+            <animate attributeName="cy" values={`${poolH + 8};${poolH + 170}`} dur="2.4s" begin="1.1s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.9;0.9;0" dur="2.4s" begin="1.1s" repeatCount="indefinite" />
+          </ellipse>
+
+          <ellipse cx="410" cy={poolH + 12} rx="10" ry="13" fill="#3E1F0D">
+            <animate attributeName="cy" values={`${poolH + 12};${poolH + 190}`} dur="3.1s" begin="0.7s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;1;1;0" dur="3.1s" begin="0.7s" repeatCount="indefinite" />
+          </ellipse>
+
+          <ellipse cx="575" cy={poolH + 9} rx="8" ry="11" fill="#5C2E0E">
+            <animate attributeName="cy" values={`${poolH + 9};${poolH + 175}`} dur="2.6s" begin="1.8s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.9;0.9;0" dur="2.6s" begin="1.8s" repeatCount="indefinite" />
+          </ellipse>
+
+          <ellipse cx="735" cy={poolH + 11} rx="9" ry="12" fill="#7B3F10">
+            <animate attributeName="cy" values={`${poolH + 11};${poolH + 185}`} dur="2.9s" begin="0.4s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.95;0.95;0" dur="2.9s" begin="0.4s" repeatCount="indefinite" />
+          </ellipse>
+
+          <ellipse cx="890" cy={poolH + 7} rx="7" ry="10" fill="#3E1F0D">
+            <animate attributeName="cy" values={`${poolH + 7};${poolH + 165}`} dur="2.2s" begin="1.4s" repeatCount="indefinite" />
+            <animate attributeName="opacity" values="0;0.85;0.85;0" dur="2.2s" begin="1.4s" repeatCount="indefinite" />
+          </ellipse>
+        </g>
       </svg>
 
     </div>
