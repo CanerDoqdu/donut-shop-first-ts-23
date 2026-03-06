@@ -18,8 +18,10 @@ const nextConfig: NextConfig = {
   // Disable on Windows dev machines to avoid colon-in-path trace copy warnings.
   ...(isWindows ? {} : { output: 'standalone' }),
 
-  // Force bundling for BullMQ+ioredis to avoid unresolved external warnings.
-  serverExternalPackages: [],
+  // Mark ioredis + bullmq as runtime externals so Next.js doesn't try to bundle
+  // ESM sub-paths like ioredis/built/utils that aren't in the exports map.
+  // Both packages are production deps so they're present in node_modules at runtime.
+  serverExternalPackages: ['ioredis', 'bullmq'],
 
   // Build-time env injection
   env: {
