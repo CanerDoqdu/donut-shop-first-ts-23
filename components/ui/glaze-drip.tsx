@@ -5,45 +5,11 @@
    drops that detach, fall randomly, and disappear.
    ────────────────────────────────────────────────────── */
 
-import { useEffect, useState, startTransition } from 'react';
-
-interface FallingDrop {
-  id: number;
-  x: number;       // % position
-  delay: number;    // start delay
-  dur: number;      // fall duration
-  size: number;     // drop size
-  swingAmt: number; // horizontal drift
-}
-
-function generateDrops(count: number): FallingDrop[] {
-  const drops: FallingDrop[] = [];
-  for (let i = 0; i < count; i++) {
-    drops.push({
-      id: i,
-      x: 3 + Math.random() * 94,
-      delay: Math.random() * 6,
-      dur: 1.5 + Math.random() * 2.5,
-      size: 4 + Math.random() * 8,
-      swingAmt: -15 + Math.random() * 30,
-    });
-  }
-  return drops;
-}
-
 export function GlazeDrip({
   toColor = 'transparent',
 }: {
   toColor?: string;
 }) {
-  const [drops, setDrops] = useState<FallingDrop[]>([]);
-
-  useEffect(() => {
-    startTransition(() => {
-      setDrops(generateDrops(20));
-    });
-  }, []);
-
   const poolH = 50;
   const totalH = poolH + 220;
 
@@ -116,49 +82,6 @@ export function GlazeDrip({
         <rect x="0" y="2" width="1000" height={poolH * 0.3} fill="url(#choco-shimmer)" />
       </svg>
 
-      {/* 4) Falling drops — detach from pool, fall randomly, and disappear */}
-      <div
-        className="absolute left-0 right-0 pointer-events-none"
-        style={{ top: '18%', height: '82%', overflow: 'hidden' }}
-      >
-        {drops.map((d) => (
-          <div
-            key={d.id}
-            style={{
-              position: 'absolute',
-              left: `${d.x}%`,
-              top: '0px',
-              width: `${d.size}px`,
-              height: `${d.size}px`,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle at 35% 35%, #7B3F10, #3E1F0D)',
-              boxShadow: '0 2px 6px rgba(62,31,13,0.5)',
-              animation: `chocoDropFall ${d.dur}s ${d.delay}s ease-in infinite`,
-              ['--swing' as string]: `${d.swingAmt}px`,
-            }}
-          />
-        ))}
-      </div>
-
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes chocoDropFall {
-          0% {
-            transform: translateY(0) translateX(0) scale(0.5);
-            opacity: 0;
-          }
-          8% {
-            transform: translateY(0) translateX(0) scale(1);
-            opacity: 0.9;
-          }
-          80% {
-            opacity: 0.7;
-          }
-          100% {
-            transform: translateY(200px) translateX(var(--swing)) scale(0.3);
-            opacity: 0;
-          }
-        }
-      `}} />
     </div>
   );
 }

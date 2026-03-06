@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import { ShoppingCart, Menu, X, Crown, Gift, Package, Users, ChevronDown, User, LogOut, LogIn, UserPlus } from 'lucide-react';
-import { useState, useEffect, startTransition } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
@@ -42,9 +42,7 @@ export function Header() {
   };
 
   useEffect(() => {
-    startTransition(() => {
-      setMounted(true);
-    });
+    setMounted(true);
   }, []);
 
   const navLinks: Array<{ href: '/' | '/products' | '/stores'; label: string }> = [
@@ -67,7 +65,7 @@ export function Header() {
         <Link href="/" className="flex items-center space-x-2">
           <Image
             src="/logo.png"
-            alt="Glazed & Sipped"
+            alt=""
             width={48}
             height={48}
             className="rounded-full shadow-md object-cover"
@@ -146,9 +144,10 @@ export function Header() {
           </div>
 
           {/* Auth Section */}
-          {mounted && !loading && (
-            user ? (
-              <div className="relative">
+          <div className="min-w-55 flex justify-end">
+            {!loading ? (
+              user ? (
+                <div className="relative">
                 <button
                   className="flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 transition-colors"
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
@@ -227,24 +226,27 @@ export function Header() {
                     </button>
                   </div>
                 )}
-              </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Button asChild variant="ghost" size="sm" className="flex items-center gap-2">
+                    <Link href="/login">
+                      <LogIn className="w-4 h-4" />
+                      {t('nav.login')}
+                    </Link>
+                  </Button>
+                  <Button asChild size="sm" className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600">
+                    <Link href="/register">
+                      <UserPlus className="w-4 h-4" />
+                      {t('nav.register')}
+                    </Link>
+                  </Button>
+                </div>
+              )
             ) : (
-              <div className="flex items-center gap-2">
-                <Button asChild variant="ghost" size="sm" className="flex items-center gap-2">
-                  <Link href="/login">
-                    <LogIn className="w-4 h-4" />
-                    {t('nav.login')}
-                  </Link>
-                </Button>
-                <Button asChild size="sm" className="flex items-center gap-2 bg-amber-500 hover:bg-amber-600">
-                  <Link href="/register">
-                    <UserPlus className="w-4 h-4" />
-                    {t('nav.register')}
-                  </Link>
-                </Button>
-              </div>
-            )
-          )}
+              <div aria-hidden="true" className="h-10 w-55 rounded-md bg-gray-100/70" />
+            )}
+          </div>
         </nav>
 
         {/* Mobile Menu Button */}
@@ -326,7 +328,7 @@ export function Header() {
             </div>
 
             {/* Auth Section Mobile */}
-            {mounted && !loading && (
+            {!loading && (
               <div className="pt-4 border-t">
                 {user ? (
                   <>

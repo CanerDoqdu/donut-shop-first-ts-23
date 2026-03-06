@@ -1,47 +1,44 @@
-'use client';
-
 import Image from 'next/image';
-import dynamic from 'next/dynamic';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 import { Link } from '@/i18n/routing';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardTitle } from '@/components/ui/card';
 import { HeroShowcase } from '@/components/home/hero-showcase';
-import { DonutConveyor } from '@/components/home/donut-conveyor';
+import { FadeIn, FloatingElement, StaggerContainer, StaggerItem } from '@/components/ui/animations';
 import { formatPrice } from '@/lib/utils';
 import { sampleProducts } from '@/lib/data';
 import { Star, Clock, Heart, ArrowRight, MapPin, Phone, Award, ShoppingBag } from 'lucide-react';
 import { AddToCartButton } from '@/components/ui/add-to-cart-button';
+import { ConveyorLoader } from '@/components/home/conveyor-loader';
 
-/* ── Lazy-loaded heavy components ── */
-const SprinkleRain = dynamic(
-  () => import('@/components/ui/sprinkle-rain').then((m) => m.SprinkleRain),
-  { ssr: false },
-);
-
-const FadeIn = dynamic(
-  () => import('@/components/ui/animations').then((m) => m.FadeIn),
-);
-const StaggerContainer = dynamic(
-  () => import('@/components/ui/animations').then((m) => m.StaggerContainer),
-);
-const StaggerItem = dynamic(
-  () => import('@/components/ui/animations').then((m) => m.StaggerItem),
-);
-const FloatingElement = dynamic(
-  () => import('@/components/ui/animations').then((m) => m.FloatingElement),
-);
-
-export default function Home() {
-  const t = useTranslations();
+export default async function Home() {
+  const t = await getTranslations();
+  const heroCopy = {
+    ourSignatures: t('home.ourSignatures'),
+    bestSeller: t('home.bestSeller'),
+    chocolateDream: t('home.chocolateDream'),
+    chocolateDreamDesc: t('home.chocolateDreamDesc'),
+    chocolateDreamPrice: t('home.chocolateDreamPrice'),
+    signature: t('home.signature'),
+    berryBliss: t('home.berryBliss'),
+    berryBlissDesc: t('home.berryBlissDesc'),
+    berryBlissPrice: t('home.berryBlissPrice'),
+    caramelCrunch: t('home.caramelCrunch'),
+    newLabel: t('home.new'),
+    caramelCrunchPrice: t('home.caramelCrunchPrice'),
+    mangoSunset: t('home.mangoSunset'),
+    mangoSunsetPrice: t('home.mangoSunsetPrice'),
+    handcraftedDaily: t('home.handcraftedDaily'),
+    signatureDrink: t('home.signatureDrink'),
+    madeWithLove: t('home.madeWithLove'),
+    handcrafted: t('home.handcrafted'),
+    dailyFresh: t('home.dailyFresh'),
+  };
 
   const featuredProducts = sampleProducts.filter((p) => p.featured).slice(0, 4);
 
   return (
     <div className="flex flex-col overflow-x-hidden">
-      {/* Sprinkle rain — fixed, falls over navbar, fades on scroll */}
-      <SprinkleRain count={80} />
-
       {/* ═══════════════════════════════════════════════════════ */}
       {/*  HERO — Full viewport: Typo top | Bev left Donut right | Belt bottom */}
       {/* ═══════════════════════════════════════════════════════ */}
@@ -112,7 +109,7 @@ export default function Home() {
 
           {/* ── MID ROW: Unified Showcase ────── */}
           <div className="flex-1 flex items-start justify-center px-0 lg:px-2 pt-2 pb-4 sm:pb-6 min-h-0 overflow-hidden lg:overflow-visible relative z-10 lg:max-h-[60vh]">
-            <HeroShowcase />
+            <HeroShowcase copy={heroCopy} />
           </div>
         </div>
 
@@ -121,11 +118,14 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════ */}
       {/*  FEATURED PRODUCTS                              */}
       {/* ═══════════════════════════════════════════════ */}
-      <section className="relative z-20 pt-24 pb-0 px-4" style={{ background: '#FFF8E7' }}>
+      <section
+        className="relative z-20 pt-24 pb-0 px-4"
+        style={{ background: '#FFF8E7', contentVisibility: 'auto', containIntrinsicSize: '1px 1600px' }}
+      >
         <div className="container mx-auto">
           <FadeIn>
             <div className="text-center mb-16">
-              <span className="inline-flex items-center gap-2 text-sm font-bold tracking-widest uppercase mb-4" style={{ color: '#FF6BBF' }}>
+              <span className="inline-flex items-center gap-2 text-sm font-bold tracking-widest uppercase mb-4" style={{ color: '#C9297A' }}>
                 <Award className="h-4 w-4" /> {t('home.bestSellers')}
               </span>
               <h2 className="font-fredoka text-4xl sm:text-5xl lg:text-6xl font-bold mb-4"
@@ -165,7 +165,7 @@ export default function Home() {
                         />
                       </div>
                       <CardTitle className="text-center mb-2 text-lg">{product.name_en}</CardTitle>
-                      <p className="text-center font-fredoka text-2xl font-bold" style={{ color: '#FF6BBF' }}>
+                      <p className="text-center font-fredoka text-2xl font-bold" style={{ color: '#C9297A' }}>
                         {formatPrice(product.price)}
                       </p>
                     </CardContent>
@@ -199,7 +199,7 @@ export default function Home() {
       {/*  CONVEYOR BELT                                  */}
       {/* ═══════════════════════════════════════════════ */}
       <div className="relative z-20">
-        <DonutConveyor />
+        <ConveyorLoader />
       </div>
 
       {/* ═══════════════════════════════════════════════ */}
@@ -209,13 +209,15 @@ export default function Home() {
         className="relative z-20 py-24 px-4 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #FFF8E7 0%, #FFB3DB15 50%, #FFF8E7 100%)',
+          contentVisibility: 'auto',
+          containIntrinsicSize: '1px 1200px',
         }}
       >
         <div className="container mx-auto">
           <div className="flex flex-col lg:flex-row items-center gap-16">
             {/* Left — Story */}
             <FadeIn direction="left" className="w-full lg:w-1/2">
-              <span className="inline-flex items-center gap-2 text-sm font-bold tracking-widest uppercase mb-4" style={{ color: '#FF6BBF' }}>
+              <span className="inline-flex items-center gap-2 text-sm font-bold tracking-widest uppercase mb-4" style={{ color: '#C9297A' }}>
                 <Heart className="h-4 w-4" /> {t('home.aboutTitle')}
               </span>
               <h2 className="font-fredoka text-4xl sm:text-5xl font-bold mb-8 text-gray-900 leading-tight">
@@ -229,15 +231,15 @@ export default function Home() {
               </p>
               <div className="flex gap-10">
                 <div>
-                  <p className="font-fredoka text-4xl font-bold" style={{ color: '#FF6BBF' }}>5+</p>
+                  <p className="font-fredoka text-4xl font-bold" style={{ color: '#C9297A' }}>5+</p>
                   <p className="text-sm text-gray-400 font-medium">{t('home.years')}</p>
                 </div>
                 <div>
-                  <p className="font-fredoka text-4xl font-bold" style={{ color: '#FF8C42' }}>50+</p>
+                  <p className="font-fredoka text-4xl font-bold" style={{ color: '#A34A0E' }}>50+</p>
                   <p className="text-sm text-gray-400 font-medium">{t('home.flavors')}</p>
                 </div>
                 <div>
-                  <p className="font-fredoka text-4xl font-bold" style={{ color: '#FFD93D' }}>3</p>
+                  <p className="font-fredoka text-4xl font-bold" style={{ color: '#7A5700' }}>3</p>
                   <p className="text-sm text-gray-400 font-medium">{t('home.locations')}</p>
                 </div>
               </div>
@@ -315,11 +317,14 @@ export default function Home() {
       {/* ═══════════════════════════════════════════════ */}
       {/*  FIND US / LOCATIONS                            */}
       {/* ═══════════════════════════════════════════════ */}
-      <section className="relative z-20 py-24 px-4 bg-white">
+      <section
+        className="relative z-20 py-24 px-4 bg-white"
+        style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 1300px' }}
+      >
         <div className="container mx-auto">
           <FadeIn>
             <div className="text-center mb-16">
-              <span className="inline-flex items-center gap-2 text-sm font-bold tracking-widest uppercase mb-4" style={{ color: '#FF6BBF' }}>
+              <span className="inline-flex items-center gap-2 text-sm font-bold tracking-widest uppercase mb-4" style={{ color: '#C9297A' }}>
                 <MapPin className="h-4 w-4" /> {t('home.ourLocations')}
               </span>
               <h2 className="font-fredoka text-4xl sm:text-5xl lg:text-6xl font-bold mb-4"
@@ -346,6 +351,7 @@ export default function Home() {
                 phone: '+1 (555) 123-4567',
                 highlight: 'Flagship Store',
                 highlightColor: '#FF6BBF',
+                highlightTextColor: '#B02768',
               },
               {
                 name: 'Waterfront',
@@ -354,6 +360,7 @@ export default function Home() {
                 phone: '+1 (555) 234-5678',
                 highlight: 'Ocean View',
                 highlightColor: '#FF8C42',
+                highlightTextColor: '#A34A0E',
               },
               {
                 name: 'Uptown',
@@ -362,6 +369,7 @@ export default function Home() {
                 phone: '+1 (555) 345-6789',
                 highlight: 'New! Grand Opening',
                 highlightColor: '#FFD93D',
+                highlightTextColor: '#946B00',
               },
             ].map((location) => (
               <StaggerItem key={location.name}>
@@ -379,7 +387,7 @@ export default function Home() {
                       <h3 className="font-fredoka text-xl font-bold">{location.name}</h3>
                       <span
                         className="text-xs font-semibold px-2.5 py-0.5 rounded-full"
-                        style={{ background: `${location.highlightColor}15`, color: location.highlightColor }}
+                        style={{ background: `${location.highlightColor}15`, color: location.highlightTextColor }}
                       >
                         {location.highlight}
                       </span>
@@ -426,6 +434,8 @@ export default function Home() {
         className="relative z-20 py-24 px-4 overflow-hidden"
         style={{
           background: 'linear-gradient(135deg, #FF6BBF 0%, #FF8C42 50%, #FFD93D 100%)',
+          contentVisibility: 'auto',
+          containIntrinsicSize: '1px 900px',
         }}
       >
         {/* Background decorative donuts */}

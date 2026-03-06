@@ -2,6 +2,7 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { Inter, Fredoka } from 'next/font/google';
 import { notFound } from 'next/navigation';
+import { cookies } from 'next/headers';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
 import { PromoBanner } from '@/components/layout/promo-banner';
@@ -9,21 +10,20 @@ import { AuthToast } from '@/components/ui/registration-toast';
 import { AuthProvider } from '@/lib/auth/context';
 import { createClient } from '@/lib/supabase/server';
 import { routing } from '@/i18n/routing';
-import { WebVitals } from '@/components/monitoring/web-vitals';
-import { SpeedInsights } from '@vercel/speed-insights/next';
+import { ClientMonitoring } from '@/components/monitoring/client-monitoring';
 import { Analytics } from '@vercel/analytics/next';
 
 const inter = Inter({
   subsets: ['latin'],
   variable: '--font-inter',
-  display: 'swap',
+  display: 'optional',
 });
 
 const fredoka = Fredoka({
   subsets: ['latin'],
   variable: '--font-fredoka',
-  weight: ['400', '500', '600', '700'],
-  display: 'swap',
+  weight: ['400', '700'],
+  display: 'optional',
 });
 
 export function generateStaticParams() {
@@ -44,26 +44,39 @@ export default async function LocaleLayout({
   }
 
   const messages = await getMessages({ locale });
+  const monitoringEnabled = process.env.NEXT_PUBLIC_DISABLE_MONITORING !== '1';
 
-  // Read auth session + profile server-side so AuthProvider starts with
-  // loading=false and profile already populated — eliminates the client-side
-  // Supabase round-trip that causes the navbar flash and account page skeleton.
-  const supabase = await createClient();
-  const { data: { user: initialUser } } = await supabase.auth.getUser();
+  // Avoid unnecessary auth DB/network work for anonymous requests.
+  const cookieStore = await cookies();
+  const hasSupabaseAuthCookie = cookieStore
+    .getAll()
+    .some((cookie) => cookie.name.startsWith('sb-') && cookie.name.includes('auth-token'));
 
-  // Fetch profile in parallel only when a user is logged in.
-  // Single extra DB read per layout render; negligible vs. the UX win.
-  const initialProfile = initialUser
-    ? await supabase
+  let initialUser: Awaited<ReturnType<Awaited<ReturnType<typeof createClient>>['auth']['getUser']>>['data']['user'] = null;
+  let initialProfile: { id: string; email: string | null; full_name: string | null } | null = null;
+
+  if (hasSupabaseAuthCookie) {
+    // Read auth session + profile server-side so AuthProvider starts with
+    // loading=false and profile already populated.
+    const supabase = await createClient();
+    const { data: { user } } = await supabase.auth.getUser();
+    initialUser = user;
+
+    if (initialUser) {
+      initialProfile = await supabase
         .from('profiles')
         .select('id, email, full_name')
         .eq('id', initialUser.id)
         .maybeSingle()
-        .then(({ data }) => data ?? null)
-    : null;
+        .then(({ data }) => data ?? null);
+    }
+  }
 
   return (
     <html lang={locale} className={`${inter.variable} ${fredoka.variable}`}>
+      <head>
+        <link rel="preconnect" href="https://o4510924639174656.ingest.de.sentry.io" />
+      </head>
       <body className="flex min-h-screen flex-col bg-[hsl(var(--background))] text-[hsl(var(--foreground))]">
         <a
           href="#main-content"
@@ -73,14 +86,13 @@ export default async function LocaleLayout({
         </a>
         <NextIntlClientProvider locale={locale} messages={messages}>
             <AuthProvider initialUser={initialUser} initialProfile={initialProfile}>
-            <WebVitals />
-            <SpeedInsights />
-            <Analytics />
+            {monitoringEnabled && <ClientMonitoring />}
             <AuthToast />
             <Header />
             <PromoBanner />
             <main id="main-content" className="flex-1">{children}</main>
             <Footer />
+            <Analytics />
           </AuthProvider>
         </NextIntlClientProvider>
       </body>

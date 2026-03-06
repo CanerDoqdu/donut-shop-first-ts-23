@@ -66,8 +66,9 @@ export function AuthProvider({
       : null)
   );
   const [loyalty, setLoyalty] = useState<LoyaltyInfo | null>(null);
-  // If we already have the user from SSR, skip the loading state entirely.
-  const [loading, setLoading] = useState(initialUser === null);
+  // Header/UI should not block on client auth initialization; SSR already
+  // provides initial auth context via middleware/session cookies.
+  const [loading, setLoading] = useState(false);
   const supabase = useMemo(() => createClient(), []);
 
   // NOTE: Dev-mode auth clearing removed — it was wiping Supabase session

@@ -54,6 +54,32 @@ async function _handleRequest(
   request: NextRequest,
   requestId: string,
 ): Promise<NextResponse> {
+  // Keep standalone project wiki route outside locale middleware to avoid
+  // /en/project-wiki -> /project-wiki -> /en/project-wiki redirect loops.
+  if (request.nextUrl.pathname === '/project-wiki') {
+    const passthrough = NextResponse.next({ request });
+    const nonce = generateCspNonce();
+    const csp = buildCspHeader(nonce);
+    passthrough.headers.set('Content-Security-Policy', csp);
+    passthrough.headers.set('x-nonce', nonce);
+    passthrough.headers.set('x-request-id', requestId);
+    return passthrough;
+  }
+
+  const authGuardRequired = isProtectedPath(request) || isAdminPath(request);
+
+  // Public routes do not need Supabase auth refresh on every request.
+  // This keeps homepage/navigation latency lower for anonymous traffic.
+  if (!authGuardRequired) {
+    const intlResponse = intlMiddleware(request);
+    const nonce = generateCspNonce();
+    const csp = buildCspHeader(nonce);
+    intlResponse.headers.set('Content-Security-Policy', csp);
+    intlResponse.headers.set('x-nonce', nonce);
+    intlResponse.headers.set('x-request-id', requestId);
+    return intlResponse;
+  }
+
   // -- 1. Refresh Supabase auth session --
   // Following the official Supabase SSR pattern: create a mutable response
   // that gets recreated inside setAll so the *modified* request (with fresh
@@ -158,9 +184,19 @@ function generateCspNonce(): string {
  * - upgrade-insecure-requests enforces HTTPS
  */
 function buildCspHeader(nonce: string): string {
+  const allowUnsafeEval = process.env.NODE_ENV !== 'production';
+  const scriptSrc = [
+    "'self'",
+    `'nonce-${nonce}'`,
+    "'strict-dynamic'",
+    ...(allowUnsafeEval ? ["'unsafe-eval'"] : []),
+    'https://js.stripe.com',
+    'https://va.vercel-scripts.com',
+  ].join(' ');
+
   return [
     "default-src 'self'",
-    `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://js.stripe.com https://va.vercel-scripts.com`,
+    `script-src ${scriptSrc}`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "img-src 'self' data: blob: https://*.supabase.co https://lh3.googleusercontent.com",
     "font-src 'self' https://fonts.gstatic.com",

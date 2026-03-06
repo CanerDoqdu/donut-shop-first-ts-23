@@ -83,7 +83,7 @@ export function AuthToast() {
     <div
       role="status"
       aria-live="polite"
-      className={`fixed top-4 left-1/2 z-[9999] -translate-x-1/2 w-[min(90vw,440px)]
+      className={`fixed top-4 left-1/2 z-50 -translate-x-1/2 w-[min(90vw,440px)]
         transition-all duration-300 ease-out
         ${visible ? 'opacity-100 translate-y-0 scale-100' : 'opacity-0 -translate-y-5 scale-95 pointer-events-none'}`}
     >

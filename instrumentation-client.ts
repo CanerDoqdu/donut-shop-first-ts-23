@@ -1,20 +1,31 @@
-// This file configures the initialization of Sentry on the client.
-// The added config here will be used whenever a users loads a page in their browser.
-// https://docs.sentry.io/platforms/javascript/guides/nextjs/
+// Client instrumentation is lazily loaded so Lighthouse and local checks can
+// run without paying the Sentry client bundle cost.
 
-import * as Sentry from "@sentry/nextjs";
+type RouterTransitionHandler = (...args: any[]) => void;
 
-Sentry.init({
-  dsn: "https://417044e9c4ea872b9e0f4f2fa3325066@o4510924639174656.ingest.de.sentry.io/4510924722012240",
+let onTransition: RouterTransitionHandler = () => {};
 
-  // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
-  tracesSampleRate: 1,
-  // Enable logs to be sent to Sentry
-  enableLogs: true,
+const monitoringDisabled = process.env.NEXT_PUBLIC_DISABLE_MONITORING === '1';
+const canInitSentry =
+  process.env.NODE_ENV === 'production' &&
+  !monitoringDisabled &&
+  Boolean(process.env.NEXT_PUBLIC_SENTRY_DSN);
 
-  // Enable sending user PII (Personally Identifiable Information)
-  // https://docs.sentry.io/platforms/javascript/guides/nextjs/configuration/options/#sendDefaultPii
-  sendDefaultPii: true,
-});
+if (canInitSentry) {
+  void import('@sentry/nextjs').then((Sentry) => {
+    Sentry.init({
+      dsn: process.env.NEXT_PUBLIC_SENTRY_DSN,
+      enabled: true,
+      tracesSampleRate: 0.1,
+      sendDefaultPii: false,
+      release: process.env.NEXT_PUBLIC_APP_VERSION,
+      environment: process.env.NODE_ENV,
+    });
 
-export const onRouterTransitionStart = Sentry.captureRouterTransitionStart;
+    onTransition = Sentry.captureRouterTransitionStart;
+  });
+}
+
+export const onRouterTransitionStart: RouterTransitionHandler = (...args) => {
+  onTransition(...args);
+};

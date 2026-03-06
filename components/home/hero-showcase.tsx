@@ -1,5 +1,3 @@
-'use client';
-
 /* ──────────────────────────────────────────────────────
    Hero Showcase — Graffiti-editorial style.
    Left : Beverage composite (decorations baked in).
@@ -8,39 +6,34 @@
    ────────────────────────────────────────────────────── */
 
 import NextImage from 'next/image';
-import { useTranslations } from 'next-intl';
-import { useState } from 'react';
+
+type HeroShowcaseCopy = {
+  ourSignatures: string;
+  bestSeller: string;
+  chocolateDream: string;
+  chocolateDreamDesc: string;
+  chocolateDreamPrice: string;
+  signature: string;
+  berryBliss: string;
+  berryBlissDesc: string;
+  berryBlissPrice: string;
+  caramelCrunch: string;
+  newLabel: string;
+  caramelCrunchPrice: string;
+  mangoSunset: string;
+  mangoSunsetPrice: string;
+  handcraftedDaily: string;
+  signatureDrink: string;
+  madeWithLove: string;
+  handcrafted: string;
+  dailyFresh: string;
+};
 
 function Image(props: React.ComponentProps<typeof NextImage>) {
-  const { className, onLoad, ...rest } = props;
-  const [loaded, setLoaded] = useState(false);
-
-  return (
-    <>
-      {!loaded && (
-        <div
-          className="absolute inset-0 rounded-full"
-          style={{
-            background: 'radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.05) 65%, transparent 100%)',
-            filter: 'blur(12px)',
-          }}
-        />
-      )}
-      <NextImage
-        {...rest}
-        className={`${className ?? ''} transition-opacity duration-500 ${loaded ? 'opacity-100' : 'opacity-0'}`}
-        onLoad={(event) => {
-          setLoaded(true);
-          onLoad?.(event);
-        }}
-      />
-    </>
-  );
+  return <NextImage {...props} />;
 }
 
-export function HeroShowcase() {
-  const t = useTranslations('home');
-  
+export function HeroShowcase({ copy }: { copy: HeroShowcaseCopy }) {
   return (
     <div className="relative w-full flex items-center justify-center select-none overflow-hidden lg:overflow-visible">
 
@@ -53,7 +46,7 @@ export function HeroShowcase() {
           {/* Section label */}
           <div className="text-center mb-4 sm:mb-5 md:mb-6">
             <span className="font-fredoka text-[10px] sm:text-xs md:text-sm tracking-[0.35em] uppercase text-white/40">
-              ✦ {t('ourSignatures')} ✦
+              ✦ {copy.ourSignatures} ✦
             </span>
           </div>
 
@@ -76,16 +69,16 @@ export function HeroShowcase() {
               </div>
               <div className="inline-flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 rounded-full mb-2 md:mb-3" style={{ background: 'rgba(255,217,61,0.15)' }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FFD93D] animate-pulse" />
-                <span className="text-[8px] sm:text-[9px] md:text-xs text-[#FFD93D] font-bold tracking-wider uppercase">{t('bestSeller')}</span>
+                <span className="text-[8px] sm:text-[9px] md:text-xs text-[#FFD93D] font-bold tracking-wider uppercase">{copy.bestSeller}</span>
               </div>
               <h3 className="font-fredoka text-base sm:text-lg md:text-2xl font-bold text-white leading-tight mb-1 md:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-                {t('chocolateDream')}
+                {copy.chocolateDream}
               </h3>
               <p className="text-[9px] sm:text-[10px] md:text-sm text-white/50 leading-relaxed mb-3 md:mb-4">
-                {t('chocolateDreamDesc')}
+                {copy.chocolateDreamDesc}
               </p>
               <div className="mt-auto pt-2 md:pt-3 border-t border-white/10 w-full text-center">
-                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>{t('chocolateDreamPrice')}</span>
+                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>{copy.chocolateDreamPrice}</span>
               </div>
             </div>
 
@@ -106,16 +99,16 @@ export function HeroShowcase() {
               </div>
               <div className="inline-flex items-center gap-1 px-2 md:px-3 py-0.5 md:py-1 rounded-full mb-2 md:mb-3" style={{ background: 'rgba(255,107,191,0.15)' }}>
                 <span className="w-1.5 h-1.5 rounded-full bg-[#FF6BBF] animate-pulse" />
-                <span className="text-[8px] sm:text-[9px] md:text-xs text-[#FF6BBF] font-bold tracking-wider uppercase">{t('signature')}</span>
+                <span className="text-[8px] sm:text-[9px] md:text-xs text-[#FF6BBF] font-bold tracking-wider uppercase">{copy.signature}</span>
               </div>
               <h3 className="font-fredoka text-base sm:text-lg md:text-2xl font-bold text-white leading-tight mb-1 md:mb-2" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.2)' }}>
-                {t('berryBliss')}
+                {copy.berryBliss}
               </h3>
               <p className="text-[9px] sm:text-[10px] md:text-sm text-white/50 leading-relaxed mb-3 md:mb-4">
-                {t('berryBlissDesc')}
+                {copy.berryBlissDesc}
               </p>
               <div className="mt-auto pt-2 md:pt-3 border-t border-white/10 w-full text-center">
-                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>{t('berryBlissPrice')}</span>
+                <span className="font-fredoka text-sm sm:text-base md:text-xl font-bold text-[#FFD93D]" style={{ textShadow: '0 0 12px rgba(255,217,61,0.3)' }}>{copy.berryBlissPrice}</span>
               </div>
             </div>
           </div>
@@ -134,10 +127,10 @@ export function HeroShowcase() {
                 <div className="relative w-6 h-6 sm:w-7 sm:h-7 md:w-10 md:h-10 shrink-0">
                   <Image src="/donut 5.png" alt="" fill sizes="(min-width: 768px) 40px, 28px" className="object-contain" draggable={false} />
                 </div>
-                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{t('caramelCrunch')}</span>
-                <span className="text-[7px] sm:text-[8px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded-full shrink-0 font-bold uppercase" style={{ background: 'rgba(255,140,66,0.2)', color: '#FF8C42' }}>{t('new')}</span>
+                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{copy.caramelCrunch}</span>
+                <span className="text-[7px] sm:text-[8px] md:text-[10px] px-1.5 md:px-2 py-0.5 rounded-full shrink-0 font-bold uppercase" style={{ background: 'rgba(255,140,66,0.2)', color: '#FF8C42' }}>{copy.newLabel}</span>
               </div>
-              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">{t('caramelCrunchPrice')}</span>
+              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">{copy.caramelCrunchPrice}</span>
             </div>
             <div className="w-full h-px my-2 md:my-3" style={{ background: 'rgba(255,255,255,0.08)' }} />
             <div className="flex items-center justify-between">
@@ -145,16 +138,16 @@ export function HeroShowcase() {
                 <div className="relative w-6 h-6 sm:w-7 sm:h-7 md:w-10 md:h-10 shrink-0 overflow-hidden">
                   <Image src="/beverage 1.png" alt="" fill sizes="(min-width: 768px) 40px, 28px" className="object-contain" draggable={false} />
                 </div>
-                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{t('mangoSunset')}</span>
+                <span className="font-fredoka text-xs sm:text-sm md:text-base font-semibold text-white truncate">{copy.mangoSunset}</span>
               </div>
-              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">{t('mangoSunsetPrice')}</span>
+              <span className="font-fredoka text-xs sm:text-sm md:text-base font-bold text-[#FFD93D] shrink-0 ml-2">{copy.mangoSunsetPrice}</span>
             </div>
           </div>
 
           {/* Bottom decorative */}
           <div className="flex items-center justify-center gap-3 mt-4 sm:mt-5 md:mt-6">
             <div className="h-px flex-1 max-w-16 md:max-w-24" style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.2))' }} />
-            <span className="text-white/25 text-[9px] sm:text-[10px] md:text-xs tracking-[0.2em] uppercase font-fredoka">{t('handcraftedDaily')}</span>
+            <span className="text-white/25 text-[9px] sm:text-[10px] md:text-xs tracking-[0.2em] uppercase font-fredoka">{copy.handcraftedDaily}</span>
             <div className="h-px flex-1 max-w-16 md:max-w-24" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.2), transparent)' }} />
           </div>
         </div>
@@ -174,17 +167,15 @@ export function HeroShowcase() {
           {/* ── Beverage composite (decorations baked in) ── */}
           <div className="relative shrink-0" style={{ transform: 'translateX(-70%) translateY(-20%) scale(2.3)', zIndex: 6 }}>
             <div className="relative" style={{ width: '240px', height: '240px' }}>
-              <Image
+              <img
                 src="/hero-left-image.webp"
                 alt="Berry Bliss Beverage"
-                fill
-                sizes="540px"
-                priority
+                width={540}
+                height={540}
+                loading="eager"
                 fetchPriority="high"
-                className="object-contain"
-                style={{
-                  filter: 'drop-shadow(0 12px 32px rgba(224,64,160,0.4))',
-                }}
+                decoding="async"
+                className="h-full w-full object-contain"
                 draggable={false}
               />
             </div>
@@ -193,11 +184,11 @@ export function HeroShowcase() {
           {/* ── Label ── */}
           <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ left: '10%', bottom: '-100px', zIndex: 10 }}>
             <p className="font-fredoka text-base sm:text-lg md:text-xl font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
-              {t('berryBliss')}
+              {copy.berryBliss}
             </p>
-            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">{t('signatureDrink')}</p>
+            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">{copy.signatureDrink}</p>
             <p className="mt-1 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] select-none">
-              {t('madeWithLove')}
+              {copy.madeWithLove}
             </p>
           </div>
 
@@ -246,17 +237,14 @@ export function HeroShowcase() {
           {/* ── Donut composite (decorations baked in) ── */}
           <div className="relative shrink-0" style={{ transform: 'translateX(60%) translateY(-9%) scale(1.62)', zIndex: 3 }}>
             <div className="relative" style={{ width: '240px', height: '240px' }}>
-              <Image
+              <img
                 src="/hero-right-image.webp"
                 alt="Chocolate Dream Donut"
-                fill
-                sizes="390px"
-                priority
-                fetchPriority="high"
-                className="object-contain"
-                style={{
-                  filter: 'drop-shadow(0 12px 32px rgba(255,107,191,0.4))',
-                }}
+                width={390}
+                height={390}
+                loading="eager"
+                decoding="async"
+                className="h-full w-full object-contain"
                 draggable={false}
               />
             </div>
@@ -265,9 +253,9 @@ export function HeroShowcase() {
           {/* ── Label ── */}
           <div className="absolute text-center pointer-events-none whitespace-nowrap" style={{ right: '10%', bottom: '-100px', zIndex: 4 }}>
             <p className="font-fredoka text-base sm:text-lg md:text-xl font-bold text-white" style={{ textShadow: '0 2px 12px rgba(0,0,0,0.3)' }}>
-              {t('chocolateDream')}
+              {copy.chocolateDream}
             </p>
-            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">{t('bestSeller')}</p>
+            <p className="text-[9px] sm:text-[10px] text-white/60 tracking-wide">{copy.bestSeller}</p>
             <p className="mt-1 font-fredoka text-[10px] sm:text-sm italic text-white/35 tracking-[0.25em] select-none">
               glazed &amp; sipped
             </p>
@@ -294,11 +282,11 @@ export function HeroShowcase() {
             ══════════════════════════════════════════════ */}
 
         <span className="absolute -top-5 sm:-top-7 left-2 sm:left-0 font-fredoka text-[10px] sm:text-sm italic text-white/40 tracking-[0.25em] pointer-events-none select-none -rotate-12 hidden sm:block">
-          {t('handcrafted')}
+          {copy.handcrafted}
         </span>
 
         <span className="absolute -top-5 sm:-top-7 right-2 sm:right-0 font-fredoka text-[10px] sm:text-sm italic text-white/40 tracking-[0.25em] pointer-events-none select-none rotate-12 hidden sm:block">
-          {t('dailyFresh')}
+          {copy.dailyFresh}
         </span>
 
       </div>

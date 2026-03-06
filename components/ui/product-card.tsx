@@ -18,7 +18,7 @@ function safeSrc(url: string): string {
   return encodeURI(decodeURI(url)); // idempotent encode
 }
 
-function ProductImage({ src, alt }: { src: string; alt: string }) {
+function ProductImage({ src, alt, priority = false }: { src: string; alt: string; priority?: boolean }) {
   const [loaded, setLoaded] = useState(false);
   const [imgSrc, setImgSrc] = useState(() => safeSrc(src));
   const [errored, setErrored] = useState(false);
@@ -40,7 +40,10 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
         src={imgSrc}
         alt={alt}
         fill
-        sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+        sizes="(min-width: 1536px) 240px, (min-width: 1280px) 220px, (min-width: 1024px) 22vw, (min-width: 640px) 40vw, 88vw"
+        quality={60}
+        priority={priority}
+        loading={priority ? 'eager' : undefined}
         className={`object-contain drop-shadow-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'}`}
         onLoad={() => setLoaded(true)}
         onError={() => {
@@ -50,7 +53,6 @@ function ProductImage({ src, alt }: { src: string; alt: string }) {
           }
           setLoaded(true);
         }}
-        unoptimized
       />
     </div>
   );
@@ -62,6 +64,7 @@ interface ProductCardProps {
   categoryLabel: string;
   addToCartLabel: string;
   outOfStockLabel: string;
+  priority?: boolean;
 }
 
 /**
@@ -75,6 +78,7 @@ export const ProductCard = memo(function ProductCard({
   categoryLabel,
   addToCartLabel,
   outOfStockLabel,
+  priority = false,
 }: ProductCardProps) {
   const name = locale === 'tr' ? product.name_tr : product.name_en;
   const description = locale === 'tr' ? product.description_tr : product.description_en;
@@ -83,16 +87,16 @@ export const ProductCard = memo(function ProductCard({
     <Card className="group hover:scale-105 transition-transform">
       <Link href={{ pathname: '/products/[slug]', params: { slug: product.slug } }}>
         <CardContent className="pt-6 cursor-pointer">
-          <ProductImage key={product.image_url} src={product.image_url} alt={name} />
+          <ProductImage key={product.image_url} src={product.image_url} alt={name} priority={priority} />
           <CardTitle className="text-center mb-2 text-lg">
             {name}
           </CardTitle>
-          <p className="text-center text-sm text-gray-600 mb-3 line-clamp-2">
+          <p className="text-center text-sm text-gray-700 mb-3 line-clamp-2">
             {description}
           </p>
           <div className="flex items-center justify-between mb-3">
             <Badge variant="secondary">{categoryLabel}</Badge>
-            <span className="text-sm text-gray-500">Stock: {product.stock}</span>
+            <span className="text-sm text-gray-700">Stock: {product.stock}</span>
           </div>
           <p className="text-center font-fredoka text-2xl font-bold text-[#FF6BBF]">
             {formatPrice(product.price)}

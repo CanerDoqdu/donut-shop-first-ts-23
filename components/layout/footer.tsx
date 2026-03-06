@@ -1,14 +1,13 @@
-'use client';
-
 import Image from 'next/image';
 import { Link } from '@/i18n/routing';
-import { useTranslations } from 'next-intl';
+import { getTranslations } from 'next-intl/server';
 
-export function Footer() {
-  const t = useTranslations('footer');
+export async function Footer() {
+  const t = await getTranslations('footer');
+  const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="mt-auto border-t bg-linear-to-br from-[#FFF8E7] to-white">
+    <footer className="border-t bg-linear-to-br from-[#FFF8E7] to-white">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
           {/* Brand */}
@@ -21,7 +20,7 @@ export function Footer() {
                 height={40}
                 className="rounded-full shadow-sm object-cover"
               />
-              <span className="font-fredoka text-xl font-bold bg-gradient-donut bg-clip-text text-transparent">
+              <span className="text-xl font-bold bg-gradient-donut bg-clip-text text-transparent">
                 Glazed & Sipped
               </span>
             </div>
@@ -32,7 +31,7 @@ export function Footer() {
 
           {/* Quick Links */}
           <div>
-            <h3 className="font-fredoka text-lg font-semibold mb-4">{t('quickLinks')}</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('quickLinks')}</h3>
             <nav aria-label="Footer navigation">
             <ul className="space-y-2 text-sm">
               <li>
@@ -56,7 +55,7 @@ export function Footer() {
 
           {/* Contact */}
           <div>
-            <h3 className="font-fredoka text-lg font-semibold mb-4">{t('contact')}</h3>
+            <h3 className="text-lg font-semibold mb-4">{t('contact')}</h3>
             <ul className="space-y-2 text-sm text-gray-600">
               <li>Email: hello@donutshop.com</li>
               <li>{t('phone')}: +90 555 123 4567</li>
@@ -66,7 +65,7 @@ export function Footer() {
         </div>
 
         <div className="mt-8 border-t pt-8 text-center text-sm text-gray-600">
-          <p>&copy; {new Date().getFullYear()} Glazed & Sipped. {t('rights')}</p>
+          <p>&copy; {currentYear} Glazed & Sipped. {t('rights')}</p>
         </div>
       </div>
     </footer>

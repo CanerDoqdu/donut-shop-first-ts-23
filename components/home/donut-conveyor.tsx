@@ -49,6 +49,8 @@ export function DonutConveyor() {
   const lastTime = useRef(0);
   const machineTimer = useRef<NodeJS.Timeout | null>(null);
   const spawnTimer = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const isVisible = useRef(false);
 
   /* spawn an empty donut just off-screen LEFT */
   const spawnEmpty = useCallback(() => {
@@ -77,9 +79,26 @@ export function DonutConveyor() {
     }]);
   }, []);
 
+  /* pause loop when scrolled out of viewport */
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { isVisible.current = entry.isIntersecting; },
+      { threshold: 0 },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
   /* animation loop — move donuts LEFT→RIGHT */
   useEffect(() => {
     const tick = (time: number) => {
+      if (!isVisible.current) {
+        lastTime.current = 0;
+        animFrame.current = requestAnimationFrame(tick);
+        return;
+      }
       if (!lastTime.current) lastTime.current = time;
       const dt = (time - lastTime.current) / 1000;
       lastTime.current = time;
@@ -141,6 +160,7 @@ export function DonutConveyor() {
 
   return (
     <div 
+      ref={containerRef}
       className="relative overflow-hidden select-none" 
       style={{ 
         height: '120px',
@@ -197,23 +217,6 @@ export function DonutConveyor() {
         />
       </div>
       
-      {/* ── Support pillars ── */}
-      {[15, 35, 55, 75, 95].map((pos) => (
-        <div
-          key={pos}
-          className="absolute"
-          style={{
-            left: `${pos}%`,
-            top: '33px',
-            width: '8px',
-            height: '50px',
-            background: 'linear-gradient(90deg, #5A3D28 0%, #8B6544 50%, #5A3D28 100%)',
-            borderRadius: '2px',
-            boxShadow: '2px 0 4px rgba(0,0,0,0.3)',
-          }}
-        />
-      ))}
-
       {/* ── Belt body — thick rubber strip with side rails ── */}
       <div
         className="absolute left-0 right-0"
@@ -286,14 +289,14 @@ export function DonutConveyor() {
         }}
       />
 
-      {/* ── Donuts on belt (sitting right on top) ── */}
+      {/* ── Donuts on belt (centered in dark belt area) ── */}
       {donuts.map((d) => (
         <div
           key={d.id}
           className="absolute"
           style={{
             left: `${d.x}%`,
-            bottom: d.type === 'empty' ? `${BELT_H}px` : `${BELT_H + 4}px`,
+            bottom: '36px',
             width: `${DONUT_SIZE}px`,
             height: `${DONUT_SIZE}px`,
             zIndex: 2,
@@ -304,6 +307,7 @@ export function DonutConveyor() {
             alt={d.type === 'empty' ? t('plainDonut') : t('decoratedDonut')}
             fill
             sizes="48px"
+            loading="eager"
             className="object-contain"
             style={{
               filter: d.type === 'decorated'

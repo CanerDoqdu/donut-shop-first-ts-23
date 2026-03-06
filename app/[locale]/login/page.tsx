@@ -137,7 +137,7 @@ export default function LoginPage() {
           <h2 className="text-2xl font-bold text-gray-800 text-center mb-2">
             {t.title}
           </h2>
-          <p className="text-gray-500 text-center mb-6">{t.subtitle}</p>
+          <p className="text-gray-700 text-center mb-6">{t.subtitle}</p>
 
           {/* Success message */}
           {isReset && (
@@ -204,7 +204,8 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-gray-600 hover:text-gray-800 rounded-md"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -215,7 +216,7 @@ export default function LoginPage() {
             <div className="text-right">
               <Link
                 href="/forgot-password"
-                className="text-sm text-amber-600 hover:text-amber-700"
+                className="text-sm text-amber-700 underline underline-offset-2 hover:text-amber-800"
               >
                 {t.forgotPassword}
               </Link>
@@ -247,7 +248,7 @@ export default function LoginPage() {
               <div className="w-full border-t border-gray-200" />
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-white text-gray-500">{t.or}</span>
+              <span className="px-4 bg-white text-gray-700">{t.or}</span>
             </div>
           </div>
 
@@ -305,11 +306,11 @@ export default function LoginPage() {
           </div>
 
           {/* Register link */}
-          <p className="mt-6 text-center text-gray-600">
+          <p className="mt-6 text-center text-gray-700">
             {t.noAccount}{' '}
             <Link
               href="/register"
-              className="text-amber-600 hover:text-amber-700 font-semibold"
+              className="text-amber-700 underline underline-offset-2 hover:text-amber-800 font-semibold"
             >
               {t.register}
             </Link>
