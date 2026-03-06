@@ -25,7 +25,10 @@ export function PromoBanner() {
       style={{ height: '40px', overflow: 'visible' }}
     >
       {/* ── GlazeDrip behind the banner content ── */}
-      <div className="absolute inset-0 pointer-events-none" style={{ zIndex: 0 }}>
+      <div
+        className="absolute left-0 right-0 pointer-events-none"
+        style={{ zIndex: 0, top: '100%', transform: 'translateY(-38px)' }}
+      >
         <GlazeDrip />
       </div>
 
