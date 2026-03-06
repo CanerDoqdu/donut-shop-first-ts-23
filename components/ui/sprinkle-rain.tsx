@@ -67,6 +67,7 @@ export function SprinkleRain({ count = 60 }: { count?: number }) {
 
   useEffect(() => {
     if (!isActive) return;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setDrops(generateSprinkles(count));
   }, [count, isActive]);
 

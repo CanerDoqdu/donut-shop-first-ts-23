@@ -1,7 +1,7 @@
 // Client instrumentation is lazily loaded so Lighthouse and local checks can
 // run without paying the Sentry client bundle cost.
 
-type RouterTransitionHandler = (...args: any[]) => void;
+type RouterTransitionHandler = (...args: unknown[]) => void;
 
 let onTransition: RouterTransitionHandler = () => {};
 

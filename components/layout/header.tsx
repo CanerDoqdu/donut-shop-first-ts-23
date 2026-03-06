@@ -2,9 +2,10 @@
 
 import Image from 'next/image';
 import { ShoppingCart, Menu, X, Crown, Gift, Package, Users, ChevronDown, User, LogOut, LogIn, UserPlus } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { Link } from '@/i18n/routing';
+import { useMounted } from '@/hooks/use-mounted';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useCartStore } from '@/store/cart-store';
@@ -15,7 +16,7 @@ export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [moreMenuOpen, setMoreMenuOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const mounted = useMounted();
   const [signingOut, setSigningOut] = useState(false);
   const t = useTranslations();
   const router = useRouter();
@@ -40,10 +41,6 @@ export function Header() {
     router.refresh();
     setSigningOut(false);
   };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   const navLinks: Array<{ href: '/' | '/products' | '/stores'; label: string }> = [
     { href: '/', label: t('nav.home') },
